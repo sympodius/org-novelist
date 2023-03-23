@@ -250,7 +250,7 @@ The resultant string should be suitable for all computer systems using en-GB."
          (taboo-chars (mapcar 'string (string-to-list (orgn--remove-chars white-list str)))))  ; Add characters to this list that are not in the white list
     (mapconcat 'identity (mapcar
                           (lambda (word) (capitalize (downcase word)))
-                          (split-string (orgn--remove-chars taboo-chars str) " ")))))
+                          (split-string (orgn--remove-chars taboo-chars str) " ")) nil)))
 ;;;; British English (en-GB) ends here
 
 
