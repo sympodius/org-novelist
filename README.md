@@ -3,7 +3,7 @@
 # Org Novelist
 
 ![Release Version](https://img.shields.io/github/tag/sympodius/org-novelist.svg?style=flat-square&label=release&color=58839b)
-![Supports Emacs 27.1 and Higher](https://img.shields.io/badge/Supports-Emacs_27.1_and_Higher-blueviolet.svg?style=flat-square&logo=GNU%20Emacs&logoColor=white)
+![Supports Emacs 29 and Higher](https://img.shields.io/badge/Supports-Emacs_29_and_Higher-blueviolet.svg?style=flat-square&logo=GNU%20Emacs&logoColor=white)
 ![Latest Commit](https://img.shields.io/github/last-commit/sympodius/org-novelist/main?style=flat-square)
 
 </div>
@@ -43,7 +43,7 @@ While Org Novelist focuses on making the writing process simpler, it's also easy
 
 
 # Install
-The Org Novelist package requires a correctly installed version of GNU Emacs 27.1 or higher. You can find more information on how to install and use Emacs at the [GNU Emacs website](https://www.gnu.org/software/emacs/).
+The Org Novelist package requires a correctly installed version of GNU Emacs 29 or higher. You can find more information on how to install and use Emacs at the [GNU Emacs website](https://www.gnu.org/software/emacs/).
 
 ## Try Without Installing
 If you just want to try Org Novelist without making it a permanent part of your Emacs setup, start by downloading the `org-novelist.el` file. Then, in Emacs, open a command buffer with <kbd>M-x</kbd> and run `load-file`. Navigate to `org-novelist.el` and its functions will be available in Emacs for the current session.
