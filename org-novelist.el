@@ -400,25 +400,25 @@ Otherwise, run org-fold-show-all."
   (catch 'FILE-NOT-WRITABLE
     (let ((current-buffer (current-buffer)))
       (if (get-file-buffer filename)
-      	  (progn
-      	    ;; Filename already open in a buffer. Update buffer and save.
-      	    (switch-to-buffer (get-file-buffer filename))
-      	    (erase-buffer)
-      	    (insert str)
-      	    (save-buffer)  ; Calling `save-buffer' with an argument of 0 would stop back-up files being created, but it's probably best to respect the user's Emacs setup in this regard
-	    (switch-to-buffer current-buffer))
-	(progn
-	  ;; Filename not open in a buffer. Just deal with file.
-	  (with-temp-buffer
-	    (insert str)
-	    ;; If directory doesn't exist, create it.
-	    (unless (file-exists-p (file-name-directory filename))
-	      (make-directory (file-name-directory filename) t))
-	    (if (file-writable-p filename)
-		(write-region (point-min) (point-max) filename)
-	      (progn
-		(error (concat filename " " (orgn--ls "is-not-writable")))
-		(throw 'FILE-NOT-WRITABLE (concat filename " " (orgn--ls "is-not-writable")))))))))))
+          (progn
+            ;; Filename already open in a buffer. Update buffer and save.
+            (switch-to-buffer (get-file-buffer filename))
+            (erase-buffer)
+            (insert str)
+            (save-buffer)  ; Calling `save-buffer' with an argument of 0 would stop back-up files being created, but it's probably best to respect the user's Emacs setup in this regard
+            (switch-to-buffer current-buffer))
+        (progn
+          ;; Filename not open in a buffer. Just deal with file.
+          (with-temp-buffer
+            (insert str)
+            ;; If directory doesn't exist, create it.
+            (unless (file-exists-p (file-name-directory filename))
+              (make-directory (file-name-directory filename) t))
+            (if (file-writable-p filename)
+                (write-region (point-min) (point-max) filename)
+              (progn
+                (error (concat filename " " (orgn--ls "is-not-writable")))
+                (throw 'FILE-NOT-WRITABLE (concat filename " " (orgn--ls "is-not-writable")))))))))))
 
 (defun orgn--generate-file-from-template (substitutions template filename)
   "Generate a new file from TEMPLATE string and SUBSTITUTIONS hash table.
@@ -437,12 +437,12 @@ The new file, FILENAME, will be saved to disk."
 (defun orgn--replace-true-headline-in-org-heading (new-headline org-heading-components)
   "Given an ORG-HEADING-COMPONENTS, replace the true headline with NEW-HEADLINE."
   (let* ((stars (nth 1 org-heading-components))
-	 (stars-str "")
-	 (todo-str (nth 2 org-heading-components))
-	 (priority-str nil)
-	 ;; (true-headline-str (nth 4 org-heading-components))
-	 (tags-str (nth 5 org-heading-components))
-	 (output-str ""))
+         (stars-str "")
+         (todo-str (nth 2 org-heading-components))
+         (priority-str nil)
+         ;; (true-headline-str (nth 4 org-heading-components))
+         (tags-str (nth 5 org-heading-components))
+         (output-str ""))
     (while (> stars 0)
       (setq stars (- stars 1))
       (setq stars-str (concat stars-str "*")))
@@ -466,20 +466,20 @@ throw an error."
   (catch 'NOT-A-STORY-FOLDER
     (let (current-folder)
       (if (string= " *temp*" (buffer-file-name))
-	  (eval nil)
-	(progn
-	  (unless folder
+          (eval nil)
+        (progn
+          (unless folder
             (if (or load-file-name buffer-file-name)
-		(setq folder (directory-file-name (file-name-directory (or load-file-name buffer-file-name))))
+                (setq folder (directory-file-name (file-name-directory (or load-file-name buffer-file-name))))
               (progn
-		(user-error (concat (orgn--ls "unsaved-buffer") " " (orgn--ls "not-part-of-a-story-folder")))
-		(throw 'NOT-A-STORY-FOLDER (concat (orgn--ls "unsaved-buffer") " " (orgn--ls "not-part-of-a-story-folder"))))))
-	  (setq current-folder folder)
-	  (while (not (file-exists-p (concat current-folder / orgn--config-filename)))
+                (user-error (concat (orgn--ls "unsaved-buffer") " " (orgn--ls "not-part-of-a-story-folder")))
+                (throw 'NOT-A-STORY-FOLDER (concat (orgn--ls "unsaved-buffer") " " (orgn--ls "not-part-of-a-story-folder"))))))
+          (setq current-folder folder)
+          (while (not (file-exists-p (concat current-folder / orgn--config-filename)))
             (when (string= current-folder (setq current-folder (expand-file-name (concat folder / ".." ))))
               (user-error (concat folder " " (orgn--ls "not-part-of-a-story-folder")))
               (throw 'NOT-A-STORY-FOLDER (concat folder " " (orgn--ls "not-part-of-a-story-folder")))))
-	  (expand-file-name current-folder))))))
+          (expand-file-name current-folder))))))
 
 (defun orgn--story-name (&optional story-folder)
   "Return the Org Novelist story's name.
@@ -521,7 +521,7 @@ related to the current buffer."
     (setq story-folder (orgn--story-root-folder story-folder)))
   (catch 'SET-STORY-NAME-FAILURE
     (let (org-heading-components
-	  beg)
+          beg)
       (with-temp-buffer
         (if (file-exists-p (concat story-folder / (orgn--ls "main-file" orgn--file-ending)))
             (if (file-readable-p (concat story-folder / (orgn--ls "main-file" orgn--file-ending)))
@@ -585,15 +585,15 @@ user for confirmation if new file name already in use."
 If no file associated with current buffer, do nothing.
 If passed a FILE, see if their is a matching buffer and save it."
   (let ((current-file (buffer-file-name))
-	(current-buffer (current-buffer)))
+        (current-buffer (current-buffer)))
     (if file
-	(progn
-	  (switch-to-buffer (get-file-buffer file))
-	  (save-buffer)
-	  (switch-to-buffer current-buffer))
+        (progn
+          (switch-to-buffer (get-file-buffer file))
+          (save-buffer)
+          (switch-to-buffer current-buffer))
       (progn
-	(when current-file
-	  (save-buffer))))))
+        (when current-file
+          (save-buffer))))))
 
 (defun orgn--make-chapter-at-index-point (chapter-name)
   "Create a new chapter file and link to it from the current point.
@@ -638,7 +638,7 @@ PLACE-NAME should be the name of the place."
   (setq story-folder (orgn--story-root-folder story-folder))
   (when story-folder
     (orgn--populate-glossary-string story-folder)))
-    
+
 (defun orgn--make-file-chapter-references-string (file &optional story-folder)
   "Create a new list of references in an Org Novelist story for FILE.
 If no STORY-FOLDER is supplied, try to determine the name for Org Novelist story
@@ -840,21 +840,21 @@ If property not found, add it."
 (defun orgn--get-file-property-value (file property)
   "Given a FILE, return the value of PROPERTY."
   (let ((value "")
-	(regexp (format "^[ \t]*#\\+%s:" (regexp-quote property)))
+        (regexp (format "^[ \t]*#\\+%s:" (regexp-quote property)))
         (case-fold-search t)
-	beg)
-      (with-temp-buffer
-	(when (file-exists-p file)
-	  (when (file-readable-p file)
-	    (insert-file-contents file)
-	    (goto-char (point-min))
-	    (while (re-search-forward regexp nil t)
-	      (when (looking-at-p " ")
-		(forward-char))
-	      (setq beg (point))
-              (end-of-line)
-	      (setq value (org-trim (buffer-substring beg (point))))))))
-      value))
+        beg)
+    (with-temp-buffer
+      (when (file-exists-p file)
+        (when (file-readable-p file)
+          (insert-file-contents file)
+          (goto-char (point-min))
+          (while (re-search-forward regexp nil t)
+            (when (looking-at-p " ")
+              (forward-char))
+            (setq beg (point))
+            (end-of-line)
+            (setq value (org-trim (buffer-substring beg (point))))))))
+    value))
 
 (defun orgn--delete-file-property-value (file property)
   "Given a FILE, delete the entry for PROPERTY."
@@ -863,65 +863,65 @@ If property not found, add it."
         (case-fold-search t))
     (with-temp-buffer
       (when (file-exists-p file)
-	(when (file-readable-p file)
-	  (insert-file-contents file)
-	  (goto-char (point-min))
-	  (while (re-search-forward regexp nil t)
-	    (beginning-of-line)
-	    (delete-line))))
+        (when (file-readable-p file)
+          (insert-file-contents file)
+          (goto-char (point-min))
+          (while (re-search-forward regexp nil t)
+            (beginning-of-line)
+            (orgn--delete-line))))
       (orgn--string-to-file (buffer-string) file))))
 
 (defun orgn--get-file-properties (file)
   "Given a FILE, return the properties."
   (let ((property-list '())
-	(regexp-start "^[ \t]*#\\+")
-	(regexp-end ": ")
-	(case-fold-search t)
-	beg
-	beg-line-num)
+        (regexp-start "^[ \t]*#\\+")
+        (regexp-end ": ")
+        (case-fold-search t)
+        beg
+        beg-line-num)
     (with-temp-buffer
       (when (file-exists-p file)
-	(when (file-readable-p file)
-	  (insert-file-contents file)
-	  (goto-char (point-min))
-	  (while (re-search-forward regexp-start nil t)
-	    (setq beg (point))
-	    (setq beg-line-num (line-number-at-pos))
-	    (when (re-search-forward regexp-end nil t)
-	      (when (= beg-line-num (line-number-at-pos))
-		(forward-char -2)
-		(setq property-list (cons (org-trim (buffer-substring beg (point))) property-list))))))))
+        (when (file-readable-p file)
+          (insert-file-contents file)
+          (goto-char (point-min))
+          (while (re-search-forward regexp-start nil t)
+            (setq beg (point))
+            (setq beg-line-num (line-number-at-pos))
+            (when (re-search-forward regexp-end nil t)
+              (when (= beg-line-num (line-number-at-pos))
+                (forward-char -2)
+                (setq property-list (cons (org-trim (buffer-substring beg (point))) property-list))))))))
     property-list))
 
 (defun orgn--get-file-subtree (file header &optional no-header)
   "Given a FILE, and HEADER, return the contents of the header's subtree.
 If NO-HEADER is non-nil, don't include header line in output."
   (let (beg
-	(output-str ""))
+        (output-str ""))
     (with-temp-buffer
       (when (file-exists-p file)
-	(when (file-readable-p file)
-	  (insert-file-contents file)
-	  (goto-char (point-min))
-	  (insert "\n")
-	  (goto-char (point-min))
-	  (org-novelist-mode)
-	  (org-fold-show-all)
-	  (while (not (org-next-visible-heading 1))
-	    (when (string= header (nth 4 (org-heading-components)))
-	      (when no-header
-		(forward-line))
-	      (beginning-of-line)
-	      (setq beg (point))
-	      (when no-header
-		(forward-line -1))
-	      (org-end-of-subtree t t)
-	      ;; Include the end of an inlinetask
-	      (when (and (featurep 'org-inlinetask)
-			 (looking-at-p (concat (org-inlinetask-outline-regexp) "END[ \t]*$")))
-		(end-of-line))
-	      (setq output-str (buffer-substring beg (point)))
-	      (goto-char (point-max)))))))
+        (when (file-readable-p file)
+          (insert-file-contents file)
+          (goto-char (point-min))
+          (insert "\n")
+          (goto-char (point-min))
+          (org-novelist-mode)
+          (orgn--fold-show-all)  ; Belts and braces
+          (while (not (org-next-visible-heading 1))
+            (when (string= header (nth 4 (org-heading-components)))
+              (when no-header
+                (forward-line))
+              (beginning-of-line)
+              (setq beg (point))
+              (when no-header
+                (forward-line -1))
+              (org-end-of-subtree t t)
+              ;; Include the end of an inlinetask
+              (when (and (featurep 'org-inlinetask)
+                         (looking-at-p (concat (org-inlinetask-outline-regexp) "END[ \t]*$")))
+                (end-of-line))
+              (setq output-str (buffer-substring beg (point)))
+              (goto-char (point-max)))))))
     output-str))
 
 (defun orgn--heading-last-link-headline-text ()
@@ -994,7 +994,7 @@ open buffer."
   (catch 'OBJECT-HEADLINES-FAULT
     (let* ((index-file (orgn--ls index-filename orgn--file-ending))
            (indices-folder (orgn--ls "indices-folder"))
-	   (file-objects (funcall (intern hash-table-func) story-folder))
+           (file-objects (funcall (intern hash-table-func) story-folder))
            (keys (hash-table-keys file-objects))
            key
            (objects-headlines '()))
@@ -1048,8 +1048,8 @@ If STORY-FOLDER is not provided, try to determine story files based on currently
 open buffer."
   (orgn--delete-org-subtrees-from-file
    (concat "\[\[file:.." (orgn--ls / "chapters-folder" / "chapter-file-prefix")
-	   (orgn--system-safe-name (orgn--sanitize-string chapter-name)) orgn--file-ending
-	   "\]\[" chapter-name "\]\]")
+           (orgn--system-safe-name (orgn--sanitize-string chapter-name)) orgn--file-ending
+           "\]\[" chapter-name "\]\]")
    (concat story-folder / (orgn--ls "indices-folder") / (orgn--ls "chapters-file" orgn--file-ending))))
 
 (defun orgn--delete-character-from-index (character-name &optional story-folder)
@@ -1058,8 +1058,8 @@ If STORY-FOLDER is not provided, try to determine story files based on currently
 open buffer."
   (orgn--delete-org-subtrees-from-file
    (concat "\[\[file:.." (orgn--ls / "notes-folder" / "character-file-prefix")
-	   (orgn--system-safe-name (orgn--sanitize-string character-name)) orgn--file-ending
-	   "\]\[" character-name "\]\]")
+           (orgn--system-safe-name (orgn--sanitize-string character-name)) orgn--file-ending
+           "\]\[" character-name "\]\]")
    (concat story-folder / (orgn--ls "indices-folder") / (orgn--ls "characters-file" orgn--file-ending))))
 
 (defun orgn--delete-prop-from-index (prop-name &optional story-folder)
@@ -1068,8 +1068,8 @@ If STORY-FOLDER is not provided, try to determine story files based on currently
 open buffer."
   (orgn--delete-org-subtrees-from-file
    (concat "\[\[file:.." (orgn--ls / "notes-folder" / "prop-file-prefix")
-	   (orgn--system-safe-name (orgn--sanitize-string prop-name)) orgn--file-ending
-	   "\]\[" prop-name "\]\]")
+           (orgn--system-safe-name (orgn--sanitize-string prop-name)) orgn--file-ending
+           "\]\[" prop-name "\]\]")
    (concat story-folder / (orgn--ls "indices-folder") / (orgn--ls "props-file" orgn--file-ending))))
 
 (defun orgn--delete-place-from-index (place-name &optional story-folder)
@@ -1078,8 +1078,8 @@ If STORY-FOLDER is not provided, try to determine story files based on currently
 open buffer."
   (orgn--delete-org-subtrees-from-file
    (concat "\[\[file:.." (orgn--ls / "notes-folder" / "place-file-prefix")
-	   (orgn--system-safe-name (orgn--sanitize-string place-name)) orgn--file-ending
-	   "\]\[" place-name "\]\]")
+           (orgn--system-safe-name (orgn--sanitize-string place-name)) orgn--file-ending
+           "\]\[" place-name "\]\]")
    (concat story-folder / (orgn--ls "indices-folder") / (orgn--ls "places-file" orgn--file-ending))))
 
 (defun orgn--delete-org-subtrees-from-string (subtree-heading org-str)
@@ -1106,14 +1106,14 @@ open buffer."
   (catch 'SUBTREE-DELETION-FROM-FILE-FAULT
     (let ((story-folder (orgn--story-root-folder (file-name-directory file))))
       (when story-folder
-	(if (file-exists-p file)
-	    (if (file-readable-p file)
-		  (orgn--string-to-file (orgn--delete-org-subtrees-from-string subtree-heading (org-file-contents file)) file)
-	      (progn
-		(error (concat file " " (orgn--ls "is-not-readable")))
-		(throw 'SUBTREE-DELETION-FROM-FILE-FAULT (concat file " " (orgn--ls "is-not-readable")))))
-	  (progn
-	    (error (concat (orgn--ls "file-not-found") ": " file))
+        (if (file-exists-p file)
+            (if (file-readable-p file)
+                (orgn--string-to-file (orgn--delete-org-subtrees-from-string subtree-heading (org-file-contents file)) file)
+              (progn
+                (error (concat file " " (orgn--ls "is-not-readable")))
+                (throw 'SUBTREE-DELETION-FROM-FILE-FAULT (concat file " " (orgn--ls "is-not-readable")))))
+          (progn
+            (error (concat (orgn--ls "file-not-found") ": " file))
             (throw 'SUBTREE-DELETION-FROM-FILE-FAULT (concat (orgn--ls "file-not-found") ": " file))))))))
 
 (defun orgn--delete-chapter-files-for (chapter-name &optional story-folder)
@@ -1207,23 +1207,23 @@ open buffer."
     (let* ((indices-folder (orgn--ls "indices-folder"))
            (index-file (concat story-folder / indices-folder / (orgn--ls index-file-name orgn--file-ending)))
            index-file-contents
-	   beg)
+           beg)
       (if (file-exists-p index-file)
           (if (file-readable-p index-file)
               (progn
                 (find-file index-file)
                 (save-buffer)
                 (goto-char (point-min))
-		(insert "\n")
-		(goto-char (point-min))
+                (insert "\n")
+                (goto-char (point-min))
                 (org-novelist-mode)
-		(org-fold-show-all)
+                (orgn--fold-show-all)  ; Belts and braces
                 (while (not (org-next-visible-heading 1))
                   (when (string= chosen-object (orgn--heading-last-link-headline-text))
-		    (setq beg (point))
-		    (goto-char (point-min))
-		    (delete-line)
-		    (goto-char beg)
+                    (setq beg (point))
+                    (goto-char (point-min))
+                    (orgn--delete-line)
+                    (goto-char beg)
                     (setq index-file-contents (orgn--replace-string-in-string
                                                (format "\[\[file:..%s%s\]\[%s\]\]"
                                                        (orgn--ls / objects-folder /)
@@ -1359,12 +1359,12 @@ open buffer."
            key
            object-file
            new-object-file
-	   (appearances-subtree "")
-	   (old-object-name "")
-	   (old-aliases "")
-	   aliases-list
-	   alias-curr
-	   (new-aliases-str ""))
+           (appearances-subtree "")
+           (old-object-name "")
+           (old-aliases "")
+           aliases-list
+           alias-curr
+           (new-aliases-str ""))
       (while keys
         (setq key (pop keys))
         (when (string= chosen-object (gethash key file-objects))
@@ -1479,35 +1479,35 @@ open buffer."
     (make-directory (concat story-folder / (orgn--ls "notes-folder")) t))
   (catch 'UPDATE-OBJECT-REFERENCES-FAULT
     (let* ((notes-folder (orgn--ls "notes-folder"))
-	   (file-characters (orgn--character-hash-table story-folder))
-	   (file-places (orgn--place-hash-table story-folder))
-	   (file-props (orgn--prop-hash-table story-folder))
-	   (keys (append (hash-table-keys file-characters)
-			 (hash-table-keys file-places)
-			 (hash-table-keys file-props)))
-	   key
-	   (appearances ""))
+           (file-characters (orgn--character-hash-table story-folder))
+           (file-places (orgn--place-hash-table story-folder))
+           (file-props (orgn--prop-hash-table story-folder))
+           (keys (append (hash-table-keys file-characters)
+                         (hash-table-keys file-places)
+                         (hash-table-keys file-props)))
+           key
+           (appearances ""))
       (while keys
-	(setq key (pop keys))
-	(if (file-exists-p (concat story-folder / notes-folder / key))
-	    (if (file-readable-p (concat story-folder / notes-folder / key))
-		(progn
-		  (when (get-file-buffer (concat story-folder / notes-folder / key))
-		    (switch-to-buffer (get-file-buffer (concat story-folder / notes-folder / key)))
-		    (save-buffer))
-		  (setq appearances (orgn--make-file-chapter-references-string (concat story-folder / notes-folder / key) story-folder))
-		  (orgn--delete-org-subtrees-from-file (orgn--ls "appearances-in-chapters-header") (concat story-folder / notes-folder / key))
-		  (with-temp-buffer
-		    (insert-file-contents (concat story-folder / notes-folder / key))
-		    (goto-char (point-max))
-		    (insert appearances)
-		    (orgn--string-to-file (buffer-string) (concat story-folder / notes-folder / key))))
-	      (progn
-		(error (concat story-folder / notes-folder / key " " (orgn--ls "is-not-readable")))
-		(throw 'UPDATE-OBJECT-REFERENCES-FAULT (concat story-folder / notes-folder / key " " (orgn--ls "is-not-readable")))))
-	  (progn
-	    (error (concat (orgn--ls "file-not-found") ": " story-folder / notes-folder / key))
-	    (throw 'UPDATE-OBJECT-REFERENCES-FAULT (concat (orgn--ls "file-not-found") ": " story-folder / notes-folder / key))))))))
+        (setq key (pop keys))
+        (if (file-exists-p (concat story-folder / notes-folder / key))
+            (if (file-readable-p (concat story-folder / notes-folder / key))
+                (progn
+                  (when (get-file-buffer (concat story-folder / notes-folder / key))
+                    (switch-to-buffer (get-file-buffer (concat story-folder / notes-folder / key)))
+                    (save-buffer))
+                  (setq appearances (orgn--make-file-chapter-references-string (concat story-folder / notes-folder / key) story-folder))
+                  (orgn--delete-org-subtrees-from-file (orgn--ls "appearances-in-chapters-header") (concat story-folder / notes-folder / key))
+                  (with-temp-buffer
+                    (insert-file-contents (concat story-folder / notes-folder / key))
+                    (goto-char (point-max))
+                    (insert appearances)
+                    (orgn--string-to-file (buffer-string) (concat story-folder / notes-folder / key))))
+              (progn
+                (error (concat story-folder / notes-folder / key " " (orgn--ls "is-not-readable")))
+                (throw 'UPDATE-OBJECT-REFERENCES-FAULT (concat story-folder / notes-folder / key " " (orgn--ls "is-not-readable")))))
+          (progn
+            (error (concat (orgn--ls "file-not-found") ": " story-folder / notes-folder / key))
+            (throw 'UPDATE-OBJECT-REFERENCES-FAULT (concat (orgn--ls "file-not-found") ": " story-folder / notes-folder / key))))))))
 
 (defun orgn--rebuild-objects-index (index-filename hash-table-func populate-template-func &optional story-folder)
   "Rebuild the story's index for the given INDEX-FILENAME.
@@ -1525,7 +1525,7 @@ open buffer."
   (let* ((file-objects (funcall (intern hash-table-func) story-folder))
          (keys (hash-table-keys file-objects))
          key
-	 (object-list-str ""))
+         (object-list-str ""))
     ;; Overwrite file to base template
     (funcall (intern populate-template-func) (orgn--story-name story-folder) story-folder)  ; Create the index file for the object type
     (setq keys (sort keys 'string<))
@@ -1533,7 +1533,7 @@ open buffer."
       (setq key (pop keys))
       (setq object-list-str (concat object-list-str "** TODO " (format "\[\[file:../%s/%s\]\[%s\]\]\n" (orgn--ls "notes-folder") key (gethash key file-objects)))))
     (orgn--string-to-file (concat (org-file-contents (concat story-folder / (orgn--ls "indices-folder") / (orgn--ls index-filename) orgn--file-ending)) object-list-str)
-			  (concat story-folder / (orgn--ls "indices-folder") / (orgn--ls index-filename) orgn--file-ending))))
+                          (concat story-folder / (orgn--ls "indices-folder") / (orgn--ls index-filename) orgn--file-ending))))
 
 (defun orgn--rebuild-characters-index (&optional story-folder)
   "Rebuild the story's characters index.
@@ -1565,51 +1565,51 @@ open buffer."
   (let* ((file-chapters (orgn--chapter-hash-table story-folder))
          (keys (hash-table-keys file-chapters))
          key
-	 (object-list-str "")
-	 (chapter-matter-type nil)
-	 (fm-object-list-str "")
-	 (mm-object-list-str "")
-	 (bm-object-list-str ""))
+         (object-list-str "")
+         (chapter-matter-type nil)
+         (fm-object-list-str "")
+         (mm-object-list-str "")
+         (bm-object-list-str ""))
     ;; Overwrite file to base template
     (orgn--populate-chapters-template (orgn--story-name story-folder) story-folder)  ; Create the chapter index file for the story
     (unless chapter-matter-type
       (while (not (or (string= chapter-matter-type (orgn--ls "front-matter-heading"))
-		      (string= chapter-matter-type (orgn--ls "main-matter-heading"))
-		      (string= chapter-matter-type (orgn--ls "back-matter-heading"))
-		      (string= chapter-matter-type (orgn--ls "file-by-file"))))
+                      (string= chapter-matter-type (orgn--ls "main-matter-heading"))
+                      (string= chapter-matter-type (orgn--ls "back-matter-heading"))
+                      (string= chapter-matter-type (orgn--ls "file-by-file"))))
         (setq chapter-matter-type (completing-read (concat (orgn--ls "rebuild-chapter-index-location-query") " ")
                                                    (list (orgn--ls "front-matter-heading")
                                                          (orgn--ls "main-matter-heading")
                                                          (orgn--ls "back-matter-heading")
-							 (orgn--ls "file-by-file"))))))
+                                                         (orgn--ls "file-by-file"))))))
     (setq keys (sort keys 'string<))
     (while keys
       (setq key (pop keys))
       ;; Put all chapters into chosen matter section by adding to correct string
       (cond ((string= chapter-matter-type (orgn--ls "front-matter-heading"))
-	     (setq fm-object-list-str (concat fm-object-list-str "*** TODO " (format "\[\[file:../%s/%s\]\[%s\]\]\n" (orgn--ls "chapters-folder") key (gethash key file-chapters)))))
-	    ((string= chapter-matter-type (orgn--ls "main-matter-heading"))
-	     (setq mm-object-list-str (concat mm-object-list-str "*** TODO " (format "\[\[file:../%s/%s\]\[%s\]\]\n" (orgn--ls "chapters-folder") key (gethash key file-chapters)))))
-	    ((string= chapter-matter-type (orgn--ls "back-matter-heading"))
-	     (setq bm-object-list-str (concat bm-object-list-str "*** TODO " (format "\[\[file:../%s/%s\]\[%s\]\]\n" (orgn--ls "chapters-folder") key (gethash key file-chapters)))))
-	    ((string= (orgn--ls "file-by-file") chapter-matter-type)
-	     (progn
-	       ;; Ask user for matter section for each chapter
-	       (while (not (or (string= chapter-matter-type (orgn--ls "front-matter-heading"))
-			       (string= chapter-matter-type (orgn--ls "main-matter-heading"))
-			       (string= chapter-matter-type (orgn--ls "back-matter-heading"))))
+             (setq fm-object-list-str (concat fm-object-list-str "*** TODO " (format "\[\[file:../%s/%s\]\[%s\]\]\n" (orgn--ls "chapters-folder") key (gethash key file-chapters)))))
+            ((string= chapter-matter-type (orgn--ls "main-matter-heading"))
+             (setq mm-object-list-str (concat mm-object-list-str "*** TODO " (format "\[\[file:../%s/%s\]\[%s\]\]\n" (orgn--ls "chapters-folder") key (gethash key file-chapters)))))
+            ((string= chapter-matter-type (orgn--ls "back-matter-heading"))
+             (setq bm-object-list-str (concat bm-object-list-str "*** TODO " (format "\[\[file:../%s/%s\]\[%s\]\]\n" (orgn--ls "chapters-folder") key (gethash key file-chapters)))))
+            ((string= (orgn--ls "file-by-file") chapter-matter-type)
+             (progn
+               ;; Ask user for matter section for each chapter
+               (while (not (or (string= chapter-matter-type (orgn--ls "front-matter-heading"))
+                               (string= chapter-matter-type (orgn--ls "main-matter-heading"))
+                               (string= chapter-matter-type (orgn--ls "back-matter-heading"))))
                  (setq chapter-matter-type (completing-read (concat (format (orgn--ls "chapter-location-query") (gethash key file-chapters))" ")
-							    (list (orgn--ls "front-matter-heading")
+                                                            (list (orgn--ls "front-matter-heading")
                                                                   (orgn--ls "main-matter-heading")
                                                                   (orgn--ls "back-matter-heading")))))
-	       ;; User gave us matter type for this chapter. Add to correct string.
-	       (cond ((string= chapter-matter-type (orgn--ls "front-matter-heading"))
-		      (setq fm-object-list-str (concat fm-object-list-str "*** TODO " (format "\[\[file:../%s/%s\]\[%s\]\]\n" (orgn--ls "chapters-folder") key (gethash key file-chapters)))))
-		     ((string= chapter-matter-type (orgn--ls "main-matter-heading"))
-		      (setq mm-object-list-str (concat mm-object-list-str "*** TODO " (format "\[\[file:../%s/%s\]\[%s\]\]\n" (orgn--ls "chapters-folder") key (gethash key file-chapters)))))
-		     ((string= chapter-matter-type (orgn--ls "back-matter-heading"))
-		      (setq bm-object-list-str (concat bm-object-list-str "*** TODO " (format "\[\[file:../%s/%s\]\[%s\]\]\n" (orgn--ls "chapters-folder") key (gethash key file-chapters))))))
-	       (setq chapter-matter-type (orgn--ls "file-by-file"))))))
+               ;; User gave us matter type for this chapter. Add to correct string.
+               (cond ((string= chapter-matter-type (orgn--ls "front-matter-heading"))
+                      (setq fm-object-list-str (concat fm-object-list-str "*** TODO " (format "\[\[file:../%s/%s\]\[%s\]\]\n" (orgn--ls "chapters-folder") key (gethash key file-chapters)))))
+                     ((string= chapter-matter-type (orgn--ls "main-matter-heading"))
+                      (setq mm-object-list-str (concat mm-object-list-str "*** TODO " (format "\[\[file:../%s/%s\]\[%s\]\]\n" (orgn--ls "chapters-folder") key (gethash key file-chapters)))))
+                     ((string= chapter-matter-type (orgn--ls "back-matter-heading"))
+                      (setq bm-object-list-str (concat bm-object-list-str "*** TODO " (format "\[\[file:../%s/%s\]\[%s\]\]\n" (orgn--ls "chapters-folder") key (gethash key file-chapters))))))
+               (setq chapter-matter-type (orgn--ls "file-by-file"))))))
     ;; Add matter type heading, and join matter strings together. Check each is not empty before adding header.
     (unless (string= "" fm-object-list-str)
       (setq object-list-str (concat "** " (orgn--ls "front-matter-heading") "\n" fm-object-list-str)))
@@ -1620,7 +1620,7 @@ open buffer."
     (setq object-list-str (string-trim object-list-str))
     ;; Output to end of the newly created (done above) chapters file.
     (orgn--string-to-file (concat (org-file-contents (concat story-folder / (orgn--ls "indices-folder") / (orgn--ls "chapters-file") orgn--file-ending)) object-list-str)
-			  (concat story-folder / (orgn--ls "indices-folder") / (orgn--ls "chapters-file") orgn--file-ending))
+                          (concat story-folder / (orgn--ls "indices-folder") / (orgn--ls "chapters-file") orgn--file-ending))
     ;; Re-order the matter sections to be in the correct order here.
     (orgn--reorder-matter-in-chapter-index story-folder)))
 
@@ -1635,15 +1635,15 @@ open buffer."
     (make-directory (concat story-folder / (orgn--ls "indices-folder")) t))
   (catch 'REBUILD-INDEX-FAULT
     (cond ((string-equal (orgn--ls "characters-file" orgn--file-ending) index-file)
-	   (orgn--rebuild-characters-index story-folder))
-	  ((string-equal (orgn--ls "places-file" orgn--file-ending) index-file)
-	   (orgn--rebuild-places-index story-folder))
-	  ((string-equal (orgn--ls "props-file" orgn--file-ending) index-file)
-	   (orgn--rebuild-props-index story-folder))
-	  ((string-equal (orgn--ls "chapters-file" orgn--file-ending) index-file)
-	   (orgn--rebuild-chapters-index story-folder))
-	  (t
-	   (error (concat index-file (orgn--ls "unrecognised-index")))
+           (orgn--rebuild-characters-index story-folder))
+          ((string-equal (orgn--ls "places-file" orgn--file-ending) index-file)
+           (orgn--rebuild-places-index story-folder))
+          ((string-equal (orgn--ls "props-file" orgn--file-ending) index-file)
+           (orgn--rebuild-props-index story-folder))
+          ((string-equal (orgn--ls "chapters-file" orgn--file-ending) index-file)
+           (orgn--rebuild-chapters-index story-folder))
+          (t
+           (error (concat index-file (orgn--ls "unrecognised-index")))
            (throw 'REBUILD-INDEX-FAULT (concat index-file (orgn--ls "unrecognised-index")))))))
 
 (defun orgn--rebuild-indices (&optional story-folder)
@@ -2208,44 +2208,44 @@ open buffer."
       (setq story-folder (orgn--story-root-folder))
     (setq story-folder (orgn--story-root-folder story-folder)))
   (let* ((notes-folder (orgn--ls "notes-folder"))
-	 (glossary-string-substitutions (make-hash-table :test 'equal))
-	 (existing-characters (orgn--character-hash-table story-folder))
-	 (existing-props (orgn--prop-hash-table story-folder))
-	 (existing-places (orgn--place-hash-table story-folder))
-	 (character-keys (hash-table-keys existing-characters))
+         (glossary-string-substitutions (make-hash-table :test 'equal))
+         (existing-characters (orgn--character-hash-table story-folder))
+         (existing-props (orgn--prop-hash-table story-folder))
+         (existing-places (orgn--place-hash-table story-folder))
+         (character-keys (hash-table-keys existing-characters))
          character-key
-	 characters-content
-	 character-aliases-str
-	 character-aliases
-	 character-alias
-	 (prop-keys (hash-table-keys existing-props))
+         characters-content
+         character-aliases-str
+         character-aliases
+         character-alias
+         (prop-keys (hash-table-keys existing-props))
          prop-key
-	 props-content
-	 prop-aliases-str
-	 prop-aliases
-	 prop-alias
-	 (place-keys (hash-table-keys existing-places))
+         props-content
+         prop-aliases-str
+         prop-aliases
+         prop-alias
+         (place-keys (hash-table-keys existing-places))
          place-key
-	 places-content
-	 place-aliases-str
-	 place-aliases
-	 place-alias)
+         places-content
+         place-aliases-str
+         place-aliases
+         place-alias)
     (puthash "<<glossary-header>>" (orgn--ls "glossary-header") glossary-string-substitutions)
     (puthash "<<characters-header>>" (orgn--ls "characters-title") glossary-string-substitutions)
     (setq character-keys (sort character-keys 'string<))
     (while character-keys
       (setq character-key (pop character-keys))
       (unless (string= character-key (gethash character-key existing-characters))
-	(when characters-content
-	  (setq characters-content (concat characters-content "\n")))
-	(setq characters-content (concat characters-content "*** <<<" (gethash character-key existing-characters) ">>> "
-					 "\[\[file:.." / notes-folder / character-key "\]\[" (orgn--ls "view-notes") "\]\]"))
-	(setq character-aliases-str (orgn--get-file-property-value (concat story-folder / notes-folder / character-key) "aliases"))
-	(when character-aliases-str
-	  (setq character-aliases (sort (split-string character-aliases-str (orgn--ls "aliases-separators") t " ") 'string<)))
-	(while character-aliases
-	  (setq character-alias (string-trim (pop character-aliases)))
-	  (setq characters-content (concat characters-content "\n- <<<" character-alias ">>> " (orgn--ls "alias-for") " " (gethash character-key existing-characters))))))
+        (when characters-content
+          (setq characters-content (concat characters-content "\n")))
+        (setq characters-content (concat characters-content "*** <<<" (gethash character-key existing-characters) ">>> "
+                                         "\[\[file:.." / notes-folder / character-key "\]\[" (orgn--ls "view-notes") "\]\]"))
+        (setq character-aliases-str (orgn--get-file-property-value (concat story-folder / notes-folder / character-key) "aliases"))
+        (when character-aliases-str
+          (setq character-aliases (sort (split-string character-aliases-str (orgn--ls "aliases-separators") t " ") 'string<)))
+        (while character-aliases
+          (setq character-alias (string-trim (pop character-aliases)))
+          (setq characters-content (concat characters-content "\n- <<<" character-alias ">>> " (orgn--ls "alias-for") " " (gethash character-key existing-characters))))))
     (when characters-content
       (setq characters-content (concat characters-content "\n")))
     (puthash "<<characters-content>>" characters-content glossary-string-substitutions)
@@ -2254,16 +2254,16 @@ open buffer."
     (while place-keys
       (setq place-key (pop place-keys))
       (unless (string= place-key (gethash place-key existing-places))
-	(when places-content
-	  (setq places-content (concat places-content "\n")))
-	(setq places-content (concat places-content "*** <<<" (gethash place-key existing-places) ">>> "
-				     "\[\[file:.." / notes-folder / place-key "\]\[" (orgn--ls "view-notes") "\]\]"))
-	(setq place-aliases-str (orgn--get-file-property-value (concat story-folder / notes-folder / place-key) "aliases"))
-	(when place-aliases-str
-	  (setq place-aliases (sort (split-string place-aliases-str (orgn--ls "aliases-separators") t " ") 'string<)))
-	(while place-aliases
-	  (setq place-alias (string-trim (pop place-aliases)))
-	  (setq places-content (concat places-content "\n- <<<" place-alias ">>> " (orgn--ls "alias-for") " " (gethash place-key existing-places))))))
+        (when places-content
+          (setq places-content (concat places-content "\n")))
+        (setq places-content (concat places-content "*** <<<" (gethash place-key existing-places) ">>> "
+                                     "\[\[file:.." / notes-folder / place-key "\]\[" (orgn--ls "view-notes") "\]\]"))
+        (setq place-aliases-str (orgn--get-file-property-value (concat story-folder / notes-folder / place-key) "aliases"))
+        (when place-aliases-str
+          (setq place-aliases (sort (split-string place-aliases-str (orgn--ls "aliases-separators") t " ") 'string<)))
+        (while place-aliases
+          (setq place-alias (string-trim (pop place-aliases)))
+          (setq places-content (concat places-content "\n- <<<" place-alias ">>> " (orgn--ls "alias-for") " " (gethash place-key existing-places))))))
     (when places-content
       (setq places-content (concat places-content "\n")))
     (puthash "<<places-content>>" places-content glossary-string-substitutions)
@@ -2272,16 +2272,16 @@ open buffer."
     (while prop-keys
       (setq prop-key (pop prop-keys))
       (unless (string= prop-key (gethash prop-key existing-props))
-	(when props-content
-	  (setq props-content (concat props-content "\n")))
-	(setq props-content (concat props-content "*** <<<" (gethash prop-key existing-props) ">>> "
-				    "\[\[file:.." / notes-folder / prop-key "\]\[" (orgn--ls "view-notes") "\]\]"))
-	(setq prop-aliases-str (orgn--get-file-property-value (concat story-folder / notes-folder / prop-key) "aliases"))
-	(when prop-aliases-str
-	  (setq prop-aliases (sort (split-string prop-aliases-str (orgn--ls "aliases-separators") t " ") 'string<)))
-	(while prop-aliases
-	  (setq prop-alias (string-trim (pop prop-aliases)))
-	  (setq props-content (concat props-content "\n- <<<" prop-alias ">>> " (orgn--ls "alias-for") " " (gethash prop-key existing-props))))))
+        (when props-content
+          (setq props-content (concat props-content "\n")))
+        (setq props-content (concat props-content "*** <<<" (gethash prop-key existing-props) ">>> "
+                                    "\[\[file:.." / notes-folder / prop-key "\]\[" (orgn--ls "view-notes") "\]\]"))
+        (setq prop-aliases-str (orgn--get-file-property-value (concat story-folder / notes-folder / prop-key) "aliases"))
+        (when prop-aliases-str
+          (setq prop-aliases (sort (split-string prop-aliases-str (orgn--ls "aliases-separators") t " ") 'string<)))
+        (while prop-aliases
+          (setq prop-alias (string-trim (pop prop-aliases)))
+          (setq props-content (concat props-content "\n- <<<" prop-alias ">>> " (orgn--ls "alias-for") " " (gethash prop-key existing-props))))))
     (puthash "<<props-content>>" props-content glossary-string-substitutions)
     (orgn--generate-string-from-template glossary-string-substitutions orgn--glossary-template)))
 
@@ -2317,10 +2317,10 @@ STORY-NAME is the name of the story, and STORY-FOLDER is its save location."
       (setq orgn-automatic-referencing-p nil)
       (if (file-directory-p story-folder)
           (progn
-	    (setq orgn-automatic-referencing-p orig-autoref-val-p)
+            (setq orgn-automatic-referencing-p orig-autoref-val-p)
             (user-error (concat (orgn--ls "story-folder-already-in-use") ": " story-folder))
             (throw 'NON-UNIQUE-STORY (concat (orgn--ls "story-folder-already-in-use") ": " story-folder)))
-	(progn
+        (progn
           (unless (file-exists-p (file-name-directory (concat story-folder /)))
             (make-directory (file-name-directory (concat story-folder /)) t))  ; The 't' tells emacs to create any non-existent parents directories that are needed as well
           (orgn--string-to-file "" (concat story-folder / orgn--config-filename))  ; Create an empty configuration file for the story
@@ -2335,7 +2335,7 @@ STORY-NAME is the name of the story, and STORY-FOLDER is its save location."
           (find-file (concat story-folder / (orgn--ls "main-file" orgn--file-ending)))))
       (setq orgn-automatic-referencing-p orig-autoref-val-p)
       (when orgn-automatic-referencing-p
-	(orgn-update-references story-folder)))))
+        (orgn-update-references story-folder)))))
 
 (defun orgn-new-chapter (chapter-name)
   "Create and modify the minimum number of linked files for a new chapter.
@@ -2353,9 +2353,9 @@ chapters to have a name, even if this will not be used on export."
            (chapters-folder (orgn--ls "chapters-folder"))
            (keys (hash-table-keys existing-chapters))
            key
-	   chapter-matter-type
-	   (file-malformed nil)
-	   (orig-autoref-val-p orgn-automatic-referencing-p))
+           chapter-matter-type
+           (file-malformed nil)
+           (orig-autoref-val-p orgn-automatic-referencing-p))
       (setq orgn-automatic-referencing-p nil)
       ;; At this point, we can be fairly certain the function was called while a file from an Org Novelist story was open in the current buffer.
       ;; However, we should still make sure the chapters.org file exists before we start trying to manipulate it. If it doesn't exist, just create one.
@@ -2484,8 +2484,8 @@ chapters to have a name, even if this will not be used on export."
                   (org-demote)  ; Turn heading into a subheading
                   (org-todo))))  ; Turn heading into a TODO item
           (progn  ; File malformed
-	    (setq orgn-automatic-referencing-p orig-autoref-val-p)
-	    (error (concat (orgn--ls "file-malformed") ": " story-folder / indices-folder / chapters-file))
+            (setq orgn-automatic-referencing-p orig-autoref-val-p)
+            (error (concat (orgn--ls "file-malformed") ": " story-folder / indices-folder / chapters-file))
             (throw 'CHAPTER-CREATION-FAULT (concat (orgn--ls "file-malformed") ": " story-folder / indices-folder / chapters-file)))))
       ;; By here, point should be at the correct location to create the new chapter.
       (save-excursion  ; Allow cursor to be placed at the start of the new chapter name
@@ -2495,7 +2495,7 @@ chapters to have a name, even if this will not be used on export."
       (orgn--reorder-matter-in-chapter-index story-folder)
       (setq orgn-automatic-referencing-p orig-autoref-val-p)
       (when orgn-automatic-referencing-p
-	(orgn-update-references story-folder)))))
+        (orgn-update-references story-folder)))))
 
 (defun orgn-destroy-chapter ()
   "Remove a chapter from the chapter index, and delete associated files."
@@ -2507,7 +2507,7 @@ chapters to have a name, even if this will not be used on export."
            (chapters-file (concat story-folder / indices-folder / (orgn--ls "chapters-file" orgn--file-ending)))
            (chapters-headlines (orgn--get-all-story-chapters-headlines story-folder))
            chosen-chapter
-	   (orig-autoref-val-p orgn-automatic-referencing-p))
+           (orig-autoref-val-p orgn-automatic-referencing-p))
       (setq orgn-automatic-referencing-p nil)
       ;; chapters-headlines now contains a list of all chapters to present to user for deletion.
       ;; This includes files without an entry in the index, and entries in the index without a file.
@@ -2522,24 +2522,24 @@ chapters to have a name, even if this will not be used on export."
             (orgn--delete-chapter-from-index chosen-chapter story-folder))
         (progn
           (message (concat chapters-file ": " (orgn--ls "no-chapters-found")))
-	  (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (setq orgn-automatic-referencing-p orig-autoref-val-p)
           (throw 'CHAPTER-DELETION-FAULT (concat chapters-file ": " (orgn--ls "no-chapters-found")))))
       (if (file-exists-p chapters-file)
           (if (file-readable-p chapters-file)
               (find-file chapters-file)
             (progn
-	      (setq orgn-automatic-referencing-p orig-autoref-val-p)
+              (setq orgn-automatic-referencing-p orig-autoref-val-p)
               (error (concat chapters-file " " (orgn--ls "is-not-readable")))
               (throw 'CHAPTER-DELETION-FAULT (concat chapters-file " " (orgn--ls "is-not-readable")))))
         (progn
-	  (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (setq orgn-automatic-referencing-p orig-autoref-val-p)
           (error (concat (orgn--ls "file-not-found") ": " chapters-file))
           (throw 'CHAPTER-DELETION-FAULT (concat (orgn--ls "file-not-found") ": " chapters-file))))
       ;; Re-order the matter sections to be in the correct order here.
       (orgn--reorder-matter-in-chapter-index story-folder)
       (setq orgn-automatic-referencing-p orig-autoref-val-p)
       (when orgn-automatic-referencing-p
-	(orgn-update-references story-folder)))))
+        (orgn-update-references story-folder)))))
 
 (defun orgn-rename-chapter ()
   "Rename a chapter from the chapter index and update associated files."
@@ -2552,7 +2552,7 @@ chapters to have a name, even if this will not be used on export."
            chosen-chapter
            new-chapter-name
            (chapters-file (concat story-folder / indices-folder / (orgn--ls "chapters-file" orgn--file-ending)))
-	   (orig-autoref-val-p orgn-automatic-referencing-p))
+           (orig-autoref-val-p orgn-automatic-referencing-p))
       (setq orgn-automatic-referencing-p nil)
       ;; chapters-headlines now contains a list of all chapters to present to user for renaming.
       ;; This includes files without an entry in the index, and entries in the index without a file.
@@ -2568,24 +2568,24 @@ chapters to have a name, even if this will not be used on export."
             (orgn--rename-chapter-in-index chosen-chapter new-chapter-name story-folder))
         (progn
           (message (concat chapters-file ": " (orgn--ls "no-chapters-found")))
-	  (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (setq orgn-automatic-referencing-p orig-autoref-val-p)
           (throw 'RENAME-CHAPTER-FAULT-AT-INDEX (concat chapters-file ": " (orgn--ls "no-chapters-found")))))
       (if (file-exists-p chapters-file)
           (if (file-readable-p chapters-file)
               (find-file chapters-file)
             (progn
-	      (setq orgn-automatic-referencing-p orig-autoref-val-p)
+              (setq orgn-automatic-referencing-p orig-autoref-val-p)
               (error (concat chapters-file " " (orgn--ls "is-not-readable")))
               (throw 'RENAME-CHAPTER-FAULT-AT-INDEX (concat chapters-file " " (orgn--ls "is-not-readable")))))
         (progn
-	  (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (setq orgn-automatic-referencing-p orig-autoref-val-p)
           (error (concat (orgn--ls "file-not-found") ": " chapters-file))
           (throw 'RENAME-CHAPTER-FAULT-AT-INDEX (concat (orgn--ls "file-not-found") ": " chapters-file))))
       ;; Re-order the matter sections to be in the correct order here.
       (orgn--reorder-matter-in-chapter-index story-folder)
       (setq orgn-automatic-referencing-p orig-autoref-val-p)
       (when orgn-automatic-referencing-p
-	(orgn-update-references story-folder)))))
+        (orgn-update-references story-folder)))))
 
 (defun orgn-new-character (character-name)
   "Create and modify the minimum number of linked files for a new character.
@@ -2602,8 +2602,8 @@ CHARACTER-NAME will be the name given to the character."
            (character-file (concat (orgn--ls "character-file-prefix") (orgn--system-safe-name character-name) orgn--file-ending))
            (keys (hash-table-keys existing-characters))
            key
-	   insert-point
-	   (orig-autoref-val-p orgn-automatic-referencing-p))
+           insert-point
+           (orig-autoref-val-p orgn-automatic-referencing-p))
       (setq orgn-automatic-referencing-p nil)
       (unless (file-exists-p (concat story-folder / indices-folder / characters-file))
         (orgn--populate-characters-template story-name story-folder))
@@ -2660,7 +2660,7 @@ CHARACTER-NAME will be the name given to the character."
       (save-buffer)
       (setq orgn-automatic-referencing-p orig-autoref-val-p)
       (when orgn-automatic-referencing-p
-	(orgn-update-references story-folder)))))
+        (orgn-update-references story-folder)))))
 
 (defun orgn-destroy-character ()
   "Remove a character from the character index, and delete associated files."
@@ -2671,7 +2671,7 @@ CHARACTER-NAME will be the name given to the character."
            (characters-file (concat story-folder / indices-folder / (orgn--ls "characters-file" orgn--file-ending)))
            (characters-headlines (orgn--get-all-story-characters-headlines story-folder))
            chosen-character
-	   (orig-autoref-val-p orgn-automatic-referencing-p))
+           (orig-autoref-val-p orgn-automatic-referencing-p))
       (setq orgn-automatic-referencing-p nil)
       ;; characters-headlines now contains a list of all characters to present to user for deletion.
       ;; This includes files without an entry in the index, and entries in the index without a file.
@@ -2686,22 +2686,22 @@ CHARACTER-NAME will be the name given to the character."
             (orgn--delete-character-from-index chosen-character story-folder))
         (progn
           (message (concat characters-file ": " (orgn--ls "no-chapters-found")))
-	  (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (setq orgn-automatic-referencing-p orig-autoref-val-p)
           (throw 'CHARACTER-DELETION-FAULT (concat characters-file ": " (orgn--ls "no-chapters-found")))))
       (if (file-exists-p characters-file)
           (if (file-readable-p characters-file)
               (find-file characters-file)
             (progn
-	      (setq orgn-automatic-referencing-p orig-autoref-val-p)
+              (setq orgn-automatic-referencing-p orig-autoref-val-p)
               (error (concat characters-file " " (orgn--ls "is-not-readable")))
               (throw 'CHARACTER-DELETION-FAULT (concat characters-file " " (orgn--ls "is-not-readable")))))
         (progn
-	  (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (setq orgn-automatic-referencing-p orig-autoref-val-p)
           (error (concat (orgn--ls "file-not-found") ": " characters-file))
           (throw 'CHARACTER-DELETION-FAULT (concat (orgn--ls "file-not-found") ": " characters-file))))
       (setq orgn-automatic-referencing-p orig-autoref-val-p)
       (when orgn-automatic-referencing-p
-	(orgn-update-references story-folder)))))
+        (orgn-update-references story-folder)))))
 
 (defun orgn-rename-character ()
   "Rename a character from the character index and update associated files."
@@ -2713,7 +2713,7 @@ CHARACTER-NAME will be the name given to the character."
            chosen-character
            new-character-name
            (characters-file (concat story-folder / indices-folder / (orgn--ls "characters-file" orgn--file-ending)))
-	   (orig-autoref-val-p orgn-automatic-referencing-p))
+           (orig-autoref-val-p orgn-automatic-referencing-p))
       (setq orgn-automatic-referencing-p nil)
       ;; characters-headlines now contains a list of all characters to present to user for renaming.
       ;; This includes files without an entry in the index, and entries in the index without a file.
@@ -2729,22 +2729,22 @@ CHARACTER-NAME will be the name given to the character."
             (orgn--rename-character-in-index chosen-character new-character-name story-folder))
         (progn
           (message (concat characters-file ": " (orgn--ls "no-characters-found")))
-	  (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (setq orgn-automatic-referencing-p orig-autoref-val-p)
           (throw 'RENAME-CHARACTER-FAULT-AT-INDEX (concat characters-file ": " (orgn--ls "no-chapters-found")))))
       (if (file-exists-p characters-file)
           (if (file-readable-p characters-file)
               (find-file characters-file)
             (progn
-	      (setq orgn-automatic-referencing-p orig-autoref-val-p)
+              (setq orgn-automatic-referencing-p orig-autoref-val-p)
               (error (concat characters-file " " (orgn--ls "is-not-readable")))
               (throw 'RENAME-CHARACTER-FAULT-AT-INDEX (concat characters-file " " (orgn--ls "is-not-readable")))))
         (progn
-	  (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (setq orgn-automatic-referencing-p orig-autoref-val-p)
           (error (concat (orgn--ls "file-not-found") ": " characters-file))
           (throw 'RENAME-CHARACTER-FAULT-AT-INDEX (concat (orgn--ls "file-not-found") ": " characters-file))))
       (setq orgn-automatic-referencing-p orig-autoref-val-p)
       (when orgn-automatic-referencing-p
-	(orgn-update-references story-folder)))))
+        (orgn-update-references story-folder)))))
 
 (defun orgn-new-prop (prop-name)
   "Create and modify the minimum number of linked files for a new prop.
@@ -2761,8 +2761,8 @@ PROP-NAME will be the name given to the prop."
            (prop-file (concat (orgn--ls "prop-file-prefix") (orgn--system-safe-name prop-name) orgn--file-ending))
            (keys (hash-table-keys existing-props))
            key
-	   insert-point
-	   (orig-autoref-val-p orgn-automatic-referencing-p))
+           insert-point
+           (orig-autoref-val-p orgn-automatic-referencing-p))
       (setq orgn-automatic-referencing-p nil)
       (unless (file-exists-p (concat story-folder / indices-folder / props-file))
         (orgn--populate-props-template story-name story-folder))
@@ -2819,7 +2819,7 @@ PROP-NAME will be the name given to the prop."
       (save-buffer)
       (setq orgn-automatic-referencing-p orig-autoref-val-p)
       (when orgn-automatic-referencing-p
-	(orgn-update-references story-folder)))))
+        (orgn-update-references story-folder)))))
 
 (defun orgn-destroy-prop ()
   "Remove a prop from the prop index, and delete associated files."
@@ -2830,7 +2830,7 @@ PROP-NAME will be the name given to the prop."
            (props-file (concat story-folder / indices-folder / (orgn--ls "props-file" orgn--file-ending)))
            (props-headlines (orgn--get-all-story-props-headlines story-folder))
            chosen-prop
-	   (orig-autoref-val-p orgn-automatic-referencing-p))
+           (orig-autoref-val-p orgn-automatic-referencing-p))
       (setq orgn-automatic-referencing-p nil)
       ;; props-headlines now contains a list of all props to present to user for deletion.
       ;; This includes files without an entry in the index, and entries in the index without a file.
@@ -2845,22 +2845,22 @@ PROP-NAME will be the name given to the prop."
             (orgn--delete-prop-from-index chosen-prop story-folder))
         (progn
           (message (concat props-file ": " (orgn--ls "no-props-found")))
-	  (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (setq orgn-automatic-referencing-p orig-autoref-val-p)
           (throw 'PROP-DELETION-FAULT (concat props-file ": " (orgn--ls "no-props-found")))))
       (if (file-exists-p props-file)
           (if (file-readable-p props-file)
               (find-file props-file)
             (progn
-	      (setq orgn-automatic-referencing-p orig-autoref-val-p)
+              (setq orgn-automatic-referencing-p orig-autoref-val-p)
               (error (concat props-file " " (orgn--ls "is-not-readable")))
               (throw 'PROP-DELETION-FAULT (concat props-file " " (orgn--ls "is-not-readable")))))
         (progn
-	  (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (setq orgn-automatic-referencing-p orig-autoref-val-p)
           (error (concat (orgn--ls "file-not-found") ": " props-file))
           (throw 'PROP-DELETION-FAULT (concat (orgn--ls "file-not-found") ": " props-file))))
       (setq orgn-automatic-referencing-p orig-autoref-val-p)
       (when orgn-automatic-referencing-p
-	(orgn-update-references story-folder)))))
+        (orgn-update-references story-folder)))))
 
 (defun orgn-rename-prop ()
   "Rename a prop from the prop index and update associated files."
@@ -2872,7 +2872,7 @@ PROP-NAME will be the name given to the prop."
            chosen-prop
            new-prop-name
            (props-file (concat story-folder / indices-folder / (orgn--ls "props-file" orgn--file-ending)))
-	   (orig-autoref-val-p orgn-automatic-referencing-p))
+           (orig-autoref-val-p orgn-automatic-referencing-p))
       (setq orgn-automatic-referencing-p nil)
       ;; props-headlines now contains a list of all props to present to user for renaming.
       ;; This includes files without an entry in the index, and entries in the index without a file.
@@ -2888,22 +2888,22 @@ PROP-NAME will be the name given to the prop."
             (orgn--rename-prop-in-index chosen-prop new-prop-name story-folder))
         (progn
           (message (concat props-file ": " (orgn--ls "no-props-found")))
-	  (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (setq orgn-automatic-referencing-p orig-autoref-val-p)
           (throw 'RENAME-PROP-FAULT-AT-INDEX (concat props-file ": " (orgn--ls "no-props-found")))))
       (if (file-exists-p props-file)
           (if (file-readable-p props-file)
               (find-file props-file)
             (progn
-	      (setq orgn-automatic-referencing-p orig-autoref-val-p)
+              (setq orgn-automatic-referencing-p orig-autoref-val-p)
               (error (concat props-file " " (orgn--ls "is-not-readable")))
               (throw 'RENAME-PROP-FAULT-AT-INDEX (concat props-file " " (orgn--ls "is-not-readable")))))
         (progn
-	  (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (setq orgn-automatic-referencing-p orig-autoref-val-p)
           (error (concat (orgn--ls "file-not-found") ": " props-file))
           (throw 'RENAME-PROP-FAULT-AT-INDEX (concat (orgn--ls "file-not-found") ": " props-file))))
       (setq orgn-automatic-referencing-p orig-autoref-val-p)
       (when orgn-automatic-referencing-p
-	(orgn-update-references story-folder)))))
+        (orgn-update-references story-folder)))))
 
 (defun orgn-new-place (place-name)
   "Create and modify the minimum number of linked files for a new place.
@@ -2920,8 +2920,8 @@ PLACE-NAME will be the name given to the place."
            (place-file (concat (orgn--ls "place-file-prefix") (orgn--system-safe-name place-name) orgn--file-ending))
            (keys (hash-table-keys existing-places))
            key
-	   insert-point
-	   (orig-autoref-val-p orgn-automatic-referencing-p))
+           insert-point
+           (orig-autoref-val-p orgn-automatic-referencing-p))
       (setq orgn-automatic-referencing-p nil)
       (unless (file-exists-p (concat story-folder / indices-folder / places-file))
         (orgn--populate-places-template story-name story-folder))
@@ -2978,7 +2978,7 @@ PLACE-NAME will be the name given to the place."
       (save-buffer)
       (setq orgn-automatic-referencing-p orig-autoref-val-p)
       (when orgn-automatic-referencing-p
-	(orgn-update-references story-folder)))))
+        (orgn-update-references story-folder)))))
 
 (defun orgn-destroy-place ()
   "Remove a place from the place index, and delete associated files."
@@ -2989,7 +2989,7 @@ PLACE-NAME will be the name given to the place."
            (places-file (concat story-folder / indices-folder / (orgn--ls "places-file" orgn--file-ending)))
            (places-headlines (orgn--get-all-story-places-headlines story-folder))
            chosen-place
-	   (orig-autoref-val-p orgn-automatic-referencing-p))
+           (orig-autoref-val-p orgn-automatic-referencing-p))
       (setq orgn-automatic-referencing-p nil)
       ;; places-headlines now contains a list of all places to present to user for deletion.
       ;; This includes files without an entry in the index, and entries in the index without a file.
@@ -3004,22 +3004,22 @@ PLACE-NAME will be the name given to the place."
             (orgn--delete-place-from-index chosen-place story-folder))
         (progn
           (message (concat places-file ": " (orgn--ls "no-places-found")))
-	  (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (setq orgn-automatic-referencing-p orig-autoref-val-p)
           (throw 'PLACE-DELETION-FAULT (concat places-file ": " (orgn--ls "no-places-found")))))
       (if (file-exists-p places-file)
           (if (file-readable-p places-file)
               (find-file places-file)
             (progn
-	      (setq orgn-automatic-referencing-p orig-autoref-val-p)
+              (setq orgn-automatic-referencing-p orig-autoref-val-p)
               (error (concat places-file " " (orgn--ls "is-not-readable")))
               (throw 'PLACE-DELETION-FAULT (concat places-file " " (orgn--ls "is-not-readable")))))
         (progn
-	  (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (setq orgn-automatic-referencing-p orig-autoref-val-p)
           (error (concat (orgn--ls "file-not-found") ": " places-file))
           (throw 'PLACE-DELETION-FAULT (concat (orgn--ls "file-not-found") ": " places-file))))
       (setq orgn-automatic-referencing-p orig-autoref-val-p)
       (when orgn-automatic-referencing-p
-	(orgn-update-references story-folder)))))
+        (orgn-update-references story-folder)))))
 
 (defun orgn-rename-place ()
   "Rename a place from the place index and update associated files."
@@ -3031,7 +3031,7 @@ PLACE-NAME will be the name given to the place."
            chosen-place
            new-place-name
            (places-file (concat story-folder / indices-folder / (orgn--ls "places-file" orgn--file-ending)))
-	   (orig-autoref-val-p orgn-automatic-referencing-p))
+           (orig-autoref-val-p orgn-automatic-referencing-p))
       (setq orgn-automatic-referencing-p nil)
       ;; places-headlines now contains a list of all places to present to user for renaming.
       ;; This includes files without an entry in the index, and entries in the index without a file.
@@ -3047,22 +3047,22 @@ PLACE-NAME will be the name given to the place."
             (orgn--rename-place-in-index chosen-place new-place-name story-folder))
         (progn
           (message (concat places-file ": " (orgn--ls "no-places-found")))
-	  (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (setq orgn-automatic-referencing-p orig-autoref-val-p)
           (throw 'RENAME-PLACE-FAULT-AT-INDEX (concat places-file ": " (orgn--ls "no-places-found")))))
       (if (file-exists-p places-file)
           (if (file-readable-p places-file)
               (find-file places-file)
             (progn
-	      (setq orgn-automatic-referencing-p orig-autoref-val-p)
+              (setq orgn-automatic-referencing-p orig-autoref-val-p)
               (error (concat places-file " " (orgn--ls "is-not-readable")))
               (throw 'RENAME-PLACE-FAULT-AT-INDEX (concat places-file " " (orgn--ls "is-not-readable")))))
         (progn
-	  (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (setq orgn-automatic-referencing-p orig-autoref-val-p)
           (error (concat (orgn--ls "file-not-found") ": " places-file))
           (throw 'RENAME-PLACE-FAULT-AT-INDEX (concat (orgn--ls "file-not-found") ": " places-file))))
       (setq orgn-automatic-referencing-p orig-autoref-val-p)
       (when orgn-automatic-referencing-p
-	(orgn-update-references story-folder)))))
+        (orgn-update-references story-folder)))))
 
 (defun orgn-update-references (&optional story-folder)
   "Given a STORY-FOLDER, update all crossreferences in story."
@@ -3071,82 +3071,82 @@ PLACE-NAME will be the name given to the place."
       (setq story-folder (orgn--story-root-folder))
     (setq story-folder (orgn--story-root-folder story-folder)))
   (let ((curr-buff (current-buffer))
-	(curr-pos (point)))
+        (curr-pos (point)))
     (if orgn-automatic-referencing-p
-	(progn
-	  (setq orgn-automatic-referencing-p nil)
-	  ;; (orgn--rebuild-indices story-folder)  ; This should really only be called when one of the functions manipulating an index are used
-	  (orgn--update-object-references story-folder)
-	  (orgn--update-glossaries story-folder)  ; Always call this after object-references, because object-references will delete all glossaries
-	  (setq orgn-automatic-referencing-p t))
+        (progn
+          (setq orgn-automatic-referencing-p nil)
+          ;; (orgn--rebuild-indices story-folder)  ; This should really only be called when one of the functions manipulating an index are used
+          (orgn--update-object-references story-folder)
+          (orgn--update-glossaries story-folder)  ; Always call this after object-references, because object-references will delete all glossaries
+          (setq orgn-automatic-referencing-p t))
       (progn
-	;; (orgn--rebuild-indices story-folder)  ; This should really only be called when one of the functions manipulating an index are used
-	(orgn--update-object-references story-folder)
-	(orgn--update-glossaries story-folder)))  ; Always call this after object-references, because object-references will delete all glossaries
-      (switch-to-buffer curr-buff)
-      (goto-char curr-pos)))
+        ;; (orgn--rebuild-indices story-folder)  ; This should really only be called when one of the functions manipulating an index are used
+        (orgn--update-object-references story-folder)
+        (orgn--update-glossaries story-folder)))  ; Always call this after object-references, because object-references will delete all glossaries
+    (switch-to-buffer curr-buff)
+    (goto-char curr-pos)))
 
 (defun orgn-rename-story ()
   "Rename the story and update all necessary files."
   (interactive)
   (catch 'RENAME-STORY-FAULT
     (let* ((story-folder (orgn--story-root-folder))
-	   (story-name (orgn--story-name))
-	   (story-files (directory-files-recursively story-folder (format "^%s%s\\'" (orgn--ls "sys-safe-name") orgn--file-ending)))
-	   new-story-name
-	   new-story-folder-name
-	   curr-file
-	   rename-story-folder-p
-	   (orig-autoref-val-p orgn-automatic-referencing-p))
+           (story-name (orgn--story-name))
+           (story-files (directory-files-recursively story-folder (format "^%s%s\\'" (orgn--ls "sys-safe-name") orgn--file-ending)))
+           new-story-name
+           new-story-folder-name
+           curr-file
+           rename-story-folder-p
+           (orig-autoref-val-p orgn-automatic-referencing-p))
       (setq orgn-automatic-referencing-p nil)
       (setq new-story-name (orgn--sanitize-string (read-string (concat (orgn--ls "new-story-name-query") " "))))
       (setq new-story-folder-name (orgn--system-safe-name new-story-name))
       ;; Ask user if they want to rename folder as well.
       (setq rename-story-folder-p (yes-or-no-p (orgn--ls "rename-story-folder-query")))
       (while story-files
-	(setq curr-file (pop story-files))
-	;; If filename starts with a period, don't add it.
-	(unless (string= (substring (file-name-nondirectory curr-file) 0 1) ".")
-	  ;; If open in buffer, save and close.
-	  (when (and rename-story-folder-p (get-file-buffer curr-file))
-	    (switch-to-buffer (get-file-buffer curr-file))
-	    (save-buffer)
-	    (kill-buffer))
-	  ;; Don't add the main.org file.
-	  (unless (string= (file-name-nondirectory curr-file) (concat (orgn--ls "main-file") orgn--file-ending))
-	    (orgn--string-to-file
-	     (orgn--replace-string-in-string (concat "\[\[file:.." / (orgn--ls "main-file")
-						     orgn--file-ending "\]\[" story-name "\]\]")
-					     (concat "\[\[file:.." / (orgn--ls "main-file")
-						     orgn--file-ending "\]\[" new-story-name "\]\]")
-					     (org-file-contents curr-file)) curr-file))))
+        (setq curr-file (pop story-files))
+        ;; If filename starts with a period, don't add it.
+        (unless (string= (substring (file-name-nondirectory curr-file) 0 1) ".")
+          ;; If open in buffer, save and close.
+          (when (and rename-story-folder-p (get-file-buffer curr-file))
+            (switch-to-buffer (get-file-buffer curr-file))
+            (save-buffer)
+            (kill-buffer))
+          ;; Don't add the main.org file.
+          (unless (string= (file-name-nondirectory curr-file) (concat (orgn--ls "main-file") orgn--file-ending))
+            (orgn--string-to-file
+             (orgn--replace-string-in-string (concat "\[\[file:.." / (orgn--ls "main-file")
+                                                     orgn--file-ending "\]\[" story-name "\]\]")
+                                             (concat "\[\[file:.." / (orgn--ls "main-file")
+                                                     orgn--file-ending "\]\[" new-story-name "\]\]")
+                                             (org-file-contents curr-file)) curr-file))))
       ;; Change title in main.org.
       (orgn--set-story-name new-story-name story-folder)
       (when (and rename-story-folder-p (get-file-buffer (concat story-folder / (orgn--ls "main-file") orgn--file-ending)))
-	(switch-to-buffer (get-file-buffer curr-file))
-	(save-buffer)
-	(kill-buffer))
+        (switch-to-buffer (get-file-buffer curr-file))
+        (save-buffer)
+        (kill-buffer))
       (when rename-story-folder-p
-	(if (not (file-exists-p (expand-file-name (concat story-folder / ".." / new-story-folder-name))))
-	    (if (file-writable-p (expand-file-name (concat story-folder / ".." / new-story-folder-name)))
-		(progn
-		  (copy-directory story-folder (expand-file-name (concat story-folder / ".." / new-story-folder-name)) t t t)
-		  (delete-directory story-folder t nil)
-		  (find-file (concat (expand-file-name (concat story-folder / ".." / new-story-folder-name)) / (orgn--ls "main-file") orgn--file-ending))
-		  (setq story-folder new-story-folder-name))
-	      (progn
-		(setq orgn-automatic-referencing-p orig-autoref-val-p)
-		(find-file (concat story-folder / (orgn--ls "main-file") orgn--file-ending))
-		(user-error (concat (expand-file-name (concat story-folder / ".." / new-story-folder-name)) " " (orgn--ls "is-not-writable")))
-		(throw 'RENAME-STORY-FAULT (concat (expand-file-name (concat story-folder / ".." / new-story-folder-name)) " " (orgn--ls "is-not-writable")))))
-	  (progn
-	    (setq orgn-automatic-referencing-p orig-autoref-val-p)
-	    (find-file (concat story-folder / (orgn--ls "main-file") orgn--file-ending))
-	    (user-error (concat (orgn--ls "folder-already-exists") ": " (expand-file-name (concat story-folder / ".." / new-story-folder-name))))
-	    (throw 'RENAME-STORY-FAULT (concat (orgn--ls "folder-already-exists") ": " (expand-file-name (concat story-folder / ".." / new-story-folder-name)))))))
+        (if (not (file-exists-p (expand-file-name (concat story-folder / ".." / new-story-folder-name))))
+            (if (file-writable-p (expand-file-name (concat story-folder / ".." / new-story-folder-name)))
+                (progn
+                  (copy-directory story-folder (expand-file-name (concat story-folder / ".." / new-story-folder-name)) t t t)
+                  (delete-directory story-folder t nil)
+                  (find-file (concat (expand-file-name (concat story-folder / ".." / new-story-folder-name)) / (orgn--ls "main-file") orgn--file-ending))
+                  (setq story-folder new-story-folder-name))
+              (progn
+                (setq orgn-automatic-referencing-p orig-autoref-val-p)
+                (find-file (concat story-folder / (orgn--ls "main-file") orgn--file-ending))
+                (user-error (concat (expand-file-name (concat story-folder / ".." / new-story-folder-name)) " " (orgn--ls "is-not-writable")))
+                (throw 'RENAME-STORY-FAULT (concat (expand-file-name (concat story-folder / ".." / new-story-folder-name)) " " (orgn--ls "is-not-writable")))))
+          (progn
+            (setq orgn-automatic-referencing-p orig-autoref-val-p)
+            (find-file (concat story-folder / (orgn--ls "main-file") orgn--file-ending))
+            (user-error (concat (orgn--ls "folder-already-exists") ": " (expand-file-name (concat story-folder / ".." / new-story-folder-name))))
+            (throw 'RENAME-STORY-FAULT (concat (orgn--ls "folder-already-exists") ": " (expand-file-name (concat story-folder / ".." / new-story-folder-name)))))))
       (setq orgn-automatic-referencing-p orig-autoref-val-p)
       (when orgn-automatic-referencing-p
-	(orgn-update-references story-folder)))))
+        (orgn-update-references story-folder)))))
 
 (defun orgn-export-story ()
   "Export story to specified formats according to org-novelist-config.org.
@@ -3310,26 +3310,26 @@ export files."
       ;; Save the results.
       (when (file-exists-p (concat story-folder / orgn--config-filename))
         (setq curr-properties-list (orgn--get-file-properties (concat story-folder / orgn--config-filename)))
-	(while curr-properties-list
-	  (setq curr-property (pop curr-properties-list))
-	  (orgn--set-file-property-value curr-property
-					 (orgn--get-file-property-value (concat story-folder / orgn--config-filename) curr-property)
-					 (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending)))
-	(orgn--save-current-file))
+        (while curr-properties-list
+          (setq curr-property (pop curr-properties-list))
+          (orgn--set-file-property-value curr-property
+                                         (orgn--get-file-property-value (concat story-folder / orgn--config-filename) curr-property)
+                                         (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending)))
+        (orgn--save-current-file))
       ;; By this point, we should have the Org file correctly exported.
       ;; Run through the export templates in the config file.
       (setq exports-hash (orgn--exports-hash-table story-folder))
       (setq keys (hash-table-keys exports-hash))
       (while keys
-	(setq key (pop keys))
-	(load-file (expand-file-name (gethash key exports-hash)))
-	(declare-function org-novelist--export-template (concat "ext:" (gethash key exports-hash)) (org-input-file output-file))
-	(org-novelist--export-template (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending) key))
+        (setq key (pop keys))
+        (load-file (expand-file-name (gethash key exports-hash)))
+        (declare-function org-novelist--export-template (concat "ext:" (gethash key exports-hash)) (org-input-file output-file))
+        (org-novelist--export-template (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending) key))
       ;; Open exported Org file.
       (find-file (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
       (setq orgn-automatic-referencing-p orig-autoref-val-p)
       (when orgn-automatic-referencing-p
-	(orgn-update-references story-folder)))))
+        (orgn-update-references story-folder)))))
 
 
 
@@ -3373,7 +3373,7 @@ The following commands are available:
 `org-novelist-update-references'
 `org-novelist-rename-story'
 `org-novelist-export-story'"
-(add-hook 'after-save-hook 'orgn--update-references-after-save-hook))
+  (add-hook 'after-save-hook 'orgn--update-references-after-save-hook))
 
 (provide 'org-novelist)
 ;;; org-novelist.el ends here
