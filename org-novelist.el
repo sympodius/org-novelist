@@ -8,9 +8,9 @@
 ;; URL: https://johnurquhartferguson.info
 ;; Keywords: fiction, writing, outlines
 ;; Prefix: org-novelist
-;; Package-Requires: ((org "9.6"))
+;; Package-Requires: ((org "9.5.5"))
 
-;; Version: 0.0.1
+;; Version: 0.0.2
 
 ;; This file is not part of GNU Emacs.
 ;;
@@ -376,6 +376,22 @@ The resultant string should be suitable for the current operating system."
   (setq str (orgn--replace-string-in-string "\"" "\\\"" str))  ; Escape any quotes (this must be run after escaping backslashes)
   str)
 
+(defun orgn--fold-show-all ()
+  "Run the deprecated org-show-all when Org version is less than 9.6.
+Otherwise, run org-fold-show-all."
+  (if (and (>= (string-to-number (nth 0 (split-string (org-version) "\\."))) 9)
+           (>= (string-to-number (nth 1 (split-string (org-version) "\\."))) 6))
+      (org-fold-show-all)
+    (org-show-all)))
+
+(defun orgn--delete-line ()
+  "If Org version is less than 9.6, delete line the old fashioned way."
+  (let ((inhibit-field-text-motion t))
+    (if (and (>= (string-to-number (nth 0 (split-string (org-version) "\\."))) 9)
+             (>= (string-to-number (nth 1 (split-string (org-version) "\\."))) 6))
+        (delete-line)
+      (delete-region (line-beginning-position) (line-beginning-position 2)))))
+
 
 ;;;; File Manipulation Worker Functions
 
@@ -481,7 +497,7 @@ related to the current buffer."
                   (insert-file-contents (concat story-folder / (orgn--ls "main-file" orgn--file-ending)))
                   (goto-char (point-min))  ; Move point to start of buffer
                   (org-novelist-mode)  ; If not explicitly in Org mode (or a derivative), then org-heading-components won't work in the temp buffer
-		  (org-fold-show-all)  ; Belts and braces
+                  (orgn--fold-show-all)  ; Belts and braces
                   (if (org-goto-first-child)  ; Get the first heading in buffer
                       (setq story-name (nth 4 (org-heading-components)))  ; Extract just the heading text without other Org stuff
                     (progn
@@ -513,16 +529,16 @@ related to the current buffer."
                   (insert-file-contents (concat story-folder / (orgn--ls "main-file" orgn--file-ending)))
                   (goto-char (point-min))  ; Move point to start of buffer
                   (org-novelist-mode)  ; If not explicitly in Org mode (or a derivative), then org-heading-components won't work in the temp buffer
-		  (org-fold-show-all)  ; Belts and braces
+                  (orgn--fold-show-all)  ; Belts and braces
                   (if (org-goto-first-child)  ; Get the first heading in buffer
-		      (progn
-			(setq org-heading-components (org-heading-components))  ; Extract heading components
-			(beginning-of-line)
-			(setq beg (point))
-			(end-of-line)
-			(delete-region beg (point))
-			(insert (org-novelist--replace-true-headline-in-org-heading new-story-name org-heading-components))
-			(orgn--string-to-file (buffer-string) (concat story-folder / (orgn--ls "main-file" orgn--file-ending))))
+                      (progn
+                        (setq org-heading-components (org-heading-components))  ; Extract heading components
+                        (beginning-of-line)
+                        (setq beg (point))
+                        (end-of-line)
+                        (delete-region beg (point))
+                        (insert (org-novelist--replace-true-headline-in-org-heading new-story-name org-heading-components))
+                        (orgn--string-to-file (buffer-string) (concat story-folder / (orgn--ls "main-file" orgn--file-ending))))
                     (progn
                       (error (orgn--ls "no-story-found"))
                       (throw 'SET-STORY-NAME-FAILURE (orgn--ls "no-story-found")))))
@@ -632,110 +648,110 @@ related to the current buffer."
     (setq story-folder (orgn--story-root-folder story-folder)))
   (catch 'MAKE-REFERENCES-WORKER-FAULT
     (if (file-exists-p file)
-	(let* ((chapters-folder (orgn--ls "chapters-folder"))
-	       (indices-folder (orgn--ls "indices-folder"))
-	       (chapter-index (concat (orgn--ls "chapters-file") orgn--file-ending))
-	       (aliases-str (orgn--get-file-property-value file "aliases"))
-	       names
-	       curr-names
-	       name
-	       (file-chapters (orgn--chapter-hash-table story-folder))
-	       (chapter-keys (sort (hash-table-keys file-chapters) #'string<))
-	       chapter-key
-	       (chapter-index-files '())
-	       (regexp (orgn--ls "notes-name-search"))
-	       (regexp-org-link (orgn--ls "notes-name-org-link-search"))
-	       found-aliases
-	       found-alias-keys
-	       found-alias-key
-	       (chap-ref-content "")
-	       (output-str "")
-	       (prepped-file-contents ""))
-	  (when aliases-str
-	    (setq names (sort (split-string aliases-str (orgn--ls "aliases-separators") t " ") 'string<)))
-	  (setq names (cons (orgn--file-title file) names))
-	  (unless (equal names '(nil))
-	    ;; Make sure order of chapter-keys matches the chapter index order, with any unknown files at the end in alphabetical order.
-	    (orgn--reorder-matter-in-chapter-index story-folder)
-	    (with-temp-buffer
-	      (insert-file-contents (concat story-folder / indices-folder / chapter-index))
-	      (goto-char (point-min))
-	      (insert "\n")
-	      (goto-char (point-min))
-	      (org-novelist-mode)
-	      (org-fold-show-all)
-	      (while (not (org-next-visible-heading 1))
-		(when (or (string= (orgn--ls "front-matter-heading") (nth 4 (org-heading-components)))
-			  (string= (orgn--ls "main-matter-heading") (nth 4 (org-heading-components)))
-			  (string= (orgn--ls "back-matter-heading") (nth 4 (org-heading-components))))
-		  (when (org-goto-first-child)
-		    (setq chapter-index-files (cons (file-name-nondirectory (orgn--heading-last-link-absolute-link-text)) chapter-index-files))
-		    (while (org-goto-sibling)
-		      (setq chapter-index-files (cons (file-name-nondirectory (orgn--heading-last-link-absolute-link-text)) chapter-index-files))))))
-	      (goto-char (point-min))
-	      (delete-line)
-	      (setq chapter-index-files (reverse chapter-index-files)))
-	    (setq chapter-keys (delq nil (delete-dups (append chapter-index-files chapter-keys))))
-	    ;; Go through chapters for each name and construct output string.
-	    (while chapter-keys
-	      (setq curr-names names)
-	      (setq chapter-key (pop chapter-keys))
-	      (setq chap-ref-content "")
-	      (setq found-aliases (make-hash-table :test 'equal))
-	      (if (file-exists-p (concat story-folder / chapters-folder / chapter-key))
-		  (if (file-readable-p (concat story-folder / chapters-folder / chapter-key))
-		      (progn
-			(when (file-exists-p (concat story-folder / chapters-folder / chapter-key))
-			  (when (file-readable-p (concat story-folder / chapters-folder / chapter-key))
-			    (when (get-file-buffer (concat story-folder / chapters-folder / chapter-key))
-			      (switch-to-buffer (get-file-buffer (concat story-folder / chapters-folder / chapter-key)))
-			      (save-buffer))))
-			;; Removing the glossary is necessary to prevent extraneous references.
-			(setq prepped-file-contents (orgn--delete-org-subtrees-from-string
-						     (orgn--ls "glossary-header")
-						     (org-file-contents (concat story-folder / chapters-folder / chapter-key))))
-			(with-temp-buffer
-			  (insert prepped-file-contents)
-			  (org-novelist-mode)
-			  (org-fold-show-all)
-			  (while curr-names
-			    (setq name (string-trim (pop curr-names)))
-			    (goto-char (point-min))
-			    (while (re-search-forward (format regexp name) nil t)
-			      (backward-word)
-			      (when (thing-at-point 'sentence t)
-				(puthash (line-number-at-pos) (thing-at-point 'sentence t) found-aliases))
-			      (forward-word))))
-			;; We should now have a hash table of found references
-			(with-temp-buffer
-			  (setq found-alias-keys (sort (hash-table-keys found-aliases) '<))
-			  (while found-alias-keys
-			    (setq found-alias-key (pop found-alias-keys))
-			    (setq chap-ref-content (concat chap-ref-content "\n- \[\[file:.." / chapters-folder / chapter-key
-							   "::" (number-to-string found-alias-key) "\]\["
-							   (orgn--ls "line") " " (number-to-string found-alias-key)
-							   ": \"" (gethash found-alias-key found-aliases) "\"\]\]")))))
-		    (progn
-		      (error (concat story-folder / chapters-folder / chapter-key " " (orgn--ls "is-not-readable")))
-		      (throw 'MAKE-REFERENCES-WORKER-FAULT (concat story-folder / chapters-folder / chapter-key " " (orgn--ls "is-not-readable")))))
-		(progn
-		  (error (concat (orgn--ls "file-not-found") ": " story-folder / chapters-folder / chapter-key))
-		  (throw 'MAKE-REFERENCES-WORKER-FAULT (concat (orgn--ls "file-not-found") ": " story-folder / chapters-folder / chapter-key))))
-	      (unless (string= "" chap-ref-content)
-		;; If hash entries exist, add chapter header and content for this chapter to output string
-		(setq output-str (concat output-str "\n** \[\[file:.." / chapters-folder / chapter-key
-					 "::/" (format regexp-org-link name) "/\]\["
-					 (gethash chapter-key file-chapters) "\]\]"
-					 chap-ref-content)))))
-	  ;; If output string is nil, setup Appearances header with 'not yet used'
-	  ;; ;; otherwise, setup appearance header with contents
-	  (if (string= "" output-str)
-	      (setq output-str (concat "* " (orgn--ls "appearances-in-chapters-header") "\n" (orgn--ls "not-yet-referenced")))
-	    (setq output-str (concat "* " (orgn--ls "appearances-in-chapters-header") output-str)))
-	  (eval output-str))
+        (let* ((chapters-folder (orgn--ls "chapters-folder"))
+               (indices-folder (orgn--ls "indices-folder"))
+               (chapter-index (concat (orgn--ls "chapters-file") orgn--file-ending))
+               (aliases-str (orgn--get-file-property-value file "aliases"))
+               names
+               curr-names
+               name
+               (file-chapters (orgn--chapter-hash-table story-folder))
+               (chapter-keys (sort (hash-table-keys file-chapters) #'string<))
+               chapter-key
+               (chapter-index-files '())
+               (regexp (orgn--ls "notes-name-search"))
+               (regexp-org-link (orgn--ls "notes-name-org-link-search"))
+               found-aliases
+               found-alias-keys
+               found-alias-key
+               (chap-ref-content "")
+               (output-str "")
+               (prepped-file-contents ""))
+          (when aliases-str
+            (setq names (sort (split-string aliases-str (orgn--ls "aliases-separators") t " ") 'string<)))
+          (setq names (cons (orgn--get-file-property-value file "TITLE") names))
+          (unless (equal names '(nil))
+            ;; Make sure order of chapter-keys matches the chapter index order, with any unknown files at the end in alphabetical order.
+            (orgn--reorder-matter-in-chapter-index story-folder)
+            (with-temp-buffer
+              (insert-file-contents (concat story-folder / indices-folder / chapter-index))
+              (goto-char (point-min))
+              (insert "\n")
+              (goto-char (point-min))
+              (org-novelist-mode)
+              (orgn--fold-show-all)  ; Belts and braces
+              (while (not (org-next-visible-heading 1))
+                (when (or (string= (orgn--ls "front-matter-heading") (nth 4 (org-heading-components)))
+                          (string= (orgn--ls "main-matter-heading") (nth 4 (org-heading-components)))
+                          (string= (orgn--ls "back-matter-heading") (nth 4 (org-heading-components))))
+                  (when (org-goto-first-child)
+                    (setq chapter-index-files (cons (file-name-nondirectory (orgn--heading-last-link-absolute-link-text)) chapter-index-files))
+                    (while (org-goto-sibling)
+                      (setq chapter-index-files (cons (file-name-nondirectory (orgn--heading-last-link-absolute-link-text)) chapter-index-files))))))
+              (goto-char (point-min))
+              (orgn--delete-line)
+              (setq chapter-index-files (reverse chapter-index-files)))
+            (setq chapter-keys (delq nil (delete-dups (append chapter-index-files chapter-keys))))
+            ;; Go through chapters for each name and construct output string.
+            (while chapter-keys
+              (setq curr-names names)
+              (setq chapter-key (pop chapter-keys))
+              (setq chap-ref-content "")
+              (setq found-aliases (make-hash-table :test 'equal))
+              (if (file-exists-p (concat story-folder / chapters-folder / chapter-key))
+                  (if (file-readable-p (concat story-folder / chapters-folder / chapter-key))
+                      (progn
+                        (when (file-exists-p (concat story-folder / chapters-folder / chapter-key))
+                          (when (file-readable-p (concat story-folder / chapters-folder / chapter-key))
+                            (when (get-file-buffer (concat story-folder / chapters-folder / chapter-key))
+                              (switch-to-buffer (get-file-buffer (concat story-folder / chapters-folder / chapter-key)))
+                              (save-buffer))))
+                        ;; Removing the glossary is necessary to prevent extraneous references.
+                        (setq prepped-file-contents (orgn--delete-org-subtrees-from-string
+                                                     (orgn--ls "glossary-header")
+                                                     (org-file-contents (concat story-folder / chapters-folder / chapter-key))))
+                        (with-temp-buffer
+                          (insert prepped-file-contents)
+                          (org-novelist-mode)
+                          (orgn--fold-show-all)  ; Belts and braces
+                          (while curr-names
+                            (setq name (string-trim (pop curr-names)))
+                            (goto-char (point-min))
+                            (while (re-search-forward (format regexp name) nil t)
+                              (backward-word)
+                              (when (thing-at-point 'sentence t)
+                                (puthash (line-number-at-pos) (thing-at-point 'sentence t) found-aliases))
+                              (forward-word))))
+                        ;; We should now have a hash table of found references
+                        (with-temp-buffer
+                          (setq found-alias-keys (sort (hash-table-keys found-aliases) '<))
+                          (while found-alias-keys
+                            (setq found-alias-key (pop found-alias-keys))
+                            (setq chap-ref-content (concat chap-ref-content "\n- \[\[file:.." / chapters-folder / chapter-key
+                                                           "::" (number-to-string found-alias-key) "\]\["
+                                                           (orgn--ls "line") " " (number-to-string found-alias-key)
+                                                           ": \"" (gethash found-alias-key found-aliases) "\"\]\]")))))
+                    (progn
+                      (error (concat story-folder / chapters-folder / chapter-key " " (orgn--ls "is-not-readable")))
+                      (throw 'MAKE-REFERENCES-WORKER-FAULT (concat story-folder / chapters-folder / chapter-key " " (orgn--ls "is-not-readable")))))
+                (progn
+                  (error (concat (orgn--ls "file-not-found") ": " story-folder / chapters-folder / chapter-key))
+                  (throw 'MAKE-REFERENCES-WORKER-FAULT (concat (orgn--ls "file-not-found") ": " story-folder / chapters-folder / chapter-key))))
+              (unless (string= "" chap-ref-content)
+                ;; If hash entries exist, add chapter header and content for this chapter to output string
+                (setq output-str (concat output-str "\n** \[\[file:.." / chapters-folder / chapter-key
+                                         "::/" (format regexp-org-link name) "/\]\["
+                                         (gethash chapter-key file-chapters) "\]\]"
+                                         chap-ref-content)))))
+          ;; If output string is nil, setup Appearances header with 'not yet used'
+          ;; ;; otherwise, setup appearance header with contents
+          (if (string= "" output-str)
+              (setq output-str (concat "* " (orgn--ls "appearances-in-chapters-header") "\n" (orgn--ls "not-yet-referenced")))
+            (setq output-str (concat "* " (orgn--ls "appearances-in-chapters-header") output-str)))
+          (eval output-str))
       (progn
-	(error (concat (orgn--ls "file-not-found") ": " file))
-	(throw 'MAKE-REFERENCES-WORKER-FAULT (concat (orgn--ls "file-not-found") ": " file))))))
+        (error (concat (orgn--ls "file-not-found") ": " file))
+        (throw 'MAKE-REFERENCES-WORKER-FAULT (concat (orgn--ls "file-not-found") ": " file))))))
 
 (defun orgn--object-hash-table (file-prefix file-folder &optional story-folder)
   "Return a hash table of known objects in FILE-FOLDER, based on FILE-PREFIX.
@@ -760,7 +776,7 @@ values."
     (while files
       (setq curr-file (car files))
       (setq files (cdr files))
-      (if (setq curr-name (orgn--file-title curr-file))
+      (if (setq curr-name (orgn--get-file-property-value curr-file "TITLE"))
           (puthash (file-name-nondirectory curr-file) curr-name names)
         (puthash (file-name-nondirectory curr-file) (file-name-nondirectory curr-file) names)))
     (eval names)))
@@ -800,17 +816,6 @@ This function is based on files, not indices.
 The returned hash table will use filenames as keys, and place titles as
 values."
   (orgn--object-hash-table (orgn--ls "place-file-prefix") (orgn--ls "notes-folder") story-folder))
-
-(defun orgn--file-title (file)
-  "Given an Org Novelist FILE, return the title."
-  (let (file-title)
-      (with-temp-buffer
-        (when (file-exists-p file)
-          (when (file-readable-p file)
-            (insert-file-contents file)
-            (org-novelist-mode)
-            (setq file-title (org-get-title))))
-        file-title)))
 
 (defun orgn--set-file-property-value (property value file)
   "Given a FILE and VALUE, change PROPERTY value of that file.
@@ -956,7 +961,7 @@ open buffer."
                   (insert-file-contents (concat story-folder / indices-folder / chapters-file))
                   (goto-char (point-min))
                   (org-novelist-mode)
-		  (org-fold-show-all)
+                  (orgn--fold-show-all)  ; Belts and braces
                   (org-next-visible-heading 1)
                   (while (not (org-next-visible-heading 1))
                     (setq chapters-headlines (cons (orgn--heading-last-link-headline-text) chapters-headlines)))
@@ -1002,7 +1007,7 @@ open buffer."
                   (insert-file-contents (concat story-folder / indices-folder / index-file))
                   (goto-char (point-min))
                   (org-novelist-mode)
-		  (org-fold-show-all)
+                  (orgn--fold-show-all)  ; Belts and braces
                   (org-next-visible-heading 1)
                   (while (not (org-next-visible-heading 1))
                     (setq objects-headlines (cons (orgn--heading-last-link-headline-text) objects-headlines)))
@@ -1085,15 +1090,15 @@ open buffer."
     (insert "\n")
     (goto-char (point-min))
     (org-novelist-mode)
-    (org-fold-show-all)
+    (orgn--fold-show-all)  ; Belts and braces
     (while (not (org-next-visible-heading 1))
       (when (string= subtree-heading (nth 4 (org-heading-components)))
-	(org-back-to-heading t)
-	(org-mark-subtree)
-	(delete-region (point) (mark))
-	(goto-char (point-min))))
+        (org-back-to-heading t)
+        (org-mark-subtree)
+        (delete-region (point) (mark))
+        (goto-char (point-min))))
     (goto-char (point-min))
-    (delete-line)
+    (orgn--delete-line)
     (buffer-string)))
 
 (defun orgn--delete-org-subtrees-from-file (subtree-heading file)
@@ -1293,7 +1298,7 @@ open buffer."
               (progn
                 (find-file chapter-file)
                 (org-novelist-mode)
-		(org-fold-show-all)
+                (orgn--fold-show-all)  ; Belts and braces
                 (setq new-chapter-contents (orgn--replace-string-in-string
                                             (format "\[\[file:..%s%s\]\[%s\]\]"
                                                     (orgn--ls / "notes-folder" /)
@@ -1306,7 +1311,7 @@ open buffer."
                                             (buffer-string)))
                 (orgn--string-to-file new-chapter-contents chapter-file)
                 (revert-buffer t t t)
-		(orgn--set-file-property-value "TITLE" new-chapter-name chapter-file)
+                (orgn--set-file-property-value "TITLE" new-chapter-name chapter-file)
                 (orgn--rename-current-file new-chapter-file))
             (progn
               (error (concat (orgn--ls "file-not-found") ": " chapter-file))
@@ -1316,7 +1321,7 @@ open buffer."
               (progn
                 (find-file chapter-notes-file)
                 (org-novelist-mode)
-		(org-fold-show-all)
+                (orgn--fold-show-all)  ; Belts and braces
                 (setq new-chapter-notes-contents (orgn--replace-string-in-string
                                                   (format "\[\[file:..%s%s\]\[%s\]\]"
                                                           (orgn--ls / "chapters-folder" /)
@@ -1329,7 +1334,7 @@ open buffer."
                                                   (buffer-string)))
                 (orgn--string-to-file new-chapter-notes-contents chapter-notes-file)
                 (revert-buffer t t t)
-		(orgn--set-file-property-value "TITLE" (concat (orgn--ls "notes-for") " " new-chapter-name) chapter-notes-file)
+                (orgn--set-file-property-value "TITLE" (concat (orgn--ls "notes-for") " " new-chapter-name) chapter-notes-file)
                 (orgn--rename-current-file new-chapter-notes-file))
             (progn
               ;; If no notes file found, don't show error; just continue.
@@ -1367,30 +1372,30 @@ open buffer."
           (setq new-object-file (concat story-folder / (orgn--ls "notes-folder") / (orgn--ls object-file-prefix) (orgn--system-safe-name new-object-name) orgn--file-ending))
           (if (file-exists-p object-file)
               (progn
-		(setq appearances-subtree (orgn--get-file-subtree object-file (orgn--ls "appearances-in-chapters-header")))
-		(orgn--delete-org-subtrees-from-file (orgn--ls "appearances-in-chapters-header") object-file)
-		(find-file object-file)
+                (setq appearances-subtree (orgn--get-file-subtree object-file (orgn--ls "appearances-in-chapters-header")))
+                (orgn--delete-org-subtrees-from-file (orgn--ls "appearances-in-chapters-header") object-file)
+                (find-file object-file)
                 (org-novelist-mode)
-		(org-fold-show-all)
-		;; Get current title and add to aliases.
-		(setq old-object-name (orgn--get-file-property-value object-file "TITLE"))
-		(setq old-aliases (orgn--get-file-property-value object-file "ALIASES"))
-		;; Prevent repeating names in aliases.
-		(when old-aliases
-		  (setq aliases-list (delete new-object-name (delq nil (delete-dups (sort (cons old-object-name (split-string old-aliases (orgn--ls "aliases-separators") t " ")) 'string<))))))
-		(unless (equal aliases-list '(nil))
-		  (while aliases-list
-		    (setq alias-curr (pop aliases-list))
-		    (setq new-aliases-str (concat new-aliases-str ", " alias-curr)))
-		  (setq new-aliases-str (substring new-aliases-str 2)))
-		;; Regenerate file contents and rename it.
-		(erase-buffer)
-		(insert (orgn--replace-string-in-string chosen-object new-object-name (org-file-contents object-file)))
-		(goto-char (point-max))
-		(insert appearances-subtree)
-		(orgn--set-file-property-value "TITLE" new-object-name object-file)
-		(orgn--set-file-property-value "ALIASES" new-aliases-str object-file)
-		(orgn--save-current-file)
+                (orgn--fold-show-all)  ; Belts and braces
+                ;; Get current title and add to aliases.
+                (setq old-object-name (orgn--get-file-property-value object-file "TITLE"))
+                (setq old-aliases (orgn--get-file-property-value object-file "ALIASES"))
+                ;; Prevent repeating names in aliases.
+                (when old-aliases
+                  (setq aliases-list (delete new-object-name (delq nil (delete-dups (sort (cons old-object-name (split-string old-aliases (orgn--ls "aliases-separators") t " ")) 'string<))))))
+                (unless (equal aliases-list '(nil))
+                  (while aliases-list
+                    (setq alias-curr (pop aliases-list))
+                    (setq new-aliases-str (concat new-aliases-str ", " alias-curr)))
+                  (setq new-aliases-str (substring new-aliases-str 2)))
+                ;; Regenerate file contents and rename it.
+                (erase-buffer)
+                (insert (orgn--replace-string-in-string chosen-object new-object-name (org-file-contents object-file)))
+                (goto-char (point-max))
+                (insert appearances-subtree)
+                (orgn--set-file-property-value "TITLE" new-object-name object-file)
+                (orgn--set-file-property-value "ALIASES" new-aliases-str object-file)
+                (orgn--save-current-file)
                 (orgn--rename-current-file new-object-file))
             (progn
               (error (concat (orgn--ls "file-not-found") ": " object-file))
@@ -1432,33 +1437,34 @@ open buffer."
     (make-directory (concat story-folder / (orgn--ls "notes-folder")) t))
   (catch 'UPDATE-GLOSSARIES-FAULT
     (let* ((chapters-folder (orgn--ls "chapters-folder"))
-	   (file-chapters (orgn--chapter-hash-table story-folder))
+           (file-chapters (orgn--chapter-hash-table story-folder))
            (keys (hash-table-keys file-chapters))
            key
-	   (glossary-str (orgn--make-glossary-string story-folder)))
+           (glossary-str (orgn--make-glossary-string story-folder)))
       (while keys
-	(setq key (pop keys))
-	(if (file-exists-p (concat story-folder / chapters-folder / key))
-	    (if (file-readable-p (concat story-folder / chapters-folder / key))
-		(progn
-		  (when (get-file-buffer (concat story-folder / chapters-folder / key))
-		    (switch-to-buffer (get-file-buffer (concat story-folder / chapters-folder / key)))
-		    (save-buffer))
-		  (orgn--delete-org-subtrees-from-file (orgn--ls "glossary-header") (concat story-folder / chapters-folder / key))
-		  (with-temp-buffer
-		    (insert-file-contents (concat story-folder / chapters-folder / key))
-		    (goto-char (buffer-size))
-		    (insert "\n" glossary-str)
-		    (orgn--string-to-file (buffer-string) (concat story-folder / chapters-folder / key))
-		    (org-novelist-mode)
-		    (org-fold-show-all)
-		    (org-update-radio-target-regexp)))
-	      (progn
-		(error (concat story-folder / chapters-folder / key " " (orgn--ls "is-not-readable")))
-		(throw 'UPDATE-GLOSSARIES-FAULT (concat story-folder / chapters-folder / key " " (orgn--ls "is-not-readable")))))
-	  (progn
-	    (error (concat (orgn--ls "file-not-found") ": " story-folder / chapters-folder / key))
-	    (throw 'UPDATE-GLOSSARIES-FAULT (concat (orgn--ls "file-not-found") ": " story-folder / chapters-folder / key))))))))
+        (setq key (pop keys))
+        (if (file-exists-p (concat story-folder / chapters-folder / key))
+            (if (file-readable-p (concat story-folder / chapters-folder / key))
+                (progn
+                  (when (get-file-buffer (concat story-folder / chapters-folder / key))
+                    (switch-to-buffer (get-file-buffer (concat story-folder / chapters-folder / key)))
+                    (save-buffer))
+                  (orgn--delete-org-subtrees-from-file (orgn--ls "glossary-header") (concat story-folder / chapters-folder / key))
+                  (with-temp-buffer
+                    (insert-file-contents (concat story-folder / chapters-folder / key))
+                    (goto-char (buffer-size))
+                    (insert "\n" glossary-str)
+                    (orgn--string-to-file (buffer-string) (concat story-folder / chapters-folder / key))
+                    (org-novelist-mode)
+                    (orgn--fold-show-all)  ; Belts and braces
+                    (org-update-radio-target-regexp)))
+              (progn
+                (error (concat story-folder / chapters-folder / key " " (orgn--ls "is-not-readable")))
+                (throw 'UPDATE-GLOSSARIES-FAULT (concat story-folder / chapters-folder / key " " (orgn--ls "is-not-readable")))))
+          (progn
+            (error (concat (orgn--ls "file-not-found") ": " story-folder / chapters-folder / key))
+            (throw 'UPDATE-GLOSSARIES-FAULT (concat (orgn--ls "file-not-found") ": " story-folder / chapters-folder / key)))))
+      (org-update-radio-target-regexp))))
 
 (defun orgn--update-object-references (&optional story-folder)
   "Update all the story appearances in the object notes files.
@@ -1655,73 +1661,73 @@ open buffer."
     (make-directory (concat story-folder / (orgn--ls "notes-folder")) t))
   (catch 'REBUILD-INDICES-FAULT
     (let* ((indices-folder (orgn--ls "indices-folder"))
-	   (indices (directory-files-recursively (concat story-folder / indices-folder) (format "^%s%s\\'" (orgn--ls "sys-safe-name") orgn--file-ending)))
-	   index
-	   file-malformed-p)
+           (indices (directory-files-recursively (concat story-folder / indices-folder) (format "^%s%s\\'" (orgn--ls "sys-safe-name") orgn--file-ending)))
+           index
+           file-malformed-p)
       ;; Remove chapters.org from indices, as it is a special case.
       (setq indices (delete (concat story-folder / indices-folder / (orgn--ls "chapters-file") orgn--file-ending) indices))
       (while indices
-	(setq index (pop indices))
-	;; Skip file if it starts with a dot.
-	(unless (string= (substring (file-name-nondirectory index) 0 1) ".")
-	  (setq file-malformed-p nil)
-	  (if (file-exists-p index)
-	      (if (file-readable-p index)
-		  (progn
-		    (orgn--save-current-file index)
-		    (with-temp-buffer
-		      (insert-file-contents index)
-		      (goto-char (point-min))
-		      (insert "\n")
-		      (goto-char (point-min))
-		      (org-novelist-mode)
-		      (org-fold-show-all)
-		      (when (not (org-next-visible-heading 1))
-			(unless (and (string= (orgn--heading-last-link-headline-text) (orgn--story-name story-folder))
-				     (= 1 (org-current-level)))
-			  (setq file-malformed-p t))))
-		    (when file-malformed-p
-		      (orgn--rebuild-index (file-name-nondirectory index) story-folder)))
-		(progn
-		  (error (concat index " " (orgn--ls "is-not-readable")))
-		  (throw 'REBUILD-INDICES-FAULT (concat index " " (orgn--ls "is-not-readable")))))
-	    (progn
-	      (orgn--string-to-file "" index)
-	      (orgn--rebuild-indices story-folder)
-	      (throw 'REBUILD-INDICES-FAULT (concat (orgn--ls "file-not-found") ": " index))))))
+        (setq index (pop indices))
+        ;; Skip file if it starts with a dot.
+        (unless (string= (substring (file-name-nondirectory index) 0 1) ".")
+          (setq file-malformed-p nil)
+          (if (file-exists-p index)
+              (if (file-readable-p index)
+                  (progn
+                    (orgn--save-current-file index)
+                    (with-temp-buffer
+                      (insert-file-contents index)
+                      (goto-char (point-min))
+                      (insert "\n")
+                      (goto-char (point-min))
+                      (org-novelist-mode)
+                      (orgn--fold-show-all)  ; Belts and braces
+                      (when (not (org-next-visible-heading 1))
+                        (unless (and (string= (orgn--heading-last-link-headline-text) (orgn--story-name story-folder))
+                                     (= 1 (org-current-level)))
+                          (setq file-malformed-p t))))
+                    (when file-malformed-p
+                      (orgn--rebuild-index (file-name-nondirectory index) story-folder)))
+                (progn
+                  (error (concat index " " (orgn--ls "is-not-readable")))
+                  (throw 'REBUILD-INDICES-FAULT (concat index " " (orgn--ls "is-not-readable")))))
+            (progn
+              (orgn--string-to-file "" index)
+              (orgn--rebuild-indices story-folder)
+              (throw 'REBUILD-INDICES-FAULT (concat (orgn--ls "file-not-found") ": " index))))))
       ;; Chapter index is special case.
       (setq index (orgn--ls "chapters-file" orgn--file-ending))
       (setq file-malformed-p nil)
       (if (file-exists-p (concat story-folder / indices-folder / index))
-	  (if (file-readable-p (concat story-folder / indices-folder / index))
-	      (progn
-		(orgn--save-current-file (concat story-folder / indices-folder / index))
-		(with-temp-buffer
-		  (insert-file-contents (concat story-folder / indices-folder / index))
-		  (goto-char (point-min))
-		  (insert "\n")
-		  (goto-char (point-min))
-		  (org-novelist-mode)
-		  (org-fold-show-all)
-		  (when (not (org-next-visible-heading 1))
-		    (unless (and (string= (orgn--heading-last-link-headline-text) (orgn--story-name story-folder))
-				 (= 1 (org-current-level)))
-		      (setq file-malformed-p t)))
-		  (when (not (org-next-visible-heading 1))
-		    (unless (and (or (string= (orgn--ls "front-matter-heading") (nth 4 (org-heading-components)))
-				     (string= (orgn--ls "main-matter-heading") (nth 4 (org-heading-components)))
-				     (string= (orgn--ls "back-matter-heading") (nth 4 (org-heading-components))))
-				 (= 2 (org-current-level)))
-		      (setq file-malformed-p t))))
-		(when file-malformed-p
-		  (orgn--rebuild-index index story-folder)))
-	    (progn
-	      (error (concat story-folder / indices-folder / index " " (orgn--ls "is-not-readable")))
-	      (throw 'REBUILD-INDICES-FAULT (concat story-folder / indices-folder / index " " (orgn--ls "is-not-readable")))))
-	(progn
-	  (orgn--string-to-file "" (concat story-folder / indices-folder / index))
-	  (orgn--rebuild-indices story-folder)
-	  (throw 'REBUILD-INDICES-FAULT (concat (orgn--ls "file-not-found") ": " story-folder / indices-folder / index)))))))
+          (if (file-readable-p (concat story-folder / indices-folder / index))
+              (progn
+                (orgn--save-current-file (concat story-folder / indices-folder / index))
+                (with-temp-buffer
+                  (insert-file-contents (concat story-folder / indices-folder / index))
+                  (goto-char (point-min))
+                  (insert "\n")
+                  (goto-char (point-min))
+                  (org-novelist-mode)
+                  (orgn--fold-show-all)  ; Belts and braces
+                  (when (not (org-next-visible-heading 1))
+                    (unless (and (string= (orgn--heading-last-link-headline-text) (orgn--story-name story-folder))
+                                 (= 1 (org-current-level)))
+                      (setq file-malformed-p t)))
+                  (when (not (org-next-visible-heading 1))
+                    (unless (and (or (string= (orgn--ls "front-matter-heading") (nth 4 (org-heading-components)))
+                                     (string= (orgn--ls "main-matter-heading") (nth 4 (org-heading-components)))
+                                     (string= (orgn--ls "back-matter-heading") (nth 4 (org-heading-components))))
+                                 (= 2 (org-current-level)))
+                      (setq file-malformed-p t))))
+                (when file-malformed-p
+                  (orgn--rebuild-index index story-folder)))
+            (progn
+              (error (concat story-folder / indices-folder / index " " (orgn--ls "is-not-readable")))
+              (throw 'REBUILD-INDICES-FAULT (concat story-folder / indices-folder / index " " (orgn--ls "is-not-readable")))))
+        (progn
+          (orgn--string-to-file "" (concat story-folder / indices-folder / index))
+          (orgn--rebuild-indices story-folder)
+          (throw 'REBUILD-INDICES-FAULT (concat (orgn--ls "file-not-found") ": " story-folder / indices-folder / index)))))))
 
 (defun orgn--update-references-after-save-hook ()
   "If automatic referencing, update references on save."
@@ -1744,113 +1750,113 @@ filenames as values."
     (setq story-folder (orgn--story-root-folder story-folder)))
   ;; If org-novelist--story-root-folder didn't throw any errors, we should be good to go.
   (let ((exports-hash (make-hash-table :test 'equal))
-	beg
-	current-template
-	current-outfile)
+        beg
+        current-template
+        current-outfile)
     (when (file-exists-p (concat story-folder / orgn--config-filename))
       (when (file-readable-p (concat story-folder / orgn--config-filename))
-	(with-temp-buffer
-	  (insert-file-contents (concat story-folder / orgn--config-filename))
-	  (goto-char (point-min))
-	  (insert "\n")
-	  (goto-char (point-min))
-	  (org-novelist-mode)
-	  (org-fold-show-all)
-	  (while (not (org-next-visible-heading 1))
-	    (when (string= (orgn--ls "exports-header") (nth 4 (org-heading-components)))
-	      (when (org-goto-first-child)
-		;; Add first thing to hash
-		(setq current-template (expand-file-name (car (split-string (nth 4 (org-heading-components)) "[\]\[]+" t "file\:")) story-folder))
-		(forward-line)
-		(beginning-of-line)
-		(setq beg (point))
-		(forward-line -1)
-		(org-end-of-subtree t t)
-		;; Include the end of an inlinetask
-		(when (and (featurep 'org-inlinetask)
-			   (looking-at-p (concat (org-inlinetask-outline-regexp) "END[ \t]*$")))
-		  (end-of-line))
-		(forward-line -1)
-		(end-of-line)
-		(setq current-outfile (expand-file-name (buffer-substring beg (point)) story-folder))
-		(puthash current-template current-outfile exports-hash)
-		;; Loop through siblings and do the same
-		(while (org-goto-sibling)
-		  (setq current-template (expand-file-name (car (split-string (nth 4 (org-heading-components)) "[\]\[]+" t "file\:")) story-folder))
-		  (forward-line)
-		  (beginning-of-line)
-		  (setq beg (point))
-		  (forward-line -1)
-		  (org-end-of-subtree t t)
-		  ;; Include the end of an inlinetask
-		  (when (and (featurep 'org-inlinetask)
-			     (looking-at-p (concat (org-inlinetask-outline-regexp) "END[ \t]*$")))
-		    (end-of-line))
-		  (forward-line -1)
-		  (end-of-line)
-		  (setq current-outfile (expand-file-name (buffer-substring beg (point)) story-folder))
-		  (puthash current-template current-outfile exports-hash))))))))
-	  (eval exports-hash)))
+        (with-temp-buffer
+          (insert-file-contents (concat story-folder / orgn--config-filename))
+          (goto-char (point-min))
+          (insert "\n")
+          (goto-char (point-min))
+          (org-novelist-mode)
+          (orgn--fold-show-all)  ; Belts and braces
+          (while (not (org-next-visible-heading 1))
+            (when (string= (orgn--ls "exports-header") (nth 4 (org-heading-components)))
+              (when (org-goto-first-child)
+                ;; Add first thing to hash
+                (setq current-template (expand-file-name (car (split-string (nth 4 (org-heading-components)) "[\]\[]+" t "file\:")) story-folder))
+                (forward-line)
+                (beginning-of-line)
+                (setq beg (point))
+                (forward-line -1)
+                (org-end-of-subtree t t)
+                ;; Include the end of an inlinetask
+                (when (and (featurep 'org-inlinetask)
+                           (looking-at-p (concat (org-inlinetask-outline-regexp) "END[ \t]*$")))
+                  (end-of-line))
+                (forward-line -1)
+                (end-of-line)
+                (setq current-outfile (expand-file-name (string-trim (buffer-substring beg (point))) story-folder))
+                (puthash current-template current-outfile exports-hash)
+                ;; Loop through siblings and do the same
+                (while (org-goto-sibling)
+                  (setq current-template (expand-file-name (car (split-string (nth 4 (org-heading-components)) "[\]\[]+" t "file\:")) story-folder))
+                  (forward-line)
+                  (beginning-of-line)
+                  (setq beg (point))
+                  (forward-line -1)
+                  (org-end-of-subtree t t)
+                  ;; Include the end of an inlinetask
+                  (when (and (featurep 'org-inlinetask)
+                             (looking-at-p (concat (org-inlinetask-outline-regexp) "END[ \t]*$")))
+                    (end-of-line))
+                  (forward-line -1)
+                  (end-of-line)
+                  (setq current-outfile (expand-file-name (string-trim (buffer-substring beg (point))) story-folder))
+                  (puthash current-template current-outfile exports-hash))))))))
+    (eval exports-hash)))
 
 (defun orgn--reorder-matter-in-chapter-index (&optional story-folder)
   "Reorder the matter sections in the chapters index in an Org Novelist story.
 Function will try to use story that current file is a part of, unless called
 with STORY-FOLDER to override that behaviour."
   (let ((fm-str "")
-	(mm-str "")
-	(bm-str "")
-	beg)
+        (mm-str "")
+        (bm-str "")
+        beg)
     (if (not story-folder)
-	(setq story-folder (orgn--story-root-folder))
+        (setq story-folder (orgn--story-root-folder))
       (setq story-folder (orgn--story-root-folder story-folder)))
     (with-temp-buffer
       (insert-file-contents (concat story-folder / (orgn--ls "indices-folder") / (orgn--ls "chapters-file") orgn--file-ending))
       (org-novelist-mode)
-      (org-fold-show-all)
+      (orgn--fold-show-all)  ; Belts and braces
       (goto-char (point-min))
       (insert "\n")
       (goto-char (point-min))
       (while (not (org-next-visible-heading 1))
-	(when (string= (orgn--ls "front-matter-heading") (nth 4 (org-heading-components)))
-	  (beginning-of-line)
-	  (setq beg (point))
-	  (org-end-of-subtree t t)
-	  ;; Include the end of an inlinetask
-	  (when (and (featurep 'org-inlinetask)
-		     (looking-at-p (concat (org-inlinetask-outline-regexp) "END[ \t]*$")))
-	    (end-of-line))
-	  (setq fm-str (buffer-substring beg (point)))
-	  (delete-region beg (point))))
+        (when (string= (orgn--ls "front-matter-heading") (nth 4 (org-heading-components)))
+          (beginning-of-line)
+          (setq beg (point))
+          (org-end-of-subtree t t)
+          ;; Include the end of an inlinetask
+          (when (and (featurep 'org-inlinetask)
+                     (looking-at-p (concat (org-inlinetask-outline-regexp) "END[ \t]*$")))
+            (end-of-line))
+          (setq fm-str (buffer-substring beg (point)))
+          (delete-region beg (point))))
       (goto-char (point-min))
       (while (not (org-next-visible-heading 1))
-	(when (string= (orgn--ls "main-matter-heading") (nth 4 (org-heading-components)))
-	  (beginning-of-line)
-	  (setq beg (point))
-	  (org-end-of-subtree t t)
-	  ;; Include the end of an inlinetask
-	  (when (and (featurep 'org-inlinetask)
-		     (looking-at-p (concat (org-inlinetask-outline-regexp) "END[ \t]*$")))
-	    (end-of-line))
-	  (setq mm-str (buffer-substring beg (point)))
-	  (delete-region beg (point))))
+        (when (string= (orgn--ls "main-matter-heading") (nth 4 (org-heading-components)))
+          (beginning-of-line)
+          (setq beg (point))
+          (org-end-of-subtree t t)
+          ;; Include the end of an inlinetask
+          (when (and (featurep 'org-inlinetask)
+                     (looking-at-p (concat (org-inlinetask-outline-regexp) "END[ \t]*$")))
+            (end-of-line))
+          (setq mm-str (buffer-substring beg (point)))
+          (delete-region beg (point))))
       (goto-char (point-min))
       (while (not (org-next-visible-heading 1))
-	(when (string= (orgn--ls "back-matter-heading") (nth 4 (org-heading-components)))
-	  (beginning-of-line)
-	  (setq beg (point))
-	  (org-end-of-subtree t t)
-	  ;; Include the end of an inlinetask
-	  (when (and (featurep 'org-inlinetask)
-		     (looking-at-p (concat (org-inlinetask-outline-regexp) "END[ \t]*$")))
-	    (end-of-line))
-	  (setq bm-str (buffer-substring beg (point)))
-	  (delete-region beg (point))))
+        (when (string= (orgn--ls "back-matter-heading") (nth 4 (org-heading-components)))
+          (beginning-of-line)
+          (setq beg (point))
+          (org-end-of-subtree t t)
+          ;; Include the end of an inlinetask
+          (when (and (featurep 'org-inlinetask)
+                     (looking-at-p (concat (org-inlinetask-outline-regexp) "END[ \t]*$")))
+            (end-of-line))
+          (setq bm-str (buffer-substring beg (point)))
+          (delete-region beg (point))))
       (goto-char (point-max))
       (insert fm-str)
       (insert mm-str)
       (insert bm-str)
       (goto-char (point-min))
-      (delete-line)
+      (orgn--delete-line)
       (orgn--string-to-file (buffer-string) (concat story-folder / (orgn--ls "indices-folder") / (orgn--ls "chapters-file") orgn--file-ending)))))
 
 
@@ -2365,60 +2371,60 @@ chapters to have a name, even if this will not be used on export."
             (completing-read (concat (orgn--ls "name-already-in-use") " ") (list (orgn--ls "okay")))
             (setq chapter-name (read-string (concat (orgn--ls "chapter-name-query") " ")))
             (orgn-new-chapter chapter-name)  ; Call this function again
-	    (setq orgn-automatic-referencing-p orig-autoref-val-p)
+            (setq orgn-automatic-referencing-p orig-autoref-val-p)
             (throw 'CHAPTER-CREATION-FAULT (concat (orgn--ls "name-already-in-use") ": " story-folder / chapters-folder / chapter-file)))))
       (find-file (concat story-folder / indices-folder / chapters-file))  ; Open the chapter index file (it will stay open after this, so no need to mess with temp buffers)
       ;; Check if index is malformed.
       (if (file-exists-p (concat story-folder / indices-folder / chapters-file))
-	  (if (file-readable-p (concat story-folder / indices-folder / chapters-file))
-	      (progn
-		(with-temp-buffer
-		  (insert-file-contents (concat story-folder / indices-folder / chapters-file))
-		  (goto-char (point-min))
-		  (insert "\n")
-		  (goto-char (point-min))
-		  (org-novelist-mode)
-		  (org-fold-show-all)
-		  (when (not (org-next-visible-heading 1))
-		    (unless (and (string= (orgn--heading-last-link-headline-text) (orgn--story-name story-folder))
-				 (= 1 (org-current-level)))
-		      (setq file-malformed t)))
-		  (when (not (org-next-visible-heading 1))
-		    (unless (and (or (string= (orgn--ls "front-matter-heading") (nth 4 (org-heading-components)))
-				     (string= (orgn--ls "main-matter-heading") (nth 4 (org-heading-components)))
-				     (string= (orgn--ls "back-matter-heading") (nth 4 (org-heading-components))))
-				 (= 2 (org-current-level)))
-		      (setq file-malformed t))))
-		(when file-malformed
-		  (orgn--rebuild-index chapters-file story-folder)))
-	    (progn
-	      (setq orgn-automatic-referencing-p orig-autoref-val-p)
-	      (error (concat story-folder / indices-folder / chapters-file " " (orgn--ls "is-not-readable")))
-	      (throw 'CHAPTER-CREATION-FAULT (concat story-folder / indices-folder / chapters-file " " (orgn--ls "is-not-readable")))))
-	(progn
-	  (orgn--string-to-file "" (concat story-folder / indices-folder / chapters-file))
-	  (orgn-new-chapter chapter-name)  ; Call this function again
-	  (setq orgn-automatic-referencing-p orig-autoref-val-p)
-	  (throw 'CHAPTER-CREATION-FAULT (concat (orgn--ls "file-not-found") ": " story-folder / indices-folder / chapters-file))))
+          (if (file-readable-p (concat story-folder / indices-folder / chapters-file))
+              (progn
+                (with-temp-buffer
+                  (insert-file-contents (concat story-folder / indices-folder / chapters-file))
+                  (goto-char (point-min))
+                  (insert "\n")
+                  (goto-char (point-min))
+                  (org-novelist-mode)
+                  (orgn--fold-show-all)  ; Belts and braces
+                  (when (not (org-next-visible-heading 1))
+                    (unless (and (string= (orgn--heading-last-link-headline-text) (orgn--story-name story-folder))
+                                 (= 1 (org-current-level)))
+                      (setq file-malformed t)))
+                  (when (not (org-next-visible-heading 1))
+                    (unless (and (or (string= (orgn--ls "front-matter-heading") (nth 4 (org-heading-components)))
+                                     (string= (orgn--ls "main-matter-heading") (nth 4 (org-heading-components)))
+                                     (string= (orgn--ls "back-matter-heading") (nth 4 (org-heading-components))))
+                                 (= 2 (org-current-level)))
+                      (setq file-malformed t))))
+                (when file-malformed
+                  (orgn--rebuild-index chapters-file story-folder)))
+            (progn
+              (setq orgn-automatic-referencing-p orig-autoref-val-p)
+              (error (concat story-folder / indices-folder / chapters-file " " (orgn--ls "is-not-readable")))
+              (throw 'CHAPTER-CREATION-FAULT (concat story-folder / indices-folder / chapters-file " " (orgn--ls "is-not-readable")))))
+        (progn
+          (orgn--string-to-file "" (concat story-folder / indices-folder / chapters-file))
+          (orgn-new-chapter chapter-name)  ; Call this function again
+          (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (throw 'CHAPTER-CREATION-FAULT (concat (orgn--ls "file-not-found") ": " story-folder / indices-folder / chapters-file))))
       ;; Chapter Index file should be formatted well enough to add new chapter. Find position for addition.
       (org-novelist-mode)
       ;; Check to see if the chosen section already exists.
-      (org-fold-show-all)
+      (orgn--fold-show-all)  ; Belts and braces
       (goto-char (point-min))  ; Move to start of buffer
       (catch 'MATTER-LOOP-EXIT
         (if (org-goto-first-child)  ; Goto the first heading in buffer if one exists
             (progn  ; Basic malformed check passed
               ;; Ask user what section they want the chapter to be in.
-	      (while (not (or (string= chapter-matter-type (orgn--ls "front-matter-heading"))
-			      (string= chapter-matter-type (orgn--ls "main-matter-heading"))
-			      (string= chapter-matter-type (orgn--ls "back-matter-heading"))))
+              (while (not (or (string= chapter-matter-type (orgn--ls "front-matter-heading"))
+                              (string= chapter-matter-type (orgn--ls "main-matter-heading"))
+                              (string= chapter-matter-type (orgn--ls "back-matter-heading"))))
                 (setq chapter-matter-type (completing-read (concat
-							    (format (orgn--ls "chapter-location-query")
-								    chapter-name
-								    (orgn--ls "front-matter-heading")
-								    (orgn--ls "main-matter-heading")
-								    (orgn--ls "back-matter-heading"))
-							    " ")
+                                                            (format (orgn--ls "chapter-location-query")
+                                                                    chapter-name
+                                                                    (orgn--ls "front-matter-heading")
+                                                                    (orgn--ls "main-matter-heading")
+                                                                    (orgn--ls "back-matter-heading"))
+                                                            " ")
                                                            (list (orgn--ls "front-matter-heading")
                                                                  (orgn--ls "main-matter-heading")
                                                                  (orgn--ls "back-matter-heading")))))
@@ -2608,45 +2614,45 @@ CHARACTER-NAME will be the name given to the character."
             (completing-read (concat (orgn--ls "name-already-in-use") " ") (list (orgn--ls "okay")))
             (setq character-name (read-string (concat (orgn--ls "character-name-query") " ")))
             (orgn-new-character character-name)  ; Call this function again
-	    (setq orgn-automatic-referencing-p orig-autoref-val-p)
+            (setq orgn-automatic-referencing-p orig-autoref-val-p)
             (throw 'CHARACTER-CREATION-FAULT (concat (orgn--ls "name-already-in-use") ": " story-folder / notes-folder / character-file)))))
       (find-file (concat story-folder / indices-folder / characters-file))
       (goto-char (point-min))
       (insert "\n")
       (goto-char (point-min))
       (org-novelist-mode)
-      (org-fold-show-all)
+      (orgn--fold-show-all)  ; Belts and braces
       (when (not (org-next-visible-heading 1))
-	(if (and (string= (orgn--heading-last-link-headline-text) (orgn--story-name story-folder))
-		 (= 1 (org-current-level)))
-	    (if (org-goto-first-child)
-		;; Existing entries found.
-		(progn
+        (if (and (string= (orgn--heading-last-link-headline-text) (orgn--story-name story-folder))
+                 (= 1 (org-current-level)))
+            (if (org-goto-first-child)
+                ;; Existing entries found.
+                (progn
                   (re-search-backward org-outline-regexp-bol nil t)  ; Go to parent heading
                   (org-end-of-subtree)  ; Go to end of last subheading in child tree
                   (org-insert-heading-after-current)  ; Add the beginning of a new heading at the end of the current tree
                   (org-todo)  ; Turn heading into a TODO item
-		  (setq insert-point (point))
-		  (goto-char (point-min))
-		  (delete-line)
-		  (goto-char (- insert-point 1)))
+                  (setq insert-point (point))
+                  (goto-char (point-min))
+                  (orgn--delete-line)
+                  (goto-char (- insert-point 1)))
               ;; First entry.
               (progn
-		(org-end-of-subtree)  ; Go to end of last subheading
-		(org-insert-heading-after-current)  ; Add the beginning of a new heading at the end of the current tree
-		(org-demote)  ; Turn heading into a subheading
-		(org-todo)  ; Turn heading into a TODO item
-		(setq insert-point (point))
-		(goto-char (point-min))
-		(delete-line)
-		(goto-char (- insert-point 1))))
-	  ;; File Malformed
-	  (progn
-	    (goto-char (point-min))
-	    (delete-line)
-	    (orgn--rebuild-characters-index story-folder)
-	    (orgn-new-character character-name)  ; Call this function again
-	    (setq orgn-automatic-referencing-p orig-autoref-val-p)
+                (org-end-of-subtree)  ; Go to end of last subheading
+                (org-insert-heading-after-current)  ; Add the beginning of a new heading at the end of the current tree
+                (org-demote)  ; Turn heading into a subheading
+                (org-todo)  ; Turn heading into a TODO item
+                (setq insert-point (point))
+                (goto-char (point-min))
+                (orgn--delete-line)
+                (goto-char (- insert-point 1))))
+          ;; File Malformed
+          (progn
+            (goto-char (point-min))
+            (orgn--delete-line)
+            (orgn--rebuild-characters-index story-folder)
+            (orgn-new-character character-name)  ; Call this function again
+            (setq orgn-automatic-referencing-p orig-autoref-val-p)
             (throw 'CHARACTER-CREATION-FAULT (concat (orgn--ls "file-malformed") ": " story-folder / indices-folder / characters-file)))))
       ;; By here, point should be at the correct location to create the new character.
       (save-excursion  ; Allow cursor to be placed at the start of the new character name
@@ -2767,45 +2773,45 @@ PROP-NAME will be the name given to the prop."
             (completing-read (concat (orgn--ls "name-already-in-use") " ") (list (orgn--ls "okay")))
             (setq prop-name (read-string (concat (orgn--ls "prop-name-query") " ")))
             (orgn-new-prop prop-name)  ; Call this function again
-	    (setq orgn-automatic-referencing-p orig-autoref-val-p)
+            (setq orgn-automatic-referencing-p orig-autoref-val-p)
             (throw 'PROP-CREATION-FAULT (concat (orgn--ls "name-already-in-use") ": " story-folder / notes-folder / prop-file)))))
       (find-file (concat story-folder / indices-folder / props-file))
       (goto-char (point-min))
       (insert "\n")
       (goto-char (point-min))
       (org-novelist-mode)
-      (org-fold-show-all)
+      (orgn--fold-show-all)  ; Belts and braces
       (when (not (org-next-visible-heading 1))
-	(if (and (string= (orgn--heading-last-link-headline-text) (orgn--story-name story-folder))
-		 (= 1 (org-current-level)))
-	    (if (org-goto-first-child)
-		;; Existing entries found.
-		(progn
+        (if (and (string= (orgn--heading-last-link-headline-text) (orgn--story-name story-folder))
+                 (= 1 (org-current-level)))
+            (if (org-goto-first-child)
+                ;; Existing entries found.
+                (progn
                   (re-search-backward org-outline-regexp-bol nil t)  ; Go to parent heading
                   (org-end-of-subtree)  ; Go to end of last subheading in child tree
                   (org-insert-heading-after-current)  ; Add the beginning of a new heading at the end of the current tree
                   (org-todo)  ; Turn heading into a TODO item
-		  (setq insert-point (point))
-		  (goto-char (point-min))
-		  (delete-line)
-		  (goto-char (- insert-point 1)))
+                  (setq insert-point (point))
+                  (goto-char (point-min))
+                  (orgn--delete-line)
+                  (goto-char (- insert-point 1)))
               ;; First entry.
               (progn
-		(org-end-of-subtree)  ; Go to end of last subheading
-		(org-insert-heading-after-current)  ; Add the beginning of a new heading at the end of the current tree
-		(org-demote)  ; Turn heading into a subheading
-		(org-todo)  ; Turn heading into a TODO item
-		(setq insert-point (point))
-		(goto-char (point-min))
-		(delete-line)
-		(goto-char (- insert-point 1))))
-	  ;; File Malformed
-	  (progn
-	    (goto-char (point-min))
-	    (delete-line)
-	    (orgn--rebuild-props-index story-folder)
-	    (orgn-new-prop prop-name)  ; Call this function again
-	    (setq orgn-automatic-referencing-p orig-autoref-val-p)
+                (org-end-of-subtree)  ; Go to end of last subheading
+                (org-insert-heading-after-current)  ; Add the beginning of a new heading at the end of the current tree
+                (org-demote)  ; Turn heading into a subheading
+                (org-todo)  ; Turn heading into a TODO item
+                (setq insert-point (point))
+                (goto-char (point-min))
+                (orgn--delete-line)
+                (goto-char (- insert-point 1))))
+          ;; File Malformed
+          (progn
+            (goto-char (point-min))
+            (orgn--delete-line)
+            (orgn--rebuild-props-index story-folder)
+            (orgn-new-prop prop-name)  ; Call this function again
+            (setq orgn-automatic-referencing-p orig-autoref-val-p)
             (throw 'PROP-CREATION-FAULT (concat (orgn--ls "file-malformed") ": " story-folder / indices-folder / props-file)))))
       ;; By here, point should be at the correct location to create the new prop.
       (save-excursion  ; Allow cursor to be placed at the start of the new prop name
@@ -2926,45 +2932,45 @@ PLACE-NAME will be the name given to the place."
             (completing-read (concat (orgn--ls "name-already-in-use") " ") (list (orgn--ls "okay")))
             (setq place-name (read-string (concat (orgn--ls "place-name-query") " ")))
             (orgn-new-place place-name)  ; Call this function again
-	    (setq orgn-automatic-referencing-p orig-autoref-val-p)
+            (setq orgn-automatic-referencing-p orig-autoref-val-p)
             (throw 'PLACE-CREATION-FAULT (concat (orgn--ls "name-already-in-use") ": " story-folder / notes-folder / place-file)))))
       (find-file (concat story-folder / indices-folder / places-file))
       (goto-char (point-min))
       (insert "\n")
       (goto-char (point-min))
       (org-novelist-mode)
-      (org-fold-show-all)
+      (orgn--fold-show-all)  ; Belts and braces
       (when (not (org-next-visible-heading 1))
-	(if (and (string= (orgn--heading-last-link-headline-text) (orgn--story-name story-folder))
-		 (= 1 (org-current-level)))
-	    (if (org-goto-first-child)
-		;; Existing entries found.
-		(progn
+        (if (and (string= (orgn--heading-last-link-headline-text) (orgn--story-name story-folder))
+                 (= 1 (org-current-level)))
+            (if (org-goto-first-child)
+                ;; Existing entries found.
+                (progn
                   (re-search-backward org-outline-regexp-bol nil t)  ; Go to parent heading
                   (org-end-of-subtree)  ; Go to end of last subheading in child tree
                   (org-insert-heading-after-current)  ; Add the beginning of a new heading at the end of the current tree
                   (org-todo)  ; Turn heading into a TODO item
-		  (setq insert-point (point))
-		  (goto-char (point-min))
-		  (delete-line)
-		  (goto-char (- insert-point 1)))
+                  (setq insert-point (point))
+                  (goto-char (point-min))
+                  (orgn--delete-line)
+                  (goto-char (- insert-point 1)))
               ;; First entry.
               (progn
-		(org-end-of-subtree)  ; Go to end of last subheading
-		(org-insert-heading-after-current)  ; Add the beginning of a new heading at the end of the current tree
-		(org-demote)  ; Turn heading into a subheading
-		(org-todo)  ; Turn heading into a TODO item
-		(setq insert-point (point))
-		(goto-char (point-min))
-		(delete-line)
-		(goto-char (- insert-point 1))))
-	  ;; File Malformed
-	  (progn
-	    (goto-char (point-min))
-	    (delete-line)
-	    (orgn--rebuild-places-index story-folder)
-	    (orgn-new-place place-name)  ; Call this function again
-	    (setq orgn-automatic-referencing-p orig-autoref-val-p)
+                (org-end-of-subtree)  ; Go to end of last subheading
+                (org-insert-heading-after-current)  ; Add the beginning of a new heading at the end of the current tree
+                (org-demote)  ; Turn heading into a subheading
+                (org-todo)  ; Turn heading into a TODO item
+                (setq insert-point (point))
+                (goto-char (point-min))
+                (orgn--delete-line)
+                (goto-char (- insert-point 1))))
+          ;; File Malformed
+          (progn
+            (goto-char (point-min))
+            (orgn--delete-line)
+            (orgn--rebuild-places-index story-folder)
+            (orgn-new-place place-name)  ; Call this function again
+            (setq orgn-automatic-referencing-p orig-autoref-val-p)
             (throw 'PLACE-CREATION-FAULT (concat (orgn--ls "file-malformed") ": " story-folder / indices-folder / places-file)))))
       ;; By here, point should be at the correct location to create the new place.
       (save-excursion  ; Allow cursor to be placed at the start of the new place name
@@ -3159,138 +3165,138 @@ export files."
   (interactive)
   (catch 'EXPORT-STORY-FAULT
     (let* ((story-folder (orgn--story-root-folder))
-	   (indices-folder (orgn--ls "indices-folder"))
-	   (exports-folder (orgn--ls "exports-folder"))
-	   (story-name (orgn--story-name story-folder))
-	   (chapter-index (concat (orgn--ls "chapters-file") orgn--file-ending))
-	   (fm-file-list '())
-	   (mm-file-list '())
-	   (bm-file-list '())
-	   curr-chap-file
-	   curr-properties-list
-	   curr-property
-	   (content "")
-	   exports-hash
-	   keys
-	   key
-	   (orig-autoref-val-p orgn-automatic-referencing-p))
+           (indices-folder (orgn--ls "indices-folder"))
+           (exports-folder (orgn--ls "exports-folder"))
+           (story-name (orgn--story-name story-folder))
+           (chapter-index (concat (orgn--ls "chapters-file") orgn--file-ending))
+           (fm-file-list '())
+           (mm-file-list '())
+           (bm-file-list '())
+           curr-chap-file
+           curr-properties-list
+           curr-property
+           (content "")
+           exports-hash
+           keys
+           key
+           (orig-autoref-val-p orgn-automatic-referencing-p))
       (setq orgn-automatic-referencing-p nil)
       (orgn--rebuild-indices story-folder)  ; Make sure the chapter index is in good condition (this function actually checks all indices)
       (if (file-exists-p (concat story-folder / indices-folder / chapter-index))
-	  (if (file-readable-p (concat story-folder / indices-folder / chapter-index))
-	      (progn
-		(find-file (concat story-folder / indices-folder / chapter-index))
-		;; If there is a front matter in chapter index, get files in order and add to front matter list
-		(with-temp-buffer
-		  (insert-file-contents (concat story-folder / indices-folder / chapter-index))
-		  (goto-char (point-min))
-		  (insert "\n")
-		  (goto-char (point-min))
-		  (org-novelist-mode)
-		  (org-fold-show-all)
-		  (while (not (org-next-visible-heading 1))
-		    (when (string= (orgn--ls "front-matter-heading") (nth 4 (org-heading-components)))
-		      ;; Found front matter, get files in order and add to list.
-		      (when (org-goto-first-child)
-			(setq fm-file-list (cons (orgn--heading-last-link-absolute-link-text) fm-file-list))
-			(while (org-goto-sibling)
-			  (setq fm-file-list (cons (orgn--heading-last-link-absolute-link-text) fm-file-list))))
-		      (goto-char (point-max))))  ; No need to check any more, so skip to the end go exit loop
-		  (setq fm-file-list (reverse fm-file-list)))  ; Put files back in order
-		;; If there is a main matter in chapter index, get files in order and add to main matter list
-		(with-temp-buffer
-		  (insert-file-contents (concat story-folder / indices-folder / chapter-index))
-		  (goto-char (point-min))
-		  (insert "\n")
-		  (goto-char (point-min))
-		  (org-novelist-mode)
-		  (org-fold-show-all)
-		  (while (not (org-next-visible-heading 1))
-		    (when (string= (orgn--ls "main-matter-heading") (nth 4 (org-heading-components)))
-		      ;; Found main matter, get files in order and add to list.
-		      (when (org-goto-first-child)
-			(setq mm-file-list (cons (orgn--heading-last-link-absolute-link-text) mm-file-list))
-			(while (org-goto-sibling)
-			  (setq mm-file-list (cons (orgn--heading-last-link-absolute-link-text) mm-file-list))))
-		      (goto-char (point-max))))  ; No need to check any more, to skip to the end go exit loop
-		  (setq mm-file-list (reverse mm-file-list)))
-		;; If there is a back matter in chapter index, get files in order and add to back matter list
-		(with-temp-buffer
-		  (insert-file-contents (concat story-folder / indices-folder / chapter-index))
-		  (goto-char (point-min))
-		  (insert "\n")
-		  (goto-char (point-min))
-		  (org-novelist-mode)
-		  (org-fold-show-all)
-		  (while (not (org-next-visible-heading 1))
-		    (when (string= (orgn--ls "back-matter-heading") (nth 4 (org-heading-components)))
-		      ;; Found back matter, get files in order and add to list.
-		      (when (org-goto-first-child)
-			(setq bm-file-list (cons (orgn--heading-last-link-absolute-link-text) bm-file-list))
-			(while (org-goto-sibling)
-			  (setq bm-file-list (cons (orgn--heading-last-link-absolute-link-text) bm-file-list))))
-		      (goto-char (point-max))))  ; No need to check any more, to skip to the end go exit loop
-		  (setq bm-file-list (reverse bm-file-list))))
-	    (progn
-	      (setq orgn-automatic-referencing-p orig-autoref-val-p)
-	      (error (concat chapter-index " " (orgn--ls "is-not-readable")))
+          (if (file-readable-p (concat story-folder / indices-folder / chapter-index))
+              (progn
+                (find-file (concat story-folder / indices-folder / chapter-index))
+                ;; If there is a front matter in chapter index, get files in order and add to front matter list
+                (with-temp-buffer
+                  (insert-file-contents (concat story-folder / indices-folder / chapter-index))
+                  (goto-char (point-min))
+                  (insert "\n")
+                  (goto-char (point-min))
+                  (org-novelist-mode)
+                  (orgn--fold-show-all)  ; Belts and braces
+                  (while (not (org-next-visible-heading 1))
+                    (when (string= (orgn--ls "front-matter-heading") (nth 4 (org-heading-components)))
+                      ;; Found front matter, get files in order and add to list.
+                      (when (org-goto-first-child)
+                        (setq fm-file-list (cons (orgn--heading-last-link-absolute-link-text) fm-file-list))
+                        (while (org-goto-sibling)
+                          (setq fm-file-list (cons (orgn--heading-last-link-absolute-link-text) fm-file-list))))
+                      (goto-char (point-max))))  ; No need to check any more, so skip to the end go exit loop
+                  (setq fm-file-list (reverse fm-file-list)))  ; Put files back in order
+                ;; If there is a main matter in chapter index, get files in order and add to main matter list
+                (with-temp-buffer
+                  (insert-file-contents (concat story-folder / indices-folder / chapter-index))
+                  (goto-char (point-min))
+                  (insert "\n")
+                  (goto-char (point-min))
+                  (org-novelist-mode)
+                  (orgn--fold-show-all)  ; Belts and braces
+                  (while (not (org-next-visible-heading 1))
+                    (when (string= (orgn--ls "main-matter-heading") (nth 4 (org-heading-components)))
+                      ;; Found main matter, get files in order and add to list.
+                      (when (org-goto-first-child)
+                        (setq mm-file-list (cons (orgn--heading-last-link-absolute-link-text) mm-file-list))
+                        (while (org-goto-sibling)
+                          (setq mm-file-list (cons (orgn--heading-last-link-absolute-link-text) mm-file-list))))
+                      (goto-char (point-max))))  ; No need to check any more, to skip to the end go exit loop
+                  (setq mm-file-list (reverse mm-file-list)))
+                ;; If there is a back matter in chapter index, get files in order and add to back matter list
+                (with-temp-buffer
+                  (insert-file-contents (concat story-folder / indices-folder / chapter-index))
+                  (goto-char (point-min))
+                  (insert "\n")
+                  (goto-char (point-min))
+                  (org-novelist-mode)
+                  (orgn--fold-show-all)  ; Belts and braces
+                  (while (not (org-next-visible-heading 1))
+                    (when (string= (orgn--ls "back-matter-heading") (nth 4 (org-heading-components)))
+                      ;; Found back matter, get files in order and add to list.
+                      (when (org-goto-first-child)
+                        (setq bm-file-list (cons (orgn--heading-last-link-absolute-link-text) bm-file-list))
+                        (while (org-goto-sibling)
+                          (setq bm-file-list (cons (orgn--heading-last-link-absolute-link-text) bm-file-list))))
+                      (goto-char (point-max))))  ; No need to check any more, to skip to the end go exit loop
+                  (setq bm-file-list (reverse bm-file-list))))
+            (progn
+              (setq orgn-automatic-referencing-p orig-autoref-val-p)
+              (error (concat chapter-index " " (orgn--ls "is-not-readable")))
               (throw 'EXPORT-STORY-FAULT (concat chapter-index " " (orgn--ls "is-not-readable")))))
-	(progn
-	  (setq orgn-automatic-referencing-p orig-autoref-val-p)
-	  (error (concat (orgn--ls "file-not-found") ": " chapter-index))
+        (progn
+          (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (error (concat (orgn--ls "file-not-found") ": " chapter-index))
           (throw 'EXPORT-STORY-FAULT (concat (orgn--ls "file-not-found") ": " chapter-index))))
       ;; Correctly ordered file lists have been made.
       (while fm-file-list
-	(setq curr-chap-file (expand-file-name (pop fm-file-list)))
-	(setq curr-properties-list (delete "TITLE" (orgn--get-file-properties curr-chap-file)))
-	(with-temp-buffer
-	  (org-novelist-mode)
-	  (org-fold-show-all)
-	  (insert (concat "* " (orgn--file-title curr-chap-file) "\n"))
-	  (org-set-property (orgn--ls "matter-type-property") (upcase (orgn--ls "front-matter-heading")))
-	  (while curr-properties-list
-	    (setq curr-property (pop curr-properties-list))
-	    (unless (org-entry-get (point) curr-property)
-	      (org-set-property curr-property (orgn--get-file-property-value curr-chap-file curr-property))))
-	  ;; Chapter setup with properties, just add contents.
-	  (goto-char (buffer-size))
-	  (insert "\n")
-	  (insert (orgn--get-file-subtree curr-chap-file (orgn--ls "content-header") t))
-	  (setq content (concat content (buffer-substring (point-min) (buffer-size))))))
-      (while mm-file-list
-	(setq curr-chap-file (pop mm-file-list))
-	(setq curr-properties-list (delete "TITLE" (orgn--get-file-properties curr-chap-file)))
-	(with-temp-buffer
-	  (org-novelist-mode)
-	  (org-fold-show-all)
-	  (insert (concat "* " (orgn--file-title curr-chap-file) "\n"))
-	  (org-set-property (orgn--ls "matter-type-property") (upcase (orgn--ls "main-matter-heading")))
-	  (while curr-properties-list
-	    (setq curr-property (pop curr-properties-list))
-	    (unless (org-entry-get (point) curr-property)
-	      (org-set-property curr-property (orgn--get-file-property-value curr-chap-file curr-property))))
-	  ;; Chapter setup with properties, just add contents.
-	  (goto-char (buffer-size))
-	  (insert "\n")
-	  (insert (orgn--get-file-subtree curr-chap-file (orgn--ls "content-header") t))
-	  (setq content (concat content (buffer-substring (point-min) (buffer-size))))))
-      (while bm-file-list
-	(setq curr-chap-file (expand-file-name (pop bm-file-list)))
+        (setq curr-chap-file (expand-file-name (pop fm-file-list)))
         (setq curr-properties-list (delete "TITLE" (orgn--get-file-properties curr-chap-file)))
-	(with-temp-buffer
-	  (org-novelist-mode)
-	  (org-fold-show-all)
-	  (insert (concat "* " (orgn--file-title curr-chap-file) "\n"))
-	  (org-set-property (orgn--ls "matter-type-property") (upcase (orgn--ls "back-matter-heading")))
-	  (while curr-properties-list
-	    (setq curr-property (pop curr-properties-list))
-	    (unless (org-entry-get (point) curr-property)
-	      (org-set-property curr-property (orgn--get-file-property-value curr-chap-file curr-property))))
-	  ;; Chapter setup with properties, just add contents.
-	  (goto-char (buffer-size))
-	  (insert "\n")
-	  (insert (orgn--get-file-subtree curr-chap-file (orgn--ls "content-header") t))
-	  (setq content (concat content (buffer-substring (point-min) (buffer-size))))))
+        (with-temp-buffer
+          (org-novelist-mode)
+          (orgn--fold-show-all)  ; Belts and braces
+          (insert (concat "* " (orgn--get-file-property-value curr-chap-file "TITLE") "\n"))
+          (org-set-property (orgn--ls "matter-type-property") (upcase (orgn--ls "front-matter-heading")))
+          (while curr-properties-list
+            (setq curr-property (pop curr-properties-list))
+            (unless (org-entry-get (point) curr-property)
+              (org-set-property curr-property (orgn--get-file-property-value curr-chap-file curr-property))))
+          ;; Chapter setup with properties, just add contents.
+          (goto-char (buffer-size))
+          (insert "\n")
+          (insert (orgn--get-file-subtree curr-chap-file (orgn--ls "content-header") t))
+          (setq content (concat content (buffer-substring (point-min) (buffer-size))))))
+      (while mm-file-list
+        (setq curr-chap-file (pop mm-file-list))
+        (setq curr-properties-list (delete "TITLE" (orgn--get-file-properties curr-chap-file)))
+        (with-temp-buffer
+          (org-novelist-mode)
+          (orgn--fold-show-all)  ; Belts and braces
+          (insert (concat "* " (orgn--get-file-property-value curr-chap-file "TITLE") "\n"))
+          (org-set-property (orgn--ls "matter-type-property") (upcase (orgn--ls "main-matter-heading")))
+          (while curr-properties-list
+            (setq curr-property (pop curr-properties-list))
+            (unless (org-entry-get (point) curr-property)
+              (org-set-property curr-property (orgn--get-file-property-value curr-chap-file curr-property))))
+          ;; Chapter setup with properties, just add contents.
+          (goto-char (buffer-size))
+          (insert "\n")
+          (insert (orgn--get-file-subtree curr-chap-file (orgn--ls "content-header") t))
+          (setq content (concat content (buffer-substring (point-min) (buffer-size))))))
+      (while bm-file-list
+        (setq curr-chap-file (expand-file-name (pop bm-file-list)))
+        (setq curr-properties-list (delete "TITLE" (orgn--get-file-properties curr-chap-file)))
+        (with-temp-buffer
+          (org-novelist-mode)
+          (orgn--fold-show-all)  ; Belts and braces
+          (insert (concat "* " (orgn--get-file-property-value curr-chap-file "TITLE") "\n"))
+          (org-set-property (orgn--ls "matter-type-property") (upcase (orgn--ls "back-matter-heading")))
+          (while curr-properties-list
+            (setq curr-property (pop curr-properties-list))
+            (unless (org-entry-get (point) curr-property)
+              (org-set-property curr-property (orgn--get-file-property-value curr-chap-file curr-property))))
+          ;; Chapter setup with properties, just add contents.
+          (goto-char (buffer-size))
+          (insert "\n")
+          (insert (orgn--get-file-subtree curr-chap-file (orgn--ls "content-header") t))
+          (setq content (concat content (buffer-substring (point-min) (buffer-size))))))
       ;; Generate Org export file.
       (orgn--populate-export-org-template
        story-name
