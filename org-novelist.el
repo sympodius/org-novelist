@@ -248,11 +248,9 @@ The resultant string should be suitable for all computer systems using en-GB."
 The resultant string should be suitable for all computer systems using en-GB."
   (let* ((white-list (list "A" "a" "B" "b" "C" "c" "D" "d" "E" "e" "F" "f" "G" "g" "H" "h" "I" "i" "J" "j" "K" "k" "L" "l" "M" "m" "N" "n" "O" "o" "P" "p" "Q" "q" "R" "r" "S" "s" "T" "t" "U" "u" "V" "v" "W" "w" "X" "x" "Y" "y" "Z" "z" "0" "1" "2" "3" "4" "5" "6" "7" "8" "9" " "))  ; List of allowed characters in folder names, plus the space character. The space will also be removed later on, but we need it in the white list as it will be used as a word separator.
          (taboo-chars (mapcar 'string (string-to-list (orgn--remove-chars white-list str)))))  ; Add characters to this list that are not in the white list
-    (mapconcat 'identity
-	       (mapcar
-                (lambda (word) (capitalize (downcase word)))
-                (split-string (orgn--remove-chars taboo-chars str) " "))
-	       "")))
+    (mapconcat 'identity (mapcar
+                          (lambda (word) (capitalize (downcase word)))
+                          (split-string (orgn--remove-chars taboo-chars str) " ")) nil)))
 ;;;; British English (en-GB) ends here
 
 
