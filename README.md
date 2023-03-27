@@ -73,9 +73,9 @@ For users of `use-package`, an entry like the following will setup Org Novelist 
   :load-path "~/Downloads/"  ; The directory containing 'org-novelist.el'
   :custom
     (org-novelist-language-tag "en-GB")  ; The interface language for Org Novelist to use. It defaults to 'en-GB' when not set
-	(org-novelist-author "John Urquhart Ferguson")  ; The default author name to use when exporting a story. Each story can also override this setting
-	(org-novelist-author-email "mail@johnurquhartferguson.info")  ; The default author contact email to use when exporting a story. Each story can also override this setting
-	(org-novelist-automatic-referencing-p nil))  ; Set this variable to 't' if you want Org Novelist to always keep note links up to date. This may slow down some systems when operating on complex stories. It defaults to 'nil' when not set
+    (org-novelist-author "John Urquhart Ferguson")  ; The default author name to use when exporting a story. Each story can also override this setting
+    (org-novelist-author-email "mail@johnurquhartferguson.info")  ; The default author contact email to use when exporting a story. Each story can also override this setting
+    (org-novelist-automatic-referencing-p nil))  ; Set this variable to 't' if you want Org Novelist to always keep note links up to date. This may slow down some systems when operating on complex stories. It defaults to 'nil' when not set
 ```
 
 
@@ -126,7 +126,7 @@ Remember that automatic referencing will always keep the notes and glossary refe
 
 If you completely change your mind about a character and want to remove all their notes, Org Novelist provides the command: `org-novelist-destroy-character`
 
-When you run this command and select a character to delete, Org Novelist will present you with each file it is about to irrevocably remove from the system to confirm that you are happy to delete it. You must type in `yes` or `no` each time. Whether you choose to keep the note files or not, the appropriate entry will be removed from the character index. If you did keep the files, then you can still link to them from their references in the main story text. If you want to keep the old character files, but not have the story text link to them, the easiest solution would be moving the old character files from your story folder and storing them somewhere else. Another option would be to delete the `#+TITLE:` and `#+ALIAS:` lines in the old character notes files, or change them to something else like, `#+OLD-TITLE:` and `#+OLD-ALIASES:` so that they will no longer be found when the references are updated.
+When you run this command and select a character to delete, Org Novelist will present you with each file it is about to irrevocably remove from the system to confirm that you are happy to delete it. You must type in `yes` or `no` each time. Whether you choose to keep the note files or not, the appropriate entry will be removed from the character index. If you did keep the files, then you can still link to them from their references in the main story text. If you want to keep the old character files, but not have the story text link to them, the easiest solution would be moving the old character files from your story folder and storing them somewhere else. Another option would be to delete the `#+TITLE:` and `#+ALIASES:` lines in the old character notes files, or change them to something else like, `#+OLD-TITLE:` and `#+OLD-ALIASES:` so that they will no longer be found when the references are updated.
 
 Running the destroy function will not change any of your story's main text. In fact, none of Org Novelist's functions will touch your main story text. As such, you can be confident that you alone have the power to edit your story's content, and Org Novelist simply helps you manage and access your notes.
 
@@ -199,10 +199,10 @@ Let's write a couple of simple export templates and add them to your story. Firs
 (defun org-novelist--export-template (org-input-file output-file)
   "Given an ORG-INPUT-FILE from Org Novelist, export to OUTPUT-FILE."
   (let ((org-export-with-toc-orig nil)
-	(org-export-with-title-orig nil)
-	(org-export-with-author-orig nil)
-	(org-export-with-email-orig nil)
-	(org-export-with-date-orig nil))
+    (org-export-with-title-orig nil)
+    (org-export-with-author-orig nil)
+    (org-export-with-email-orig nil)
+    (org-export-with-date-orig nil))
     (when (boundp 'org-export-with-toc)
       (setq org-export-with-toc-orig org-export-with-toc))
     (when (boundp 'org-export-with-title)
@@ -252,11 +252,11 @@ Let's make a second export template for an odt file. Create a file called `org-o
 (defun org-novelist--export-template (org-input-file output-file)
   "Given an ORG-INPUT-FILE from Org Novelist, export to OUTPUT-FILE."
   (let ((org-export-with-toc-orig nil)
-	(org-export-with-title-orig nil)
-	(org-export-with-author-orig nil)
-	(org-export-with-email-orig nil)
-	(org-export-with-date-orig nil)
-	(org-odt-styles-file-orig nil))
+    (org-export-with-title-orig nil)
+    (org-export-with-author-orig nil)
+    (org-export-with-email-orig nil)
+    (org-export-with-date-orig nil)
+    (org-odt-styles-file-orig nil))
     (when (boundp 'org-export-with-toc)
       (setq org-export-with-toc-orig org-export-with-toc))
     (when (boundp 'org-export-with-title)
