@@ -3136,16 +3136,16 @@ PLACE-NAME will be the name given to the place."
         (curr-pos (point)))
     (if orgn-automatic-referencing-p
         (progn
-	  (setq orgn--autoref-p orgn-automatic-referencing-p)
+          (setq orgn--autoref-p orgn-automatic-referencing-p)
           (setq orgn-automatic-referencing-p nil)
-	  ;; Temporarily add a hook to reset automatic referencing in case user aborts minibuffer.
-	  (add-hook 'post-command-hook 'orgn--reset-automatic-referencing)
+          ;; Temporarily add a hook to reset automatic referencing in case user aborts minibuffer.
+          (add-hook 'post-command-hook 'orgn--reset-automatic-referencing)
           ;; (orgn--rebuild-indices story-folder)  ; This should really only be called when one of the functions manipulating an index are used
           (orgn--update-object-references story-folder)
           (orgn--update-glossaries story-folder)  ; Always call this after object-references, because object-references will delete all glossaries
           (setq orgn-automatic-referencing-p t)
-	  ;; Remove hook to reset automatic referencing since we made it to the end of the function.
-	  (remove-hook 'post-command-hook 'orgn--reset-automatic-referencing))
+          ;; Remove hook to reset automatic referencing since we made it to the end of the function.
+          (remove-hook 'post-command-hook 'orgn--reset-automatic-referencing))
       (progn
         ;; (orgn--rebuild-indices story-folder)  ; This should really only be called when one of the functions manipulating an index are used
         (orgn--update-object-references story-folder)
