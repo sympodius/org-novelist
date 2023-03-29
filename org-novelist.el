@@ -61,6 +61,11 @@
 (require 'org)  ; Org Novelist is built upon the incredible work of Org mode
 
 
+;;;; Global Variables
+
+(defvar orgn--autoref-p nil "Temporary store for last known value of org-novelist-automatic-referencing-p.")
+
+
 ;;;; Global Constants
 
 ;; This constant allows the system to work on Linux and Windows (and
@@ -1736,6 +1741,12 @@ open buffer."
       (orgn-update-references)
       (setq orgn-automatic-referencing-p t))))
 
+(defun orgn--reset-automatic-referencing ()
+  "Reset automatic referencing to last known value when user aborts minibuffer."
+  (when (string= (format "%s" this-command) "abort-minibuffers")
+    (setq orgn-automatic-referencing-p orgn--autoref-p)
+    (remove-hook 'post-command-hook 'orgn--reset-automatic-referencing)))
+
 (defun orgn--exports-hash-table (&optional story-folder)
   "Return a hash table of export templates and output files.
 This series of key/value pairs will come from the Org Novelist story's
@@ -2312,29 +2323,33 @@ STORY-NAME is the name of the story, and STORY-FOLDER is its save location."
   (setq story-name (orgn--sanitize-string story-name))
   (setq story-folder (concat story-folder / (orgn--system-safe-name story-name)))
   (catch 'NON-UNIQUE-STORY
-    (let ((orig-autoref-val-p orgn-automatic-referencing-p))
-      (setq orgn-automatic-referencing-p nil)
-      (if (file-directory-p story-folder)
-          (progn
-            (setq orgn-automatic-referencing-p orig-autoref-val-p)
-            (user-error (concat (orgn--ls "story-folder-already-in-use") ": " story-folder))
-            (throw 'NON-UNIQUE-STORY (concat (orgn--ls "story-folder-already-in-use") ": " story-folder)))
+    (setq orgn--autoref-p orgn-automatic-referencing-p)
+    (setq orgn-automatic-referencing-p nil)
+    ;; Temporarily add a hook to reset automatic referencing in case user aborts minibuffer.
+    (add-hook 'post-command-hook 'orgn--reset-automatic-referencing)
+    (if (file-directory-p story-folder)
         (progn
-          (unless (file-exists-p (file-name-directory (concat story-folder /)))
-            (make-directory (file-name-directory (concat story-folder /)) t))  ; The 't' tells emacs to create any non-existent parents directories that are needed as well
-          (orgn--string-to-file "" (concat story-folder / orgn--config-filename))  ; Create an empty configuration file for the story
-          (orgn--populate-main-template story-name story-folder)  ; Create the main entry-point file for the story
-          (orgn--populate-notes-template story-name story-folder)  ; Create the general notes file for the story
-          (orgn--populate-research-template story-name story-folder)  ; Create the general research file for the story
-          (orgn--populate-characters-template story-name story-folder)  ; Create the character index file for the story
-          (orgn--populate-places-template story-name story-folder)  ; Create the location index file for the story
-          (orgn--populate-props-template story-name story-folder)  ; Create the prop index file for the story
-          (orgn--populate-chapters-template story-name story-folder)  ; Create the chapter index file for the story
-          ;; At this point, all the minimalist files needed for a new story should have been created. All that remains for us to do is to open the story's main.org file in the current buffer.
-          (find-file (concat story-folder / (orgn--ls "main-file" orgn--file-ending)))))
-      (setq orgn-automatic-referencing-p orig-autoref-val-p)
-      (when orgn-automatic-referencing-p
-        (orgn-update-references story-folder)))))
+          (setq orgn-automatic-referencing-p orgn--autoref-p)
+          (user-error (concat (orgn--ls "story-folder-already-in-use") ": " story-folder))
+          (throw 'NON-UNIQUE-STORY (concat (orgn--ls "story-folder-already-in-use") ": " story-folder)))
+      (progn
+        (unless (file-exists-p (file-name-directory (concat story-folder /)))
+          (make-directory (file-name-directory (concat story-folder /)) t))  ; The 't' tells emacs to create any non-existent parents directories that are needed as well
+        (orgn--string-to-file "" (concat story-folder / orgn--config-filename))  ; Create an empty configuration file for the story
+        (orgn--populate-main-template story-name story-folder)  ; Create the main entry-point file for the story
+        (orgn--populate-notes-template story-name story-folder)  ; Create the general notes file for the story
+        (orgn--populate-research-template story-name story-folder)  ; Create the general research file for the story
+        (orgn--populate-characters-template story-name story-folder)  ; Create the character index file for the story
+        (orgn--populate-places-template story-name story-folder)  ; Create the location index file for the story
+        (orgn--populate-props-template story-name story-folder)  ; Create the prop index file for the story
+        (orgn--populate-chapters-template story-name story-folder)  ; Create the chapter index file for the story
+        ;; At this point, all the minimalist files needed for a new story should have been created. All that remains for us to do is to open the story's main.org file in the current buffer.
+        (find-file (concat story-folder / (orgn--ls "main-file" orgn--file-ending)))))
+    (setq orgn-automatic-referencing-p orgn--autoref-p)
+    (when orgn-automatic-referencing-p
+      (orgn-update-references story-folder))
+    ;; Remove hook to reset automatic referencing since we made it to the end of the function.
+    (remove-hook 'post-command-hook 'orgn--reset-automatic-referencing)))
 
 (defun orgn-new-chapter (chapter-name)
   "Create and modify the minimum number of linked files for a new chapter.
@@ -2353,9 +2368,11 @@ chapters to have a name, even if this will not be used on export."
            (keys (hash-table-keys existing-chapters))
            key
            chapter-matter-type
-           (file-malformed nil)
-           (orig-autoref-val-p orgn-automatic-referencing-p))
+           (file-malformed nil))
+      (setq orgn--autoref-p orgn-automatic-referencing-p)
       (setq orgn-automatic-referencing-p nil)
+      ;; Temporarily add a hook to reset automatic referencing in case user aborts minibuffer.
+      (add-hook 'post-command-hook 'orgn--reset-automatic-referencing)
       ;; At this point, we can be fairly certain the function was called while a file from an Org Novelist story was open in the current buffer.
       ;; However, we should still make sure the chapters.org file exists before we start trying to manipulate it. If it doesn't exist, just create one.
       ;; Either way, open the chapter index file when done.
@@ -2370,7 +2387,7 @@ chapters to have a name, even if this will not be used on export."
             (completing-read (concat (orgn--ls "name-already-in-use") " ") (list (orgn--ls "okay")))
             (setq chapter-name (read-string (concat (orgn--ls "chapter-name-query") " ")))
             (orgn-new-chapter chapter-name)  ; Call this function again
-            (setq orgn-automatic-referencing-p orig-autoref-val-p)
+            (setq orgn-automatic-referencing-p orgn--autoref-p)
             (throw 'CHAPTER-CREATION-FAULT (concat (orgn--ls "name-already-in-use") ": " story-folder / chapters-folder / chapter-file)))))
       (find-file (concat story-folder / indices-folder / chapters-file))  ; Open the chapter index file (it will stay open after this, so no need to mess with temp buffers)
       ;; Check if index is malformed.
@@ -2397,13 +2414,13 @@ chapters to have a name, even if this will not be used on export."
                 (when file-malformed
                   (orgn--rebuild-index chapters-file story-folder)))
             (progn
-              (setq orgn-automatic-referencing-p orig-autoref-val-p)
+              (setq orgn-automatic-referencing-p orgn--autoref-p)
               (error (concat story-folder / indices-folder / chapters-file " " (orgn--ls "is-not-readable")))
               (throw 'CHAPTER-CREATION-FAULT (concat story-folder / indices-folder / chapters-file " " (orgn--ls "is-not-readable")))))
         (progn
           (orgn--string-to-file "" (concat story-folder / indices-folder / chapters-file))
           (orgn-new-chapter chapter-name)  ; Call this function again
-          (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (setq orgn-automatic-referencing-p orgn--autoref-p)
           (throw 'CHAPTER-CREATION-FAULT (concat (orgn--ls "file-not-found") ": " story-folder / indices-folder / chapters-file))))
       ;; Chapter Index file should be formatted well enough to add new chapter. Find position for addition.
       (org-novelist-mode)
@@ -2483,7 +2500,7 @@ chapters to have a name, even if this will not be used on export."
                   (org-demote)  ; Turn heading into a subheading
                   (org-todo))))  ; Turn heading into a TODO item
           (progn  ; File malformed
-            (setq orgn-automatic-referencing-p orig-autoref-val-p)
+            (setq orgn-automatic-referencing-p orgn--autoref-p)
             (error (concat (orgn--ls "file-malformed") ": " story-folder / indices-folder / chapters-file))
             (throw 'CHAPTER-CREATION-FAULT (concat (orgn--ls "file-malformed") ": " story-folder / indices-folder / chapters-file)))))
       ;; By here, point should be at the correct location to create the new chapter.
@@ -2492,9 +2509,11 @@ chapters to have a name, even if this will not be used on export."
       (save-buffer)
       ;; Re-order the matter sections to be in the correct order here.
       (orgn--reorder-matter-in-chapter-index story-folder)
-      (setq orgn-automatic-referencing-p orig-autoref-val-p)
+      (setq orgn-automatic-referencing-p orgn--autoref-p)
       (when orgn-automatic-referencing-p
-        (orgn-update-references story-folder)))))
+        (orgn-update-references story-folder))
+      ;; Remove hook to reset automatic referencing since we made it to the end of the function.
+      (remove-hook 'post-command-hook 'orgn--reset-automatic-referencing))))
 
 (defun orgn-destroy-chapter ()
   "Remove a chapter from the chapter index, and delete associated files."
@@ -2505,9 +2524,11 @@ chapters to have a name, even if this will not be used on export."
            (indices-folder (orgn--ls "indices-folder"))
            (chapters-file (concat story-folder / indices-folder / (orgn--ls "chapters-file" orgn--file-ending)))
            (chapters-headlines (orgn--get-all-story-chapters-headlines story-folder))
-           chosen-chapter
-           (orig-autoref-val-p orgn-automatic-referencing-p))
+           chosen-chapter)
+      (setq orgn--autoref-p orgn-automatic-referencing-p)
       (setq orgn-automatic-referencing-p nil)
+      ;; Temporarily add a hook to reset automatic referencing in case user aborts minibuffer.
+      (add-hook 'post-command-hook 'orgn--reset-automatic-referencing)
       ;; chapters-headlines now contains a list of all chapters to present to user for deletion.
       ;; This includes files without an entry in the index, and entries in the index without a file.
       (if chapters-headlines
@@ -2521,24 +2542,26 @@ chapters to have a name, even if this will not be used on export."
             (orgn--delete-chapter-from-index chosen-chapter story-folder))
         (progn
           (message (concat chapters-file ": " (orgn--ls "no-chapters-found")))
-          (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (setq orgn-automatic-referencing-p orgn--autoref-p)
           (throw 'CHAPTER-DELETION-FAULT (concat chapters-file ": " (orgn--ls "no-chapters-found")))))
       (if (file-exists-p chapters-file)
           (if (file-readable-p chapters-file)
               (find-file chapters-file)
             (progn
-              (setq orgn-automatic-referencing-p orig-autoref-val-p)
+              (setq orgn-automatic-referencing-p orgn--autoref-p)
               (error (concat chapters-file " " (orgn--ls "is-not-readable")))
               (throw 'CHAPTER-DELETION-FAULT (concat chapters-file " " (orgn--ls "is-not-readable")))))
         (progn
-          (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (setq orgn-automatic-referencing-p orgn--autoref-p)
           (error (concat (orgn--ls "file-not-found") ": " chapters-file))
           (throw 'CHAPTER-DELETION-FAULT (concat (orgn--ls "file-not-found") ": " chapters-file))))
       ;; Re-order the matter sections to be in the correct order here.
       (orgn--reorder-matter-in-chapter-index story-folder)
-      (setq orgn-automatic-referencing-p orig-autoref-val-p)
+      (setq orgn-automatic-referencing-p orgn--autoref-p)
       (when orgn-automatic-referencing-p
-        (orgn-update-references story-folder)))))
+        (orgn-update-references story-folder))
+      ;; Remove hook to reset automatic referencing since we made it to the end of the function.
+      (remove-hook 'post-command-hook 'orgn--reset-automatic-referencing))))
 
 (defun orgn-rename-chapter ()
   "Rename a chapter from the chapter index and update associated files."
@@ -2550,9 +2573,11 @@ chapters to have a name, even if this will not be used on export."
            (chapters-headlines (orgn--get-all-story-chapters-headlines story-folder))
            chosen-chapter
            new-chapter-name
-           (chapters-file (concat story-folder / indices-folder / (orgn--ls "chapters-file" orgn--file-ending)))
-           (orig-autoref-val-p orgn-automatic-referencing-p))
+           (chapters-file (concat story-folder / indices-folder / (orgn--ls "chapters-file" orgn--file-ending))))
+      (setq orgn--autoref-p orgn-automatic-referencing-p)
       (setq orgn-automatic-referencing-p nil)
+      ;; Temporarily add a hook to reset automatic referencing in case user aborts minibuffer.
+      (add-hook 'post-command-hook 'orgn--reset-automatic-referencing)
       ;; chapters-headlines now contains a list of all chapters to present to user for renaming.
       ;; This includes files without an entry in the index, and entries in the index without a file.
       (if chapters-headlines
@@ -2567,24 +2592,26 @@ chapters to have a name, even if this will not be used on export."
             (orgn--rename-chapter-in-index chosen-chapter new-chapter-name story-folder))
         (progn
           (message (concat chapters-file ": " (orgn--ls "no-chapters-found")))
-          (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (setq orgn-automatic-referencing-p orgn--autoref-p)
           (throw 'RENAME-CHAPTER-FAULT-AT-INDEX (concat chapters-file ": " (orgn--ls "no-chapters-found")))))
       (if (file-exists-p chapters-file)
           (if (file-readable-p chapters-file)
               (find-file chapters-file)
             (progn
-              (setq orgn-automatic-referencing-p orig-autoref-val-p)
+              (setq orgn-automatic-referencing-p orgn--autoref-p)
               (error (concat chapters-file " " (orgn--ls "is-not-readable")))
               (throw 'RENAME-CHAPTER-FAULT-AT-INDEX (concat chapters-file " " (orgn--ls "is-not-readable")))))
         (progn
-          (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (setq orgn-automatic-referencing-p orgn--autoref-p)
           (error (concat (orgn--ls "file-not-found") ": " chapters-file))
           (throw 'RENAME-CHAPTER-FAULT-AT-INDEX (concat (orgn--ls "file-not-found") ": " chapters-file))))
       ;; Re-order the matter sections to be in the correct order here.
       (orgn--reorder-matter-in-chapter-index story-folder)
-      (setq orgn-automatic-referencing-p orig-autoref-val-p)
+      (setq orgn-automatic-referencing-p orgn--autoref-p)
       (when orgn-automatic-referencing-p
-        (orgn-update-references story-folder)))))
+        (orgn-update-references story-folder))
+      ;; Remove hook to reset automatic referencing since we made it to the end of the function.
+      (remove-hook 'post-command-hook 'orgn--reset-automatic-referencing))))
 
 (defun orgn-new-character (character-name)
   "Create and modify the minimum number of linked files for a new character.
@@ -2601,9 +2628,11 @@ CHARACTER-NAME will be the name given to the character."
            (character-file (concat (orgn--ls "character-file-prefix") (orgn--system-safe-name character-name) orgn--file-ending))
            (keys (hash-table-keys existing-characters))
            key
-           insert-point
-           (orig-autoref-val-p orgn-automatic-referencing-p))
+           insert-point)
+      (setq orgn--autoref-p orgn-automatic-referencing-p)
       (setq orgn-automatic-referencing-p nil)
+      ;; Temporarily add a hook to reset automatic referencing in case user aborts minibuffer.
+      (add-hook 'post-command-hook 'orgn--reset-automatic-referencing)
       (unless (file-exists-p (concat story-folder / indices-folder / characters-file))
         (orgn--populate-characters-template story-name story-folder))
       (while keys
@@ -2613,7 +2642,7 @@ CHARACTER-NAME will be the name given to the character."
             (completing-read (concat (orgn--ls "name-already-in-use") " ") (list (orgn--ls "okay")))
             (setq character-name (read-string (concat (orgn--ls "character-name-query") " ")))
             (orgn-new-character character-name)  ; Call this function again
-            (setq orgn-automatic-referencing-p orig-autoref-val-p)
+            (setq orgn-automatic-referencing-p orgn--autoref-p)
             (throw 'CHARACTER-CREATION-FAULT (concat (orgn--ls "name-already-in-use") ": " story-folder / notes-folder / character-file)))))
       (find-file (concat story-folder / indices-folder / characters-file))
       (goto-char (point-min))
@@ -2651,15 +2680,17 @@ CHARACTER-NAME will be the name given to the character."
             (orgn--delete-line)
             (orgn--rebuild-characters-index story-folder)
             (orgn-new-character character-name)  ; Call this function again
-            (setq orgn-automatic-referencing-p orig-autoref-val-p)
+            (setq orgn-automatic-referencing-p orgn--autoref-p)
             (throw 'CHARACTER-CREATION-FAULT (concat (orgn--ls "file-malformed") ": " story-folder / indices-folder / characters-file)))))
       ;; By here, point should be at the correct location to create the new character.
       (save-excursion  ; Allow cursor to be placed at the start of the new character name
         (orgn--make-character-at-index-point character-name))  ; Create character at point
       (save-buffer)
-      (setq orgn-automatic-referencing-p orig-autoref-val-p)
+      (setq orgn-automatic-referencing-p orgn--autoref-p)
       (when orgn-automatic-referencing-p
-        (orgn-update-references story-folder)))))
+        (orgn-update-references story-folder))
+      ;; Remove hook to reset automatic referencing since we made it to the end of the function.
+      (remove-hook 'post-command-hook 'orgn--reset-automatic-referencing))))
 
 (defun orgn-destroy-character ()
   "Remove a character from the character index, and delete associated files."
@@ -2669,9 +2700,11 @@ CHARACTER-NAME will be the name given to the character."
            (indices-folder (orgn--ls "indices-folder"))
            (characters-file (concat story-folder / indices-folder / (orgn--ls "characters-file" orgn--file-ending)))
            (characters-headlines (orgn--get-all-story-characters-headlines story-folder))
-           chosen-character
-           (orig-autoref-val-p orgn-automatic-referencing-p))
+           chosen-character)
+      (setq orgn--autoref-p orgn-automatic-referencing-p)
       (setq orgn-automatic-referencing-p nil)
+      ;; Temporarily add a hook to reset automatic referencing in case user aborts minibuffer.
+      (add-hook 'post-command-hook 'orgn--reset-automatic-referencing)
       ;; characters-headlines now contains a list of all characters to present to user for deletion.
       ;; This includes files without an entry in the index, and entries in the index without a file.
       (if characters-headlines
@@ -2685,22 +2718,24 @@ CHARACTER-NAME will be the name given to the character."
             (orgn--delete-character-from-index chosen-character story-folder))
         (progn
           (message (concat characters-file ": " (orgn--ls "no-chapters-found")))
-          (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (setq orgn-automatic-referencing-p orgn--autoref-p)
           (throw 'CHARACTER-DELETION-FAULT (concat characters-file ": " (orgn--ls "no-chapters-found")))))
       (if (file-exists-p characters-file)
           (if (file-readable-p characters-file)
               (find-file characters-file)
             (progn
-              (setq orgn-automatic-referencing-p orig-autoref-val-p)
+              (setq orgn-automatic-referencing-p orgn--autoref-p)
               (error (concat characters-file " " (orgn--ls "is-not-readable")))
               (throw 'CHARACTER-DELETION-FAULT (concat characters-file " " (orgn--ls "is-not-readable")))))
         (progn
-          (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (setq orgn-automatic-referencing-p orgn--autoref-p)
           (error (concat (orgn--ls "file-not-found") ": " characters-file))
           (throw 'CHARACTER-DELETION-FAULT (concat (orgn--ls "file-not-found") ": " characters-file))))
-      (setq orgn-automatic-referencing-p orig-autoref-val-p)
+      (setq orgn-automatic-referencing-p orgn--autoref-p)
       (when orgn-automatic-referencing-p
-        (orgn-update-references story-folder)))))
+        (orgn-update-references story-folder))
+      ;; Remove hook to reset automatic referencing since we made it to the end of the function.
+      (remove-hook 'post-command-hook 'orgn--reset-automatic-referencing))))
 
 (defun orgn-rename-character ()
   "Rename a character from the character index and update associated files."
@@ -2711,9 +2746,11 @@ CHARACTER-NAME will be the name given to the character."
            (characters-headlines (orgn--get-all-story-characters-headlines story-folder))
            chosen-character
            new-character-name
-           (characters-file (concat story-folder / indices-folder / (orgn--ls "characters-file" orgn--file-ending)))
-           (orig-autoref-val-p orgn-automatic-referencing-p))
+           (characters-file (concat story-folder / indices-folder / (orgn--ls "characters-file" orgn--file-ending))))
+      (setq orgn--autoref-p orgn-automatic-referencing-p)
       (setq orgn-automatic-referencing-p nil)
+      ;; Temporarily add a hook to reset automatic referencing in case user aborts minibuffer.
+      (add-hook 'post-command-hook 'orgn--reset-automatic-referencing)
       ;; characters-headlines now contains a list of all characters to present to user for renaming.
       ;; This includes files without an entry in the index, and entries in the index without a file.
       (if characters-headlines
@@ -2728,22 +2765,24 @@ CHARACTER-NAME will be the name given to the character."
             (orgn--rename-character-in-index chosen-character new-character-name story-folder))
         (progn
           (message (concat characters-file ": " (orgn--ls "no-characters-found")))
-          (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (setq orgn-automatic-referencing-p orgn--autoref-p)
           (throw 'RENAME-CHARACTER-FAULT-AT-INDEX (concat characters-file ": " (orgn--ls "no-chapters-found")))))
       (if (file-exists-p characters-file)
           (if (file-readable-p characters-file)
               (find-file characters-file)
             (progn
-              (setq orgn-automatic-referencing-p orig-autoref-val-p)
+              (setq orgn-automatic-referencing-p orgn--autoref-p)
               (error (concat characters-file " " (orgn--ls "is-not-readable")))
               (throw 'RENAME-CHARACTER-FAULT-AT-INDEX (concat characters-file " " (orgn--ls "is-not-readable")))))
         (progn
-          (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (setq orgn-automatic-referencing-p orgn--autoref-p)
           (error (concat (orgn--ls "file-not-found") ": " characters-file))
           (throw 'RENAME-CHARACTER-FAULT-AT-INDEX (concat (orgn--ls "file-not-found") ": " characters-file))))
-      (setq orgn-automatic-referencing-p orig-autoref-val-p)
+      (setq orgn-automatic-referencing-p orgn--autoref-p)
       (when orgn-automatic-referencing-p
-        (orgn-update-references story-folder)))))
+        (orgn-update-references story-folder))
+      ;; Remove hook to reset automatic referencing since we made it to the end of the function.
+      (remove-hook 'post-command-hook 'orgn--reset-automatic-referencing))))
 
 (defun orgn-new-prop (prop-name)
   "Create and modify the minimum number of linked files for a new prop.
@@ -2760,9 +2799,11 @@ PROP-NAME will be the name given to the prop."
            (prop-file (concat (orgn--ls "prop-file-prefix") (orgn--system-safe-name prop-name) orgn--file-ending))
            (keys (hash-table-keys existing-props))
            key
-           insert-point
-           (orig-autoref-val-p orgn-automatic-referencing-p))
+           insert-point)
+      (setq orgn--autoref-p orgn-automatic-referencing-p)
       (setq orgn-automatic-referencing-p nil)
+      ;; Temporarily add a hook to reset automatic referencing in case user aborts minibuffer.
+      (add-hook 'post-command-hook 'orgn--reset-automatic-referencing)
       (unless (file-exists-p (concat story-folder / indices-folder / props-file))
         (orgn--populate-props-template story-name story-folder))
       (while keys
@@ -2772,7 +2813,7 @@ PROP-NAME will be the name given to the prop."
             (completing-read (concat (orgn--ls "name-already-in-use") " ") (list (orgn--ls "okay")))
             (setq prop-name (read-string (concat (orgn--ls "prop-name-query") " ")))
             (orgn-new-prop prop-name)  ; Call this function again
-            (setq orgn-automatic-referencing-p orig-autoref-val-p)
+            (setq orgn-automatic-referencing-p orgn--autoref-p)
             (throw 'PROP-CREATION-FAULT (concat (orgn--ls "name-already-in-use") ": " story-folder / notes-folder / prop-file)))))
       (find-file (concat story-folder / indices-folder / props-file))
       (goto-char (point-min))
@@ -2810,15 +2851,17 @@ PROP-NAME will be the name given to the prop."
             (orgn--delete-line)
             (orgn--rebuild-props-index story-folder)
             (orgn-new-prop prop-name)  ; Call this function again
-            (setq orgn-automatic-referencing-p orig-autoref-val-p)
+            (setq orgn-automatic-referencing-p orgn--autoref-p)
             (throw 'PROP-CREATION-FAULT (concat (orgn--ls "file-malformed") ": " story-folder / indices-folder / props-file)))))
       ;; By here, point should be at the correct location to create the new prop.
       (save-excursion  ; Allow cursor to be placed at the start of the new prop name
         (orgn--make-prop-at-index-point prop-name))  ; Create prop at point
       (save-buffer)
-      (setq orgn-automatic-referencing-p orig-autoref-val-p)
+      (setq orgn-automatic-referencing-p orgn--autoref-p)
       (when orgn-automatic-referencing-p
-        (orgn-update-references story-folder)))))
+        (orgn-update-references story-folder))
+      ;; Remove hook to reset automatic referencing since we made it to the end of the function.
+      (remove-hook 'post-command-hook 'orgn--reset-automatic-referencing))))
 
 (defun orgn-destroy-prop ()
   "Remove a prop from the prop index, and delete associated files."
@@ -2828,9 +2871,11 @@ PROP-NAME will be the name given to the prop."
            (indices-folder (orgn--ls "indices-folder"))
            (props-file (concat story-folder / indices-folder / (orgn--ls "props-file" orgn--file-ending)))
            (props-headlines (orgn--get-all-story-props-headlines story-folder))
-           chosen-prop
-           (orig-autoref-val-p orgn-automatic-referencing-p))
+           chosen-prop)
+      (setq orgn--autoref-p orgn-automatic-referencing-p)
       (setq orgn-automatic-referencing-p nil)
+      ;; Temporarily add a hook to reset automatic referencing in case user aborts minibuffer.
+      (add-hook 'post-command-hook 'orgn--reset-automatic-referencing)
       ;; props-headlines now contains a list of all props to present to user for deletion.
       ;; This includes files without an entry in the index, and entries in the index without a file.
       (if props-headlines
@@ -2844,22 +2889,24 @@ PROP-NAME will be the name given to the prop."
             (orgn--delete-prop-from-index chosen-prop story-folder))
         (progn
           (message (concat props-file ": " (orgn--ls "no-props-found")))
-          (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (setq orgn-automatic-referencing-p orgn--autoref-p)
           (throw 'PROP-DELETION-FAULT (concat props-file ": " (orgn--ls "no-props-found")))))
       (if (file-exists-p props-file)
           (if (file-readable-p props-file)
               (find-file props-file)
             (progn
-              (setq orgn-automatic-referencing-p orig-autoref-val-p)
+              (setq orgn-automatic-referencing-p orgn--autoref-p)
               (error (concat props-file " " (orgn--ls "is-not-readable")))
               (throw 'PROP-DELETION-FAULT (concat props-file " " (orgn--ls "is-not-readable")))))
         (progn
-          (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (setq orgn-automatic-referencing-p orgn--autoref-p)
           (error (concat (orgn--ls "file-not-found") ": " props-file))
           (throw 'PROP-DELETION-FAULT (concat (orgn--ls "file-not-found") ": " props-file))))
-      (setq orgn-automatic-referencing-p orig-autoref-val-p)
+      (setq orgn-automatic-referencing-p orgn--autoref-p)
       (when orgn-automatic-referencing-p
-        (orgn-update-references story-folder)))))
+        (orgn-update-references story-folder))
+      ;; Remove hook to reset automatic referencing since we made it to the end of the function.
+      (remove-hook 'post-command-hook 'orgn--reset-automatic-referencing))))
 
 (defun orgn-rename-prop ()
   "Rename a prop from the prop index and update associated files."
@@ -2870,9 +2917,11 @@ PROP-NAME will be the name given to the prop."
            (props-headlines (orgn--get-all-story-props-headlines story-folder))
            chosen-prop
            new-prop-name
-           (props-file (concat story-folder / indices-folder / (orgn--ls "props-file" orgn--file-ending)))
-           (orig-autoref-val-p orgn-automatic-referencing-p))
+           (props-file (concat story-folder / indices-folder / (orgn--ls "props-file" orgn--file-ending))))
+      (setq orgn--autoref-p orgn-automatic-referencing-p)
       (setq orgn-automatic-referencing-p nil)
+      ;; Temporarily add a hook to reset automatic referencing in case user aborts minibuffer.
+      (add-hook 'post-command-hook 'orgn--reset-automatic-referencing)
       ;; props-headlines now contains a list of all props to present to user for renaming.
       ;; This includes files without an entry in the index, and entries in the index without a file.
       (if props-headlines
@@ -2887,22 +2936,24 @@ PROP-NAME will be the name given to the prop."
             (orgn--rename-prop-in-index chosen-prop new-prop-name story-folder))
         (progn
           (message (concat props-file ": " (orgn--ls "no-props-found")))
-          (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (setq orgn-automatic-referencing-p orgn--autoref-p)
           (throw 'RENAME-PROP-FAULT-AT-INDEX (concat props-file ": " (orgn--ls "no-props-found")))))
       (if (file-exists-p props-file)
           (if (file-readable-p props-file)
               (find-file props-file)
             (progn
-              (setq orgn-automatic-referencing-p orig-autoref-val-p)
+              (setq orgn-automatic-referencing-p orgn--autoref-p)
               (error (concat props-file " " (orgn--ls "is-not-readable")))
               (throw 'RENAME-PROP-FAULT-AT-INDEX (concat props-file " " (orgn--ls "is-not-readable")))))
         (progn
-          (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (setq orgn-automatic-referencing-p orgn--autoref-p)
           (error (concat (orgn--ls "file-not-found") ": " props-file))
           (throw 'RENAME-PROP-FAULT-AT-INDEX (concat (orgn--ls "file-not-found") ": " props-file))))
-      (setq orgn-automatic-referencing-p orig-autoref-val-p)
+      (setq orgn-automatic-referencing-p orgn--autoref-p)
       (when orgn-automatic-referencing-p
-        (orgn-update-references story-folder)))))
+        (orgn-update-references story-folder))
+      ;; Remove hook to reset automatic referencing since we made it to the end of the function.
+      (remove-hook 'post-command-hook 'orgn--reset-automatic-referencing))))
 
 (defun orgn-new-place (place-name)
   "Create and modify the minimum number of linked files for a new place.
@@ -2919,9 +2970,11 @@ PLACE-NAME will be the name given to the place."
            (place-file (concat (orgn--ls "place-file-prefix") (orgn--system-safe-name place-name) orgn--file-ending))
            (keys (hash-table-keys existing-places))
            key
-           insert-point
-           (orig-autoref-val-p orgn-automatic-referencing-p))
+           insert-point)
+      (setq orgn--autoref-p orgn-automatic-referencing-p)
       (setq orgn-automatic-referencing-p nil)
+      ;; Temporarily add a hook to reset automatic referencing in case user aborts minibuffer.
+      (add-hook 'post-command-hook 'orgn--reset-automatic-referencing)
       (unless (file-exists-p (concat story-folder / indices-folder / places-file))
         (orgn--populate-places-template story-name story-folder))
       (while keys
@@ -2931,7 +2984,7 @@ PLACE-NAME will be the name given to the place."
             (completing-read (concat (orgn--ls "name-already-in-use") " ") (list (orgn--ls "okay")))
             (setq place-name (read-string (concat (orgn--ls "place-name-query") " ")))
             (orgn-new-place place-name)  ; Call this function again
-            (setq orgn-automatic-referencing-p orig-autoref-val-p)
+            (setq orgn-automatic-referencing-p orgn--autoref-p)
             (throw 'PLACE-CREATION-FAULT (concat (orgn--ls "name-already-in-use") ": " story-folder / notes-folder / place-file)))))
       (find-file (concat story-folder / indices-folder / places-file))
       (goto-char (point-min))
@@ -2969,15 +3022,17 @@ PLACE-NAME will be the name given to the place."
             (orgn--delete-line)
             (orgn--rebuild-places-index story-folder)
             (orgn-new-place place-name)  ; Call this function again
-            (setq orgn-automatic-referencing-p orig-autoref-val-p)
+            (setq orgn-automatic-referencing-p orgn--autoref-p)
             (throw 'PLACE-CREATION-FAULT (concat (orgn--ls "file-malformed") ": " story-folder / indices-folder / places-file)))))
       ;; By here, point should be at the correct location to create the new place.
       (save-excursion  ; Allow cursor to be placed at the start of the new place name
         (orgn--make-place-at-index-point place-name))  ; Create place at point
       (save-buffer)
-      (setq orgn-automatic-referencing-p orig-autoref-val-p)
+      (setq orgn-automatic-referencing-p orgn--autoref-p)
       (when orgn-automatic-referencing-p
-        (orgn-update-references story-folder)))))
+        (orgn-update-references story-folder))
+      ;; Remove hook to reset automatic referencing since we made it to the end of the function.
+      (remove-hook 'post-command-hook 'orgn--reset-automatic-referencing))))
 
 (defun orgn-destroy-place ()
   "Remove a place from the place index, and delete associated files."
@@ -2987,9 +3042,11 @@ PLACE-NAME will be the name given to the place."
            (indices-folder (orgn--ls "indices-folder"))
            (places-file (concat story-folder / indices-folder / (orgn--ls "places-file" orgn--file-ending)))
            (places-headlines (orgn--get-all-story-places-headlines story-folder))
-           chosen-place
-           (orig-autoref-val-p orgn-automatic-referencing-p))
+           chosen-place)
+      (setq orgn--autoref-p orgn-automatic-referencing-p)
       (setq orgn-automatic-referencing-p nil)
+      ;; Temporarily add a hook to reset automatic referencing in case user aborts minibuffer.
+      (add-hook 'post-command-hook 'orgn--reset-automatic-referencing)
       ;; places-headlines now contains a list of all places to present to user for deletion.
       ;; This includes files without an entry in the index, and entries in the index without a file.
       (if places-headlines
@@ -3003,22 +3060,24 @@ PLACE-NAME will be the name given to the place."
             (orgn--delete-place-from-index chosen-place story-folder))
         (progn
           (message (concat places-file ": " (orgn--ls "no-places-found")))
-          (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (setq orgn-automatic-referencing-p orgn--autoref-p)
           (throw 'PLACE-DELETION-FAULT (concat places-file ": " (orgn--ls "no-places-found")))))
       (if (file-exists-p places-file)
           (if (file-readable-p places-file)
               (find-file places-file)
             (progn
-              (setq orgn-automatic-referencing-p orig-autoref-val-p)
+              (setq orgn-automatic-referencing-p orgn--autoref-p)
               (error (concat places-file " " (orgn--ls "is-not-readable")))
               (throw 'PLACE-DELETION-FAULT (concat places-file " " (orgn--ls "is-not-readable")))))
         (progn
-          (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (setq orgn-automatic-referencing-p orgn--autoref-p)
           (error (concat (orgn--ls "file-not-found") ": " places-file))
           (throw 'PLACE-DELETION-FAULT (concat (orgn--ls "file-not-found") ": " places-file))))
-      (setq orgn-automatic-referencing-p orig-autoref-val-p)
+      (setq orgn-automatic-referencing-p orgn--autoref-p)
       (when orgn-automatic-referencing-p
-        (orgn-update-references story-folder)))))
+        (orgn-update-references story-folder))
+      ;; Remove hook to reset automatic referencing since we made it to the end of the function.
+      (remove-hook 'post-command-hook 'orgn--reset-automatic-referencing))))
 
 (defun orgn-rename-place ()
   "Rename a place from the place index and update associated files."
@@ -3029,9 +3088,11 @@ PLACE-NAME will be the name given to the place."
            (places-headlines (orgn--get-all-story-places-headlines story-folder))
            chosen-place
            new-place-name
-           (places-file (concat story-folder / indices-folder / (orgn--ls "places-file" orgn--file-ending)))
-           (orig-autoref-val-p orgn-automatic-referencing-p))
+           (places-file (concat story-folder / indices-folder / (orgn--ls "places-file" orgn--file-ending))))
+      (setq orgn--autoref-p orgn-automatic-referencing-p)
       (setq orgn-automatic-referencing-p nil)
+      ;; Temporarily add a hook to reset automatic referencing in case user aborts minibuffer.
+      (add-hook 'post-command-hook 'orgn--reset-automatic-referencing)
       ;; places-headlines now contains a list of all places to present to user for renaming.
       ;; This includes files without an entry in the index, and entries in the index without a file.
       (if places-headlines
@@ -3046,22 +3107,24 @@ PLACE-NAME will be the name given to the place."
             (orgn--rename-place-in-index chosen-place new-place-name story-folder))
         (progn
           (message (concat places-file ": " (orgn--ls "no-places-found")))
-          (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (setq orgn-automatic-referencing-p orgn--autoref-p)
           (throw 'RENAME-PLACE-FAULT-AT-INDEX (concat places-file ": " (orgn--ls "no-places-found")))))
       (if (file-exists-p places-file)
           (if (file-readable-p places-file)
               (find-file places-file)
             (progn
-              (setq orgn-automatic-referencing-p orig-autoref-val-p)
+              (setq orgn-automatic-referencing-p orgn--autoref-p)
               (error (concat places-file " " (orgn--ls "is-not-readable")))
               (throw 'RENAME-PLACE-FAULT-AT-INDEX (concat places-file " " (orgn--ls "is-not-readable")))))
         (progn
-          (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (setq orgn-automatic-referencing-p orgn--autoref-p)
           (error (concat (orgn--ls "file-not-found") ": " places-file))
           (throw 'RENAME-PLACE-FAULT-AT-INDEX (concat (orgn--ls "file-not-found") ": " places-file))))
-      (setq orgn-automatic-referencing-p orig-autoref-val-p)
+      (setq orgn-automatic-referencing-p orgn--autoref-p)
       (when orgn-automatic-referencing-p
-        (orgn-update-references story-folder)))))
+        (orgn-update-references story-folder))
+      ;; Remove hook to reset automatic referencing since we made it to the end of the function.
+      (remove-hook 'post-command-hook 'orgn--reset-automatic-referencing))))
 
 (defun orgn-update-references (&optional story-folder)
   "Given a STORY-FOLDER, update all crossreferences in story."
@@ -3073,11 +3136,16 @@ PLACE-NAME will be the name given to the place."
         (curr-pos (point)))
     (if orgn-automatic-referencing-p
         (progn
+	  (setq orgn--autoref-p orgn-automatic-referencing-p)
           (setq orgn-automatic-referencing-p nil)
+	  ;; Temporarily add a hook to reset automatic referencing in case user aborts minibuffer.
+	  (add-hook 'post-command-hook 'orgn--reset-automatic-referencing)
           ;; (orgn--rebuild-indices story-folder)  ; This should really only be called when one of the functions manipulating an index are used
           (orgn--update-object-references story-folder)
           (orgn--update-glossaries story-folder)  ; Always call this after object-references, because object-references will delete all glossaries
-          (setq orgn-automatic-referencing-p t))
+          (setq orgn-automatic-referencing-p t)
+	  ;; Remove hook to reset automatic referencing since we made it to the end of the function.
+	  (remove-hook 'post-command-hook 'orgn--reset-automatic-referencing))
       (progn
         ;; (orgn--rebuild-indices story-folder)  ; This should really only be called when one of the functions manipulating an index are used
         (orgn--update-object-references story-folder)
@@ -3095,9 +3163,11 @@ PLACE-NAME will be the name given to the place."
            new-story-name
            new-story-folder-name
            curr-file
-           rename-story-folder-p
-           (orig-autoref-val-p orgn-automatic-referencing-p))
+           rename-story-folder-p)
+      (setq orgn--autoref-p orgn-automatic-referencing-p)
       (setq orgn-automatic-referencing-p nil)
+      ;; Temporarily add a hook to reset automatic referencing in case user aborts minibuffer.
+      (add-hook 'post-command-hook 'orgn--reset-automatic-referencing)
       (setq new-story-name (orgn--sanitize-string (read-string (concat (orgn--ls "new-story-name-query") " "))))
       (setq new-story-folder-name (orgn--system-safe-name new-story-name))
       ;; Ask user if they want to rename folder as well.
@@ -3134,18 +3204,20 @@ PLACE-NAME will be the name given to the place."
                   (find-file (concat (expand-file-name (concat story-folder / ".." / new-story-folder-name)) / (orgn--ls "main-file") orgn--file-ending))
                   (setq story-folder new-story-folder-name))
               (progn
-                (setq orgn-automatic-referencing-p orig-autoref-val-p)
+                (setq orgn-automatic-referencing-p orgn--autoref-p)
                 (find-file (concat story-folder / (orgn--ls "main-file") orgn--file-ending))
                 (user-error (concat (expand-file-name (concat story-folder / ".." / new-story-folder-name)) " " (orgn--ls "is-not-writable")))
                 (throw 'RENAME-STORY-FAULT (concat (expand-file-name (concat story-folder / ".." / new-story-folder-name)) " " (orgn--ls "is-not-writable")))))
           (progn
-            (setq orgn-automatic-referencing-p orig-autoref-val-p)
+            (setq orgn-automatic-referencing-p orgn--autoref-p)
             (find-file (concat story-folder / (orgn--ls "main-file") orgn--file-ending))
             (user-error (concat (orgn--ls "folder-already-exists") ": " (expand-file-name (concat story-folder / ".." / new-story-folder-name))))
             (throw 'RENAME-STORY-FAULT (concat (orgn--ls "folder-already-exists") ": " (expand-file-name (concat story-folder / ".." / new-story-folder-name)))))))
-      (setq orgn-automatic-referencing-p orig-autoref-val-p)
+      (setq orgn-automatic-referencing-p orgn--autoref-p)
       (when orgn-automatic-referencing-p
-        (orgn-update-references story-folder)))))
+        (orgn-update-references story-folder))
+      ;; Remove hook to reset automatic referencing since we made it to the end of the function.
+      (remove-hook 'post-command-hook 'orgn--reset-automatic-referencing))))
 
 (defun orgn-export-story ()
   "Export story to specified formats according to org-novelist-config.org.
@@ -3177,9 +3249,11 @@ export files."
            (content "")
            exports-hash
            keys
-           key
-           (orig-autoref-val-p orgn-automatic-referencing-p))
+           key)
+      (setq orgn--autoref-p orgn-automatic-referencing-p)
       (setq orgn-automatic-referencing-p nil)
+      ;; Temporarily add a hook to reset automatic referencing in case user aborts minibuffer.
+      (add-hook 'post-command-hook 'orgn--reset-automatic-referencing)
       (orgn--rebuild-indices story-folder)  ; Make sure the chapter index is in good condition (this function actually checks all indices)
       (if (file-exists-p (concat story-folder / indices-folder / chapter-index))
           (if (file-readable-p (concat story-folder / indices-folder / chapter-index))
@@ -3237,11 +3311,11 @@ export files."
                       (goto-char (point-max))))  ; No need to check any more, to skip to the end go exit loop
                   (setq bm-file-list (reverse bm-file-list))))
             (progn
-              (setq orgn-automatic-referencing-p orig-autoref-val-p)
+              (setq orgn-automatic-referencing-p orgn--autoref-p)
               (error (concat chapter-index " " (orgn--ls "is-not-readable")))
               (throw 'EXPORT-STORY-FAULT (concat chapter-index " " (orgn--ls "is-not-readable")))))
         (progn
-          (setq orgn-automatic-referencing-p orig-autoref-val-p)
+          (setq orgn-automatic-referencing-p orgn--autoref-p)
           (error (concat (orgn--ls "file-not-found") ": " chapter-index))
           (throw 'EXPORT-STORY-FAULT (concat (orgn--ls "file-not-found") ": " chapter-index))))
       ;; Correctly ordered file lists have been made.
@@ -3326,9 +3400,11 @@ export files."
         (org-novelist--export-template (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending) key))
       ;; Open exported Org file.
       (find-file (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
-      (setq orgn-automatic-referencing-p orig-autoref-val-p)
+      (setq orgn-automatic-referencing-p orgn--autoref-p)
       (when orgn-automatic-referencing-p
-        (orgn-update-references story-folder)))))
+        (orgn-update-references story-folder))
+      ;; Remove hook to reset automatic referencing since we made it to the end of the function.
+      (remove-hook 'post-command-hook 'orgn--reset-automatic-referencing))))
 
 
 
