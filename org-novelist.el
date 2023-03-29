@@ -385,10 +385,9 @@ Otherwise, run org-fold-show-all."
     (org-show-all)))
 
 (defun orgn--delete-line ()
-  "If Org version is less than 9.6, delete line the old fashioned way."
+  "If Emacs version is less than 29, delete line the old fashioned way."
   (let ((inhibit-field-text-motion t))
-    (if (and (>= (string-to-number (nth 0 (split-string (org-version) "\\."))) 9)
-             (>= (string-to-number (nth 1 (split-string (org-version) "\\."))) 6))
+    (if (>= (string-to-number (nth 0 (split-string (string-trim-left (emacs-version) "GNU Emacs ") "\\."))) 29)
         (delete-line)
       (delete-region (line-beginning-position) (line-beginning-position 2)))))
 
