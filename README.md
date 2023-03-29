@@ -43,7 +43,7 @@ While Org Novelist focuses on making the writing process simpler, it's also easy
 
 
 # Install
-The Org Novelist package requires a correctly installed version of GNU Emacs 29 or higher. You can find more information on how to install and use Emacs at the [GNU Emacs website](https://www.gnu.org/software/emacs/).
+The Org Novelist package requires a correctly installed version of GNU Emacs 28.1 or higher. You can find more information on how to install and use Emacs at the [GNU Emacs website](https://www.gnu.org/software/emacs/).
 
 ## Try Without Installing
 If you just want to try Org Novelist without making it a permanent part of your Emacs setup, start by downloading the `org-novelist.el` file. Then, in Emacs, open a command buffer with <kbd>M-x</kbd> and run `load-file`. Navigate to `org-novelist.el` and its functions will be available in Emacs for the current session.
@@ -257,6 +257,96 @@ Let's make a second export template for an odt file. Create a file called `org-o
     (org-export-with-email-orig nil)
     (org-export-with-date-orig nil)
     (org-odt-styles-file-orig nil))
+    (when (boundp 'org-export-with-toc)
+      (setq org-export-with-toc-orig org-export-with-toc))
+    (when (boundp 'org-export-with-title)
+      (setq org-export-with-title-orig org-export-with-title))
+    (when (boundp 'org-export-with-author)
+      (setq org-export-with-author-orig org-export-with-author))
+    (when (boundp 'org-export-with-email)
+      (setq org-export-with-email-orig org-export-with-email))
+    (when (boundp 'org-export-with-date)
+      (setq org-export-with-date-orig org-export-with-date))
+    (when (boundp 'org-odt-styles-file)
+      (setq org-odt-styles-file-orig org-odt-styles-file))
+    (setq org-export-with-toc t)
+    (setq org-export-with-title t)
+    (setq org-export-with-author t)
+    (setq org-export-with-email t)
+    (setq org-export-with-date t)
+    (setq org-odt-styles-file nil)
+    (find-file org-input-file)
+    (org-odt-export-to-odt)
+    (setq org-odt-styles-file org-odt-styles-file-orig)
+    (setq org-export-with-toc org-export-with-toc-orig)
+    (setq org-export-with-title org-export-with-title-orig)
+    (setq org-export-with-author org-export-with-author-orig)
+    (setq org-export-with-email org-export-with-email-orig)
+    (setq org-export-with-date org-export-with-date-orig)
+    (make-directory (file-name-directory output-file) t)
+    (rename-file (concat (file-name-sans-extension org-input-file) ".odt") output-file t)))
+
+(provide 'org-odt-export-to-odt-en-gb)
+;;; org-odt-export-to-odt-en-gb.el ends here
+```
+
+Again, this is just a wrapper for Org mode's built-in `org-odt-export-to-odt` function, and will create a cleanly formatted ODT file.
+
+Now that you have your templates set up, you need to tell Org Novelist to use them. From you story's `main.org` file, follow the link to `Export Settings`. The new file will be blank, but you can fill it with these contents:
+
+```
+* Exports
+** [[file:Exports/Basic-ODT-en-GB/ExportedStoryName.odt][Basic ODT en-GB]]
+Exports/org-odt-export-to-odt-en-gb.el
+** [[file:Exports/Basic-PDF-en-GB/ExportedStoryName.pdf][Basic PDF en-GB]]
+Exports/org-latex-export-to-pdf-en-gb.el
+```
+
+You can change `ExportedStoryName` to whatever you'd like the output files to be called. The directory before that is where the file will be saved. It doesn't need to be relative to your main story folder, but keeping it relative will make it easier to move and store the story folder elsewhere if you need to. The line under the heading is the location of the export template file. To ensure the output will be reproducible, storing the template in the story folder like this will be better. However, if you wish to use the same export template for multiple stories and only update it in one place, it might be easier for all your stories to link to the same file. Either way, the choice is yours.
+
+Save the file, and then run the following command: `org-novelist-export-story`
+
+You will be presented with a new buffer containing your whole story in one Org file.
+
+Additionally, you should now have two exported files in two new folders within your story's `Exports` folder. You can add as many output formats as you like using this system. Other example templates can be found at [https://github.com/sympodius/org-novelist-export-templates/](https://github.com/sympodius/org-novelist-export-templates/)
+
+On the subject of keeping output files reproducible, you can also lock the title, author, author email, and date of any story. This is also useful if you want to publish something using a different name and email than what you set as the Org Novelist default for your stories. Change the export settings file to something like this:
+
+```
+#+TITLE: A Totally Different Story Name
+#+AUTHOR: A. D. Ifferent-Author
+#+EMAIL: pseudo@nym-email.com
+#+DATE: [2023-03-17 Fri 12:00]
+* Exports
+** [[file:Exports/Basic-ODT-en-GB/ExportedStoryName.odt][Basic ODT en-GB]]
+Exports/org-odt-export-to-odt-en-gb.el
+** [[file:Exports/Basic-PDF-en-GB/ExportedStoryName.pdf][Basic PDF en-GB]]
+Exports/org-latex-export-to-pdf-en-gb.el
+```
+
+From now on, running `org-novelist-export-story` will use these settings for the title, author, author email, and date, no matter what else is set in the story files, or the global Org Novelist settings. If you only want to override some of these, you obviously don't need to include the others.
+
+This ends the tutorial for the main features of Org Novelist. I designed this system for myself, but I hope it proves useful to you. The main goal has always been to help make the boring stuff easier so that you can spend more time on writing. I sincerely hope it helps make your writing more enjoyable.
+
+
+# Summary of Functions
++ `org-novelist-new-story` - Setup the skeleton files for a new story.
++ `org-novelist-new-chapter` - Add a new chapter to the current story.
++ `org-novelist-destroy-chapter` - Delete the files and index entry for a chapter in the current story.
++ `org-novelist-rename-chapter` - Rename a chapter in the current story.
++ `org-novelist-new-character` - Add notes for a character to the current story.
++ `org-novelist-destroy-character` - Delete the notes and index entry for a character in the current story.
++ `org-novelist-rename-character` - Rename the notes and index entry for a character in the current story.
++ `org-novelist-new-prop` - Add notes for a prop to the current story.
++ `org-novelist-destroy-prop` - Delete the notes and index entry for a prop in the current story.
++ `org-novelist-rename-prop` - Rename the notes and index entry for a prop in the current story.
++ `org-novelist-new-place` - Add notes for a place to the current story.
++ `org-novelist-destroy-place` - Delete the notes and index entry for a place in the current story.
++ `org-novelist-rename-place` - Rename the notes and index entry for a place in the current story.
++ `org-novelist-update-references` - Force a system update of notes references.
++ `org-novelist-rename-story` - Rename a story and, optionally, its directory.
++ `org-novelist-export-story` - Export the story to a single Org file, and any other formats specified in export settings.
+(org-odt-styles-file-orig nil))
     (when (boundp 'org-export-with-toc)
       (setq org-export-with-toc-orig org-export-with-toc))
     (when (boundp 'org-export-with-title)
