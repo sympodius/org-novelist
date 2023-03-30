@@ -1239,7 +1239,16 @@ open buffer."
                                                        new-object-name)
                                                (buffer-string)))
                     (orgn--string-to-file index-file-contents index-file)
-                    (revert-buffer t t t))))
+                    (revert-buffer t t t)))
+		;; Place point at start of renamed object
+		(goto-char (point-max))
+		(re-search-backward
+		 (regexp-quote (format "\[\[file:..%s%s\]\[%s\]\]"
+                                       (orgn--ls / objects-folder /)
+                                       (concat (orgn--ls object-file-prefix) (orgn--system-safe-name new-object-name) orgn--file-ending)
+                                       new-object-name))
+		 nil t)
+		)
             (progn
               (error (concat index-file " " (orgn--ls "is-not-readable")))
               (throw 'OBJECT-RENAME-IN-INDEX-FAULT (concat index-file " " (orgn--ls "is-not-readable")))))
@@ -2504,11 +2513,15 @@ chapters to have a name, even if this will not be used on export."
             (error (concat (orgn--ls "file-malformed") ": " story-folder / indices-folder / chapters-file))
             (throw 'CHAPTER-CREATION-FAULT (concat (orgn--ls "file-malformed") ": " story-folder / indices-folder / chapters-file)))))
       ;; By here, point should be at the correct location to create the new chapter.
-      (save-excursion  ; Allow cursor to be placed at the start of the new chapter name
-        (orgn--make-chapter-at-index-point chapter-name))  ; Create chapter at point
+      (orgn--make-chapter-at-index-point chapter-name)  ; Create chapter at point
       (save-buffer)
       ;; Re-order the matter sections to be in the correct order here.
       (orgn--reorder-matter-in-chapter-index story-folder)
+      ;; Place cursor at the start of the new chapter name.
+      (goto-char (point-max))
+      (re-search-backward
+       (regexp-quote chapter-name)
+       nil t)
       (setq orgn-automatic-referencing-p orgn--autoref-p)
       (when orgn-automatic-referencing-p
         (orgn-update-references story-folder))
@@ -2607,6 +2620,11 @@ chapters to have a name, even if this will not be used on export."
           (throw 'RENAME-CHAPTER-FAULT-AT-INDEX (concat (orgn--ls "file-not-found") ": " chapters-file))))
       ;; Re-order the matter sections to be in the correct order here.
       (orgn--reorder-matter-in-chapter-index story-folder)
+      ;; Place cursor at the start of the new chapter name.
+      (goto-char (point-max))
+      (re-search-backward
+       (regexp-quote new-chapter-name)
+       nil t)
       (setq orgn-automatic-referencing-p orgn--autoref-p)
       (when orgn-automatic-referencing-p
         (orgn-update-references story-folder))
