@@ -1240,15 +1240,15 @@ open buffer."
                                                (buffer-string)))
                     (orgn--string-to-file index-file-contents index-file)
                     (revert-buffer t t t)))
-		;; Place point at start of renamed object
-		(goto-char (point-max))
-		(re-search-backward
-		 (regexp-quote (format "\[\[file:..%s%s\]\[%s\]\]"
+                ;; Place point at start of renamed object
+                (goto-char (point-max))
+                (re-search-backward
+                 (regexp-quote (format "\[\[file:..%s%s\]\[%s\]\]"
                                        (orgn--ls / objects-folder /)
                                        (concat (orgn--ls object-file-prefix) (orgn--system-safe-name new-object-name) orgn--file-ending)
                                        new-object-name))
-		 nil t)
-		)
+                 nil t)
+                )
             (progn
               (error (concat index-file " " (orgn--ls "is-not-readable")))
               (throw 'OBJECT-RENAME-IN-INDEX-FAULT (concat index-file " " (orgn--ls "is-not-readable")))))
