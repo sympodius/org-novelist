@@ -2466,12 +2466,12 @@ chapters to have a name, even if this will not be used on export."
                                 (progn
                                   (re-search-backward org-outline-regexp-bol nil t)  ; Go to parent heading
                                   (org-end-of-subtree)  ; Go to end of last subheading in child tree
-                                  (org-insert-heading-after-current)  ; Add the beginning of a new heading at the end of the current tree
+                                  (org-insert-heading-respect-content)  ; Add the beginning of a new heading at the end of the current tree
                                   (org-todo))  ; Turn heading into a TODO item
                               ;; Matter type found, but it is empty.
                               (progn
                                 (org-end-of-subtree)  ; Go to end of last subheading
-                                (org-insert-heading-after-current)  ; Add the beginning of a new heading at the end of the current tree
+                                (org-insert-heading-respect-content)  ; Add the beginning of a new heading at the end of the current tree
                                 (org-demote)  ; Turn heading into a subheading
                                 (org-todo)))  ; Turn heading into a TODO item
                             (throw 'MATTER-LOOP-EXIT (orgn--ls "new-chapter-created")))
@@ -2484,28 +2484,28 @@ chapters to have a name, even if this will not be used on export."
                               (progn
                                 (re-search-backward org-outline-regexp-bol nil t)  ; Go to parent heading
                                 (org-end-of-subtree)  ; Go to end of last subheading
-                                (org-insert-heading-after-current)  ; Add the beginning of a new heading at the end of the current tree
+                                (org-insert-heading-respect-content)  ; Add the beginning of a new heading at the end of the current tree
                                 (insert chapter-matter-type)  ; Create section heading
                                 (org-promote)  ; Turn subheading into a heading
-                                (org-insert-heading-after-current)  ; Add the beginning of a new heading at the end of the current tree
+                                (org-insert-heading-respect-content)  ; Add the beginning of a new heading at the end of the current tree
                                 (org-demote)  ; Turn heading into a subheading
                                 (org-todo))  ; Turn heading into a TODO item
                             ;; Subheadings not found
                             (progn
                               (org-end-of-subtree)  ; Go to end of last subheading
-                              (org-insert-heading-after-current)  ; Add the beginning of a new heading at the end of the current tree
+                              (org-insert-heading-respect-content)  ; Add the beginning of a new heading at the end of the current tree
                               (insert chapter-matter-type)  ; Create section heading
-                              (org-insert-heading-after-current)  ; Add the beginning of a new heading at the end of the current tree
+                              (org-insert-heading-respect-content)  ; Add the beginning of a new heading at the end of the current tree
                               (org-demote)  ; Turn heading into a subheading
                               (org-todo)))  ; Turn heading into a TODO item
                           (throw 'MATTER-LOOP-EXIT (orgn--ls "no-more-headings"))))))
                 (progn ;; No matter found, create needed one and add chapter
                   ;; Create the required matter section and setup for new chapter within it.
                   (org-end-of-subtree)  ; Go to end of last subheading
-                  (org-insert-heading-after-current)  ; Add the beginning of a new heading at the end of the current tree
+                  (org-insert-heading-respect-content)  ; Add the beginning of a new heading at the end of the current tree
                   (org-demote)  ; Turn heading into a subheading
                   (insert chapter-matter-type)  ; Create section heading
-                  (org-insert-heading-after-current)  ; Add the beginning of a new heading at the end of the current tree
+                  (org-insert-heading-respect-content)  ; Add the beginning of a new heading at the end of the current tree
                   (org-demote)  ; Turn heading into a subheading
                   (org-todo))))  ; Turn heading into a TODO item
           (progn  ; File malformed
@@ -2676,7 +2676,7 @@ CHARACTER-NAME will be the name given to the character."
                 (progn
                   (re-search-backward org-outline-regexp-bol nil t)  ; Go to parent heading
                   (org-end-of-subtree)  ; Go to end of last subheading in child tree
-                  (org-insert-heading-after-current)  ; Add the beginning of a new heading at the end of the current tree
+                  (org-insert-heading-respect-content)  ; Add the beginning of a new heading at the end of the current tree
                   (org-todo)  ; Turn heading into a TODO item
                   (setq insert-point (point))
                   (goto-char (point-min))
@@ -2685,7 +2685,7 @@ CHARACTER-NAME will be the name given to the character."
               ;; First entry.
               (progn
                 (org-end-of-subtree)  ; Go to end of last subheading
-                (org-insert-heading-after-current)  ; Add the beginning of a new heading at the end of the current tree
+                (org-insert-heading-respect-content)  ; Add the beginning of a new heading at the end of the current tree
                 (org-demote)  ; Turn heading into a subheading
                 (org-todo)  ; Turn heading into a TODO item
                 (setq insert-point (point))
@@ -2847,7 +2847,7 @@ PROP-NAME will be the name given to the prop."
                 (progn
                   (re-search-backward org-outline-regexp-bol nil t)  ; Go to parent heading
                   (org-end-of-subtree)  ; Go to end of last subheading in child tree
-                  (org-insert-heading-after-current)  ; Add the beginning of a new heading at the end of the current tree
+                  (org-insert-heading-respect-content)  ; Add the beginning of a new heading at the end of the current tree
                   (org-todo)  ; Turn heading into a TODO item
                   (setq insert-point (point))
                   (goto-char (point-min))
@@ -2856,7 +2856,7 @@ PROP-NAME will be the name given to the prop."
               ;; First entry.
               (progn
                 (org-end-of-subtree)  ; Go to end of last subheading
-                (org-insert-heading-after-current)  ; Add the beginning of a new heading at the end of the current tree
+                (org-insert-heading-respect-content)  ; Add the beginning of a new heading at the end of the current tree
                 (org-demote)  ; Turn heading into a subheading
                 (org-todo)  ; Turn heading into a TODO item
                 (setq insert-point (point))
@@ -3018,7 +3018,7 @@ PLACE-NAME will be the name given to the place."
                 (progn
                   (re-search-backward org-outline-regexp-bol nil t)  ; Go to parent heading
                   (org-end-of-subtree)  ; Go to end of last subheading in child tree
-                  (org-insert-heading-after-current)  ; Add the beginning of a new heading at the end of the current tree
+                  (org-insert-heading-respect-content)  ; Add the beginning of a new heading at the end of the current tree
                   (org-todo)  ; Turn heading into a TODO item
                   (setq insert-point (point))
                   (goto-char (point-min))
@@ -3027,7 +3027,7 @@ PLACE-NAME will be the name given to the place."
               ;; First entry.
               (progn
                 (org-end-of-subtree)  ; Go to end of last subheading
-                (org-insert-heading-after-current)  ; Add the beginning of a new heading at the end of the current tree
+                (org-insert-heading-respect-content)  ; Add the beginning of a new heading at the end of the current tree
                 (org-demote)  ; Turn heading into a subheading
                 (org-todo)  ; Turn heading into a TODO item
                 (setq insert-point (point))
