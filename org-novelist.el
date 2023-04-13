@@ -2324,6 +2324,7 @@ Once template is populated, it will be written to file."
 
 ;;;; User Acessible Functions
 
+;;;###autoload
 (defun orgn-new-story (story-name story-folder)
   "Create the minimum number of linked files and folders for a new story.
 STORY-NAME is the name of the story, and STORY-FOLDER is its save location."
@@ -2344,7 +2345,7 @@ STORY-NAME is the name of the story, and STORY-FOLDER is its save location."
       (progn
         (unless (file-exists-p (file-name-directory (concat story-folder /)))
           (make-directory (file-name-directory (concat story-folder /)) t))  ; The 't' tells emacs to create any non-existent parents directories that are needed as well
-        (orgn--string-to-file "" (concat story-folder / orgn--config-filename))  ; Create an empty configuration file for the story
+        (orgn--string-to-file (concat orgn--mode-identifier "\n") (concat story-folder / orgn--config-filename))  ; Create an empty configuration file for the story
         (orgn--populate-main-template story-name story-folder)  ; Create the main entry-point file for the story
         (orgn--populate-notes-template story-name story-folder)  ; Create the general notes file for the story
         (orgn--populate-research-template story-name story-folder)  ; Create the general research file for the story
@@ -3406,7 +3407,7 @@ export files."
           (orgn--set-file-property-value curr-property
                                          (orgn--get-file-property-value (concat story-folder / orgn--config-filename) curr-property)
                                          (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending)))
-        (orgn--save-current-file))
+        (orgn--save-current-file))  ; This is currently unchecked for when user enters an invalid filename. As such, it could result in an error that will not allow orgn-automatic-referencing-p to be reset
       ;; By this point, we should have the Org file correctly exported.
       ;; Run through the export templates in the config file.
       (setq exports-hash (orgn--exports-hash-table story-folder))
