@@ -8,9 +8,9 @@
 ;; URL: https://johnurquhartferguson.info
 ;; Keywords: fiction, writing, outlines
 ;; Prefix: org-novelist
-;; Package-Requires: ((org "9.5.5"))
+;; Package-Requires: ((emacs "28.1") (org "9.5.5"))
 
-;; Version: 0.0.2
+;; Version: 0.0.3
 
 ;; This file is not part of GNU Emacs.
 ;;
