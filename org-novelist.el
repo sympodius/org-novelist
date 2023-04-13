@@ -402,27 +402,25 @@ Otherwise, run org-fold-show-all."
 (defun orgn--string-to-file (str filename)
   "Create/Overwrite FILENAME with the contents of STR."
   (catch 'FILE-NOT-WRITABLE
-    (let ((current-buffer (current-buffer)))
-      (if (get-file-buffer filename)
-          (progn
-            ;; Filename already open in a buffer. Update buffer and save.
-            (switch-to-buffer (get-file-buffer filename))
+    (if (get-file-buffer filename)
+        (progn
+          ;; Filename already open in a buffer. Update buffer and save.
+          (with-current-buffer (get-file-buffer filename)
             (erase-buffer)
             (insert str)
-            (save-buffer)  ; Calling `save-buffer' with an argument of 0 would stop back-up files being created, but it's probably best to respect the user's Emacs setup in this regard
-            (switch-to-buffer current-buffer))
-        (progn
-          ;; Filename not open in a buffer. Just deal with file.
-          (with-temp-buffer
-            (insert str)
-            ;; If directory doesn't exist, create it.
-            (unless (file-exists-p (file-name-directory filename))
-              (make-directory (file-name-directory filename) t))
-            (if (file-writable-p filename)
-                (write-region (point-min) (point-max) filename)
-              (progn
-                (error (concat filename " " (orgn--ls "is-not-writable")))
-                (throw 'FILE-NOT-WRITABLE (concat filename " " (orgn--ls "is-not-writable")))))))))))
+            (save-buffer)))  ; Calling `save-buffer' with an argument of 0 would stop back-up files being created, but it's probably best to respect the user's Emacs setup in this regard
+      (progn
+        ;; Filename not open in a buffer. Just deal with file.
+        (with-temp-buffer
+          (insert str)
+          ;; If directory doesn't exist, create it.
+          (unless (file-exists-p (file-name-directory filename))
+            (make-directory (file-name-directory filename) t))
+          (if (file-writable-p filename)
+              (write-region (point-min) (point-max) filename)
+            (progn
+              (error (concat filename " " (orgn--ls "is-not-writable")))
+              (throw 'FILE-NOT-WRITABLE (concat filename " " (orgn--ls "is-not-writable"))))))))))
 
 (defun orgn--generate-file-from-template (substitutions template filename)
   "Generate a new file from TEMPLATE string and SUBSTITUTIONS hash table.
@@ -588,16 +586,12 @@ user for confirmation if new file name already in use."
   "Save the current buffer to its associated file.
 If no file associated with current buffer, do nothing.
 If passed a FILE, see if their is a matching buffer and save it."
-  (let ((current-file (buffer-file-name))
-        (current-buffer (current-buffer)))
+  (let ((current-file (buffer-file-name)))
     (if file
-        (progn
-          (switch-to-buffer (get-file-buffer file))
-          (save-buffer)
-          (switch-to-buffer current-buffer))
-      (progn
-        (when current-file
-          (save-buffer))))))
+        (with-current-buffer (get-file-buffer file)
+          (save-buffer))
+      (when current-file
+        (save-buffer)))))
 
 (defun orgn--make-chapter-at-index-point (chapter-name)
   "Create a new chapter file and link to it from the current point.
@@ -708,7 +702,7 @@ related to the current buffer."
                         (when (file-exists-p (concat story-folder / chapters-folder / chapter-key))
                           (when (file-readable-p (concat story-folder / chapters-folder / chapter-key))
                             (when (get-file-buffer (concat story-folder / chapters-folder / chapter-key))
-                              (switch-to-buffer (get-file-buffer (concat story-folder / chapters-folder / chapter-key)))
+                              (set-buffer (get-file-buffer (concat story-folder / chapters-folder / chapter-key)))
                               (save-buffer))))
                         ;; Removing the glossary is necessary to prevent extraneous references.
                         (setq prepped-file-contents (orgn--delete-org-subtrees-from-string
@@ -1460,7 +1454,7 @@ open buffer."
             (if (file-readable-p (concat story-folder / chapters-folder / key))
                 (progn
                   (when (get-file-buffer (concat story-folder / chapters-folder / key))
-                    (switch-to-buffer (get-file-buffer (concat story-folder / chapters-folder / key)))
+                    (set-buffer (get-file-buffer (concat story-folder / chapters-folder / key)))
                     (save-buffer))
                   (orgn--delete-org-subtrees-from-file (orgn--ls "glossary-header") (concat story-folder / chapters-folder / key))
                   (with-temp-buffer
@@ -1506,7 +1500,7 @@ open buffer."
             (if (file-readable-p (concat story-folder / notes-folder / key))
                 (progn
                   (when (get-file-buffer (concat story-folder / notes-folder / key))
-                    (switch-to-buffer (get-file-buffer (concat story-folder / notes-folder / key)))
+                    (set-buffer (get-file-buffer (concat story-folder / notes-folder / key)))
                     (save-buffer))
                   (setq appearances (orgn--make-file-chapter-references-string (concat story-folder / notes-folder / key) story-folder))
                   (orgn--delete-org-subtrees-from-file (orgn--ls "appearances-in-chapters-header") (concat story-folder / notes-folder / key))
@@ -3169,7 +3163,7 @@ PLACE-NAME will be the name given to the place."
         ;; (orgn--rebuild-indices story-folder)  ; This should really only be called when one of the functions manipulating an index are used
         (orgn--update-object-references story-folder)
         (orgn--update-glossaries story-folder)))  ; Always call this after object-references, because object-references will delete all glossaries
-    (switch-to-buffer curr-buff)
+    (set-buffer curr-buff)
     (goto-char curr-pos)))
 
 (defun orgn-rename-story ()
@@ -3197,7 +3191,7 @@ PLACE-NAME will be the name given to the place."
         (unless (string= (substring (file-name-nondirectory curr-file) 0 1) ".")
           ;; If open in buffer, save and close.
           (when (and rename-story-folder-p (get-file-buffer curr-file))
-            (switch-to-buffer (get-file-buffer curr-file))
+            (set-buffer (get-file-buffer curr-file))
             (save-buffer)
             (kill-buffer))
           ;; Don't add the main.org file.
@@ -3211,7 +3205,7 @@ PLACE-NAME will be the name given to the place."
       ;; Change title in main.org.
       (orgn--set-story-name new-story-name story-folder)
       (when (and rename-story-folder-p (get-file-buffer (concat story-folder / (orgn--ls "main-file") orgn--file-ending)))
-        (switch-to-buffer (get-file-buffer curr-file))
+        (set-buffer (get-file-buffer curr-file))
         (save-buffer)
         (kill-buffer))
       (when rename-story-folder-p
