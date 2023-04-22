@@ -586,12 +586,11 @@ user for confirmation if new file name already in use."
   "Save the current buffer to its associated file.
 If no file associated with current buffer, do nothing.
 If passed a FILE, see if their is a matching buffer and save it."
-  (let ((current-file (buffer-file-name)))
-    (if file
-        (with-current-buffer (get-file-buffer file)
-          (save-buffer))
-      (when current-file
-        (save-buffer)))))
+  (if (and file (get-file-buffer file))
+      (with-current-buffer (get-file-buffer file)
+        (save-buffer))
+    (when (buffer-file-name)
+      (save-buffer))))
 
 (defun orgn--make-chapter-at-index-point (chapter-name)
   "Create a new chapter file and link to it from the current point.
