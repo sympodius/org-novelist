@@ -3338,7 +3338,7 @@ export files."
         (with-temp-buffer
           (org-novelist-mode)
           (orgn--fold-show-all)  ; Belts and braces
-          (insert (concat "* " (orgn--get-file-property-value curr-chap-file "TITLE") "\n"))
+          (insert "* " (orgn--get-file-property-value curr-chap-file "TITLE") "\n")
           (org-set-property (orgn--ls "matter-type-property") (upcase (orgn--ls "front-matter-heading")))
           (while curr-properties-list
             (setq curr-property (pop curr-properties-list))
@@ -3355,7 +3355,7 @@ export files."
         (with-temp-buffer
           (org-novelist-mode)
           (orgn--fold-show-all)  ; Belts and braces
-          (insert (concat "* " (orgn--get-file-property-value curr-chap-file "TITLE") "\n"))
+          (insert "* " (orgn--get-file-property-value curr-chap-file "TITLE") "\n")
           (org-set-property (orgn--ls "matter-type-property") (upcase (orgn--ls "main-matter-heading")))
           (while curr-properties-list
             (setq curr-property (pop curr-properties-list))
@@ -3372,7 +3372,7 @@ export files."
         (with-temp-buffer
           (org-novelist-mode)
           (orgn--fold-show-all)  ; Belts and braces
-          (insert (concat "* " (orgn--get-file-property-value curr-chap-file "TITLE") "\n"))
+          (insert "* " (orgn--get-file-property-value curr-chap-file "TITLE") "\n")
           (org-set-property (orgn--ls "matter-type-property") (upcase (orgn--ls "back-matter-heading")))
           (while curr-properties-list
             (setq curr-property (pop curr-properties-list))
