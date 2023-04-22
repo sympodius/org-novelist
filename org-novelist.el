@@ -2334,8 +2334,15 @@ STORY-NAME is the name of the story, and STORY-FOLDER is its save location."
           (user-error (concat (orgn--ls "story-folder-already-in-use") ": " story-folder))
           (throw 'NON-UNIQUE-STORY (concat (orgn--ls "story-folder-already-in-use") ": " story-folder)))
       (progn
+	;; Create story folder.
         (unless (file-exists-p (file-name-directory (concat story-folder /)))
           (make-directory (file-name-directory (concat story-folder /)) t))  ; The 't' tells emacs to create any non-existent parents directories that are needed as well
+	;; Create empty export folder.
+	(unless (file-exists-p (file-name-directory (concat story-folder / (orgn--ls "exports-folder") /)))
+          (make-directory (file-name-directory (concat story-folder / (orgn--ls "exports-folder") /)) t))
+	;; Create empty chapters folder.
+	(unless (file-exists-p (file-name-directory (concat story-folder / (orgn--ls "chapters-folder") /)))
+          (make-directory (file-name-directory (concat story-folder / (orgn--ls "chapters-folder") /)) t))
         (orgn--string-to-file (concat orgn--mode-identifier "\n") (concat story-folder / orgn--config-filename))  ; Create an empty configuration file for the story
         (orgn--populate-main-template story-name story-folder)  ; Create the main entry-point file for the story
         (orgn--populate-notes-template story-name story-folder)  ; Create the general notes file for the story
