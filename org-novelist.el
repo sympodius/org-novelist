@@ -403,24 +403,22 @@ Otherwise, run org-fold-show-all."
   "Create/Overwrite FILENAME with the contents of STR."
   (catch 'FILE-NOT-WRITABLE
     (if (get-file-buffer filename)
-        (progn
-          ;; Filename already open in a buffer. Update buffer and save.
-          (with-current-buffer (get-file-buffer filename)
-            (erase-buffer)
-            (insert str)
-            (save-buffer)))  ; Calling `save-buffer' with an argument of 0 would stop back-up files being created, but it's probably best to respect the user's Emacs setup in this regard
-      (progn
-        ;; Filename not open in a buffer. Just deal with file.
-        (with-temp-buffer
+        ;; Filename already open in a buffer. Update buffer and save.
+        (with-current-buffer (get-file-buffer filename)
+          (erase-buffer)
           (insert str)
-          ;; If directory doesn't exist, create it.
-          (unless (file-exists-p (file-name-directory filename))
-            (make-directory (file-name-directory filename) t))
-          (if (file-writable-p filename)
-              (write-region (point-min) (point-max) filename)
-            (progn
-              (error (concat filename " " (orgn--ls "is-not-writable")))
-              (throw 'FILE-NOT-WRITABLE (concat filename " " (orgn--ls "is-not-writable"))))))))))
+          (save-buffer))  ; Calling `save-buffer' with an argument of 0 would stop back-up files being created, but it's probably best to respect the user's Emacs setup in this regard
+      ;; Filename not open in a buffer. Just deal with file.
+      (with-temp-buffer
+        (insert str)
+        ;; If directory doesn't exist, create it.
+        (unless (file-exists-p (file-name-directory filename))
+          (make-directory (file-name-directory filename) t))
+        (if (file-writable-p filename)
+            (write-region (point-min) (point-max) filename)
+          (progn
+            (error (concat filename " " (orgn--ls "is-not-writable")))
+            (throw 'FILE-NOT-WRITABLE (concat filename " " (orgn--ls "is-not-writable")))))))))
 
 (defun orgn--generate-file-from-template (substitutions template filename)
   "Generate a new file from TEMPLATE string and SUBSTITUTIONS hash table.
