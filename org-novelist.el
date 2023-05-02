@@ -434,8 +434,9 @@ The new file, FILENAME, will be saved to disk."
       (setq template (orgn--replace-string-in-string key (gethash key substitutions) template)))
     template))
 
-(defun orgn--replace-true-headline-in-org-heading (new-headline org-heading-components)
-  "Given an ORG-HEADING-COMPONENTS, replace the true headline with NEW-HEADLINE."
+(defun orgn--replace-true-headline-in-org-heading (new-headline org-heading-components &optional new-level)
+  "Given an ORG-HEADING-COMPONENTS, replace the true headline with NEW-HEADLINE.
+If integer NEW-LEVEL is specified, change heading to that level."
   (let* ((stars (nth 1 org-heading-components))
          (stars-str "")
          (todo-str (nth 2 org-heading-components))
@@ -443,6 +444,8 @@ The new file, FILENAME, will be saved to disk."
          ;; (true-headline-str (nth 4 org-heading-components))
          (tags-str (nth 5 org-heading-components))
          (output-str ""))
+    (when new-level
+      (setq stars new-level))
     (while (> stars 0)
       (setq stars (- stars 1))
       (setq stars-str (concat stars-str "*")))
@@ -3261,8 +3264,11 @@ export files."
            (mm-file-list '())
            (bm-file-list '())
            curr-chap-file
+           (curr-header "")
            curr-properties-list
+           curr-index-properties-list
            curr-property
+           curr-index-property
            (content "")
            exports-hash
            keys
@@ -3339,15 +3345,32 @@ export files."
       (while fm-file-list
         (setq curr-chap-file (expand-file-name (pop fm-file-list)))
         (setq curr-properties-list (delete "TITLE" (orgn--get-file-properties curr-chap-file)))
+        ;; Generate header for current chapter. TITLE property in file will override the one in the Chapter Index, but otherwise the Chapter Index line will be used, set to level 1.
+        (when (file-readable-p (concat story-folder / indices-folder / chapter-index))
+          (with-temp-buffer
+            (insert-file-contents (concat story-folder / indices-folder / chapter-index))
+            (org-novelist-mode)
+            (orgn--fold-show-all)  ; Belts and braces
+            (goto-char (point-min))
+            (re-search-forward (file-relative-name curr-chap-file) nil t)
+            (setq curr-header (orgn--replace-true-headline-in-org-heading (orgn--get-file-property-value curr-chap-file "TITLE") (org-heading-components) 1))
+            (setq curr-index-properties-list (org-entry-properties nil 'standard))))
         (with-temp-buffer
           (org-novelist-mode)
           (orgn--fold-show-all)  ; Belts and braces
-          (insert "* " (orgn--get-file-property-value curr-chap-file "TITLE") "\n")
+          (if (string=  curr-header "")
+              (insert "* " (orgn--get-file-property-value curr-chap-file "TITLE") "\n")
+            (insert curr-header "\n"))
+          (setq curr-header "")
+          ;; If the chapter index had any properties, we should probably include them as well. Doing it here will allow file level properties to override the index properties.
+          (while curr-index-properties-list
+            (setq curr-index-property (pop curr-index-properties-list))
+            (when (not (string= (cdr curr-index-property) "???"))
+              (org-set-property (car curr-index-property) (cdr curr-index-property))))
           (org-set-property (orgn--ls "matter-type-property") (upcase (orgn--ls "front-matter-heading")))
           (while curr-properties-list
             (setq curr-property (pop curr-properties-list))
-            (unless (org-entry-get (point) curr-property)
-              (org-set-property curr-property (orgn--get-file-property-value curr-chap-file curr-property))))
+            (org-set-property curr-property (orgn--get-file-property-value curr-chap-file curr-property)))
           ;; Chapter setup with properties, just add contents.
           (goto-char (buffer-size))
           (insert "\n")
@@ -3356,15 +3379,32 @@ export files."
       (while mm-file-list
         (setq curr-chap-file (pop mm-file-list))
         (setq curr-properties-list (delete "TITLE" (orgn--get-file-properties curr-chap-file)))
+        ;; Generate header for current chapter. TITLE property in file will override the one in the Chapter Index, but otherwise the Chapter Index line will be used, set to level 1.
+        (when (file-readable-p (concat story-folder / indices-folder / chapter-index))
+          (with-temp-buffer
+            (insert-file-contents (concat story-folder / indices-folder / chapter-index))
+            (org-novelist-mode)
+            (orgn--fold-show-all)  ; Belts and braces
+            (goto-char (point-min))
+            (re-search-forward (file-relative-name curr-chap-file) nil t)
+            (setq curr-header (orgn--replace-true-headline-in-org-heading (orgn--get-file-property-value curr-chap-file "TITLE") (org-heading-components) 1))
+            (setq curr-index-properties-list (org-entry-properties nil 'standard))))
         (with-temp-buffer
           (org-novelist-mode)
           (orgn--fold-show-all)  ; Belts and braces
-          (insert "* " (orgn--get-file-property-value curr-chap-file "TITLE") "\n")
+          (if (string=  curr-header "")
+              (insert "* " (orgn--get-file-property-value curr-chap-file "TITLE") "\n")
+            (insert curr-header "\n"))
+          (setq curr-header "")
+          ;; If the chapter index had any properties, we should probably include them as well. Doing it here will allow file level properties to override the index properties.
+          (while curr-index-properties-list
+            (setq curr-index-property (pop curr-index-properties-list))
+            (when (not (string= (cdr curr-index-property) "???"))
+              (org-set-property (car curr-index-property) (cdr curr-index-property))))
           (org-set-property (orgn--ls "matter-type-property") (upcase (orgn--ls "main-matter-heading")))
           (while curr-properties-list
             (setq curr-property (pop curr-properties-list))
-            (unless (org-entry-get (point) curr-property)
-              (org-set-property curr-property (orgn--get-file-property-value curr-chap-file curr-property))))
+            (org-set-property curr-property (orgn--get-file-property-value curr-chap-file curr-property)))
           ;; Chapter setup with properties, just add contents.
           (goto-char (buffer-size))
           (insert "\n")
@@ -3373,15 +3413,32 @@ export files."
       (while bm-file-list
         (setq curr-chap-file (expand-file-name (pop bm-file-list)))
         (setq curr-properties-list (delete "TITLE" (orgn--get-file-properties curr-chap-file)))
+        ;; Generate header for current chapter. TITLE property in file will override the one in the Chapter Index, but otherwise the Chapter Index line will be used, set to level 1.
+        (when (file-readable-p (concat story-folder / indices-folder / chapter-index))
+          (with-temp-buffer
+            (insert-file-contents (concat story-folder / indices-folder / chapter-index))
+            (org-novelist-mode)
+            (orgn--fold-show-all)  ; Belts and braces
+            (goto-char (point-min))
+            (re-search-forward (file-relative-name curr-chap-file) nil t)
+            (setq curr-header (orgn--replace-true-headline-in-org-heading (orgn--get-file-property-value curr-chap-file "TITLE") (org-heading-components) 1))
+            (setq curr-index-properties-list (org-entry-properties nil 'standard))))
         (with-temp-buffer
           (org-novelist-mode)
           (orgn--fold-show-all)  ; Belts and braces
-          (insert "* " (orgn--get-file-property-value curr-chap-file "TITLE") "\n")
+          (if (string=  curr-header "")
+              (insert "* " (orgn--get-file-property-value curr-chap-file "TITLE") "\n")
+            (insert curr-header "\n"))
+          (setq curr-header "")
+          ;; If the chapter index had any properties, we should probably include them as well. Doing it here will allow file level properties to override the index properties.
+          (while curr-index-properties-list
+            (setq curr-index-property (pop curr-index-properties-list))
+            (when (not (string= (cdr curr-index-property) "???"))
+              (org-set-property (car curr-index-property) (cdr curr-index-property))))
           (org-set-property (orgn--ls "matter-type-property") (upcase (orgn--ls "back-matter-heading")))
           (while curr-properties-list
             (setq curr-property (pop curr-properties-list))
-            (unless (org-entry-get (point) curr-property)
-              (org-set-property curr-property (orgn--get-file-property-value curr-chap-file curr-property))))
+            (org-set-property curr-property (orgn--get-file-property-value curr-chap-file curr-property)))
           ;; Chapter setup with properties, just add contents.
           (goto-char (buffer-size))
           (insert "\n")
