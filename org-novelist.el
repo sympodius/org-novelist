@@ -537,7 +537,7 @@ related to the current buffer."
                         (setq beg (point))
                         (end-of-line)
                         (delete-region beg (point))
-                        (insert (org-novelist--replace-true-headline-in-org-heading new-story-name org-heading-components))
+                        (insert (orgn--replace-true-headline-in-org-heading new-story-name org-heading-components))
                         (orgn--string-to-file (buffer-string) (concat story-folder / (orgn--ls "main-file" orgn--file-ending))))
                     (progn
                       (error (orgn--ls "no-story-found"))
@@ -962,9 +962,9 @@ open buffer."
                     (setq chapters-headlines (cons (orgn--heading-last-link-headline-text) chapters-headlines)))
                   ;; Top level heading already removed, just need to remove the three matter types, and any duplicates or nils,
                   ;; then compare the lists and add missing.
-                  (setq chapters-headlines (delete (org-novelist--ls "front-matter-heading") chapters-headlines))
-                  (setq chapters-headlines (delete (org-novelist--ls "main-matter-heading") chapters-headlines))
-                  (setq chapters-headlines (delete (org-novelist--ls "back-matter-heading") chapters-headlines))
+                  (setq chapters-headlines (delete (orgn--ls "front-matter-heading") chapters-headlines))
+                  (setq chapters-headlines (delete (orgn--ls "main-matter-heading") chapters-headlines))
+                  (setq chapters-headlines (delete (orgn--ls "back-matter-heading") chapters-headlines))
                   (while keys
                     (setq key (pop keys))
                     (setq chapters-headlines (cons (gethash key file-chapters) chapters-headlines)))
@@ -2334,14 +2334,14 @@ STORY-NAME is the name of the story, and STORY-FOLDER is its save location."
           (user-error (concat (orgn--ls "story-folder-already-in-use") ": " story-folder))
           (throw 'NON-UNIQUE-STORY (concat (orgn--ls "story-folder-already-in-use") ": " story-folder)))
       (progn
-	;; Create story folder.
+        ;; Create story folder.
         (unless (file-exists-p (file-name-directory (concat story-folder /)))
           (make-directory (file-name-directory (concat story-folder /)) t))  ; The 't' tells emacs to create any non-existent parents directories that are needed as well
-	;; Create empty export folder.
-	(unless (file-exists-p (file-name-directory (concat story-folder / (orgn--ls "exports-folder") /)))
+        ;; Create empty export folder.
+        (unless (file-exists-p (file-name-directory (concat story-folder / (orgn--ls "exports-folder") /)))
           (make-directory (file-name-directory (concat story-folder / (orgn--ls "exports-folder") /)) t))
-	;; Create empty chapters folder.
-	(unless (file-exists-p (file-name-directory (concat story-folder / (orgn--ls "chapters-folder") /)))
+        ;; Create empty chapters folder.
+        (unless (file-exists-p (file-name-directory (concat story-folder / (orgn--ls "chapters-folder") /)))
           (make-directory (file-name-directory (concat story-folder / (orgn--ls "chapters-folder") /)) t))
         (orgn--string-to-file (concat orgn--mode-identifier "\n") (concat story-folder / orgn--config-filename))  ; Create an empty configuration file for the story
         (orgn--populate-main-template story-name story-folder)  ; Create the main entry-point file for the story
@@ -3247,7 +3247,7 @@ be moved to property drawers in the output Org file for each chapter
 heading.
 Once Org file is created, go though any export settings in the story
 config file and apply them to the Org file.
-Once the single Org file is complete, go through any out export
+Once the single Org file is complete, go through any other export
 templates specified in config file and run them to create all specified
 export files."
   (interactive)
