@@ -9,3 +9,6 @@
 
 # Undo-tree save-files
 *.~undo-tree
+
+# Specific files
+org-novelist-todo.org
