@@ -204,7 +204,7 @@
 (defconst orgn--rebuild-chapter-index-location-query-en-GB "Rebuilding index: Where should chapters go?" "When rebuilding chapter index, ask user where to place chapters.")
 (defconst orgn--delete-file-query-en-GB "Delete file?" "A query to show the user to see if they want to delete a file.")
 (defconst orgn--name-already-in-use-en-GB "That name is already in use. Please try again" "Tell user the chosen name is already in use.")
-(defconst orgn--okay-en-GB "Okay" "Positive acknowledgement to the user.")
+(defconst orgn--okay-en-GB "Okay" "Positive acknowledgement to the user.")  ; This is also used to check that a language pack exists
 (defconst orgn--new-chapter-name-query-en-GB "New Chapter Name?" "A query to the user for the new name of a chapter.")
 (defconst orgn--character-name-query-en-GB "Character Name?" "A query to the user for what to name a character.")
 (defconst orgn--prop-name-query-en-GB "Prop Name?" "A query to the user for what to name a prop.")
@@ -214,7 +214,8 @@
 (defconst orgn--new-place-name-query-en-GB "New Place Name?" "A query to the user for the new name of a place.")
 (defconst orgn--new-story-name-query-en-GB "New Story Name?" "A query to the user for the new name for the story.")
 (defconst orgn--rename-story-folder-query-en-GB "Rename story folder as well? " "A query to the user as to whether to also rename the story folder.")
-;; Error/Throw Messages
+(defconst orgn--match-lang-tag-to-story-query-en-GB "What language was used to create this story (eg, 'en-GB')?" "A query to the user to change the session language tag.")
+;; Error/Throw/Messages
 (defconst orgn--no-localised-function-en-GB "No localised function found for" "The local language version of the function is missing.")
 (defconst orgn--is-not-writable-en-GB "is not writable" "File is not writable.")
 (defconst orgn--story-folder-already-in-use-en-GB "That story folder is already in use" "Tell user the selected folder already contains an Org Novelist story.")
@@ -231,6 +232,8 @@
 (defconst orgn--no-props-found-en-GB "No props found" "No props found in story.")
 (defconst orgn--no-places-found-en-GB "No places found" "No places found in story.")
 (defconst orgn--unrecognised-index-en-GB "is not a recognised index" "Index is not of a known type.")
+(defconst orgn--language-set-to-en-GB "Org Novelist language set to" "Inform user that language has been set.")
+(defconst orgn--language-not-found-en-GB "Selected language pack not found." "Inform user that language pack could not be found.")
 ;; Pattern Matches
 (defconst orgn--sys-safe-name-en-GB "[-A-Za-z0-9]*" "Regexp to match strings produced by `org-novelist--system-safe-name-en-GB'.")
 (defconst orgn--aliases-separators-en-GB "[,\f\t\n\r\v]+" "Regexp to match the separators in a list of aliases.")
@@ -273,6 +276,9 @@ Strings matching the values of `org-novelist--folder-separator' or
   (catch 'LOCALISATION-STRING-NOT-FOUND
     (unless (boundp 'orgn-language-tag)
       (defvar orgn-language-tag "en-GB" "The language to use for Org Novelist. Based on https://www.w3.org/International/articles/language-tags/index.en"))
+    (unless (boundp (intern (concat "org-novelist--okay-" orgn-language-tag)))
+      (setq orgn-language-tag "en-GB")
+      (message (concat (orgn--ls "language-not-found") " " (orgn--ls "language-set-to") ": " orgn-language-tag)))
     (cond ((string-equal str-name /)  ; Special case for the folder separator string
            (if (> (length str-list) 0)
                (concat (eval /) (apply 'orgn--localise-string str-list))
@@ -298,6 +304,9 @@ a supported language. The default is \"en-GB\"."
   (catch 'LOCALISATION-FUNCTION-NOT-FOUND
     (unless (boundp 'orgn-language-tag)
       (defconst orgn-language-tag "en-GB" "The language to use for Org Novelist (based on https://www.w3.org/International/articles/language-tags/index.en)."))
+    (unless (boundp (intern (concat "org-novelist--okay-" orgn-language-tag)))
+      (setq orgn-language-tag "en-GB")
+      (message (concat (orgn--ls "language-not-found") " " (orgn--ls "language-set-to") ": " orgn-language-tag)))
     (if (fboundp (intern (concat func-name "-" orgn-language-tag)))
         (intern (concat func-name "-" orgn-language-tag))
       (progn
@@ -3481,6 +3490,17 @@ export files."
       (remove-hook 'post-command-hook 'orgn--reset-automatic-referencing))))
 
 
+(defun orgn-match-language-tag-to-story (lang-tag)
+  "Change the language to LANG-TAG for the current session.
+Based on https://www.w3.org/International/articles/language-tags/index.en
+A corresponding language pack must be included with Org Novelist."
+  (interactive (list (read-string (concat (orgn--ls "match-lang-tag-to-story-query") " "))))
+  (let ((mess ""))
+    (if (boundp (intern (concat "org-novelist--okay-" lang-tag)))
+        (setq orgn-language-tag lang-tag)
+      (setq mess (concat (orgn--ls "language-not-found") " ")))
+    (setq mess (concat mess (orgn--ls "language-set-to") ": " orgn-language-tag))
+    (message mess)))
 
 
 ;;;###autoload
@@ -3521,7 +3541,8 @@ The following commands are available:
 `org-novelist-rename-place'
 `org-novelist-update-references'
 `org-novelist-rename-story'
-`org-novelist-export-story'"
+`org-novelist-export-story'
+`org-novelist-match-language-tag-to-story'"
   (add-hook 'after-save-hook 'orgn--update-references-after-save-hook))
 
 (provide 'org-novelist)
