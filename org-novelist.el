@@ -232,6 +232,8 @@
 (defconst orgn--no-props-found-en-GB "No props found" "No props found in story.")
 (defconst orgn--no-places-found-en-GB "No places found" "No places found in story.")
 (defconst orgn--unrecognised-index-en-GB "is not a recognised index" "Index is not of a known type.")
+(defconst orgn--auto-ref-now-on-en-GB "Org Novelist automatic referencing has been turned ON." "Inform user that automatic referencing has been turned on.")
+(defconst orgn--auto-ref-now-off-en-GB "Org Novelist automatic referencing has been turned OFF." "Inform user that automatic referencing has been turned off.")
 (defconst orgn--language-set-to-en-GB "Org Novelist language set to" "Inform user that language has been set.")
 (defconst orgn--language-not-found-en-GB "Selected language pack not found." "Inform user that language pack could not be found.")
 ;; Pattern Matches
@@ -3489,6 +3491,14 @@ export files."
       ;; Remove hook to reset automatic referencing since we made it to the end of the function.
       (remove-hook 'post-command-hook 'orgn--reset-automatic-referencing))))
 
+(defun orgn-toggle-automatic-referencing ()
+  "Toggle automatic referencing from its current value.
+Once changed, inform user of new state."
+  (interactive)
+  (setq orgn-automatic-referencing-p (not orgn-automatic-referencing-p))
+  (if orgn-automatic-referencing-p
+      (message (orgn--ls "auto-ref-now-on"))
+    (message (orgn--ls "auto-ref-now-off"))))
 
 (defun orgn-match-language-tag-to-story (lang-tag)
   "Change the language to LANG-TAG for the current session.
@@ -3542,6 +3552,7 @@ The following commands are available:
 `org-novelist-update-references'
 `org-novelist-rename-story'
 `org-novelist-export-story'
+`org-novelist-toggle-automatic-referencing'
 `org-novelist-match-language-tag-to-story'"
   (add-hook 'after-save-hook 'orgn--update-references-after-save-hook))
 
