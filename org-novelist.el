@@ -3281,6 +3281,7 @@ export files."
            curr-property
            curr-index-property
            (content "")
+           (curr-content "")
            exports-hash
            keys
            key)
@@ -3373,6 +3374,19 @@ export files."
               (insert "* " (orgn--get-file-property-value curr-chap-file "TITLE") "\n")
             (insert curr-header "\n"))
           (setq curr-header "")
+          ;; Chapter title setup, add contents.
+          (goto-char (buffer-size))
+          (insert "\n")
+          (insert (orgn--get-file-subtree curr-chap-file (orgn--ls "content-header") t))
+          (cd (concat ".." /  (orgn--ls "chapters-folder")))
+          (setq curr-content (org-export-as 'org))
+          (cd (concat ".." / (orgn--ls "indices-folder"))))
+        (with-temp-buffer
+          (insert curr-content)
+          (org-novelist-mode)
+          (orgn--fold-show-all)  ; Belts and braces
+          (goto-char (point-min))
+          (orgn--delete-line)
           ;; If the chapter index had any properties, we should probably include them as well. Doing it here will allow file level properties to override the index properties.
           (while curr-index-properties-list
             (setq curr-index-property (pop curr-index-properties-list))
@@ -3382,11 +3396,7 @@ export files."
           (while curr-properties-list
             (setq curr-property (pop curr-properties-list))
             (org-set-property curr-property (orgn--get-file-property-value curr-chap-file curr-property)))
-          ;; Chapter setup with properties, just add contents.
-          (goto-char (buffer-size))
-          (insert "\n")
-          (insert (orgn--get-file-subtree curr-chap-file (orgn--ls "content-header") t))
-          (setq content (concat content (buffer-substring (point-min) (buffer-size))))))
+          (setq content (concat content (buffer-substring (point-min) (buffer-size)) "\n"))))
       (while mm-file-list
         (setq curr-chap-file (pop mm-file-list))
         (setq curr-properties-list (delete "TITLE" (orgn--get-file-properties curr-chap-file)))
@@ -3407,6 +3417,19 @@ export files."
               (insert "* " (orgn--get-file-property-value curr-chap-file "TITLE") "\n")
             (insert curr-header "\n"))
           (setq curr-header "")
+          ;; Chapter title setup, add contents.
+          (goto-char (buffer-size))
+          (insert "\n")
+          (insert (orgn--get-file-subtree curr-chap-file (orgn--ls "content-header") t))
+          (cd (concat ".." /  (orgn--ls "chapters-folder")))
+          (setq curr-content (org-export-as 'org))
+          (cd (concat ".." / (orgn--ls "indices-folder"))))
+        (with-temp-buffer
+          (insert curr-content)
+          (org-novelist-mode)
+          (orgn--fold-show-all)  ; Belts and braces
+          (goto-char (point-min))
+          (orgn--delete-line)
           ;; If the chapter index had any properties, we should probably include them as well. Doing it here will allow file level properties to override the index properties.
           (while curr-index-properties-list
             (setq curr-index-property (pop curr-index-properties-list))
@@ -3416,11 +3439,7 @@ export files."
           (while curr-properties-list
             (setq curr-property (pop curr-properties-list))
             (org-set-property curr-property (orgn--get-file-property-value curr-chap-file curr-property)))
-          ;; Chapter setup with properties, just add contents.
-          (goto-char (buffer-size))
-          (insert "\n")
-          (insert (orgn--get-file-subtree curr-chap-file (orgn--ls "content-header") t))
-          (setq content (concat content (buffer-substring (point-min) (buffer-size))))))
+          (setq content (concat content (buffer-substring (point-min) (buffer-size)) "\n"))))
       (while bm-file-list
         (setq curr-chap-file (expand-file-name (pop bm-file-list)))
         (setq curr-properties-list (delete "TITLE" (orgn--get-file-properties curr-chap-file)))
@@ -3441,6 +3460,19 @@ export files."
               (insert "* " (orgn--get-file-property-value curr-chap-file "TITLE") "\n")
             (insert curr-header "\n"))
           (setq curr-header "")
+          ;; Chapter title setup, add contents.
+          (goto-char (buffer-size))
+          (insert "\n")
+          (insert (orgn--get-file-subtree curr-chap-file (orgn--ls "content-header") t))
+          (cd (concat ".." /  (orgn--ls "chapters-folder")))
+          (setq curr-content (org-export-as 'org))
+          (cd (concat ".." / (orgn--ls "indices-folder"))))
+        (with-temp-buffer
+          (insert curr-content)
+          (org-novelist-mode)
+          (orgn--fold-show-all)  ; Belts and braces
+          (goto-char (point-min))
+          (orgn--delete-line)
           ;; If the chapter index had any properties, we should probably include them as well. Doing it here will allow file level properties to override the index properties.
           (while curr-index-properties-list
             (setq curr-index-property (pop curr-index-properties-list))
@@ -3450,18 +3482,14 @@ export files."
           (while curr-properties-list
             (setq curr-property (pop curr-properties-list))
             (org-set-property curr-property (orgn--get-file-property-value curr-chap-file curr-property)))
-          ;; Chapter setup with properties, just add contents.
-          (goto-char (buffer-size))
-          (insert "\n")
-          (insert (orgn--get-file-subtree curr-chap-file (orgn--ls "content-header") t))
-          (setq content (concat content (buffer-substring (point-min) (buffer-size))))))
+          (setq content (concat content (buffer-substring (point-min) (buffer-size)) "\n"))))
       ;; Generate Org export file.
       (orgn--populate-export-org-template
        story-name
        orgn-author
        orgn-author-email
        (format-time-string "[%Y-%m-%d %a %H:%M]")
-       content
+       (string-chop-newline content)
        (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
       ;; Although Org export file is made, the file level properties may need to be overridden by the config file.
       ;; Find all properties in config file, then go through each and add/overwrite what is in Org export file.
