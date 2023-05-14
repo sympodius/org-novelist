@@ -59,6 +59,7 @@
 ;;;; Require other packages
 
 (require 'org)  ; Org Novelist is built upon the incredible work of Org mode
+(require 'ox)  ; Necessary to call Org's built-in export functions.
 
 
 ;;;; Global Variables
@@ -3449,25 +3450,26 @@ export files."
           (throw 'EXPORT-STORY-FAULT (concat (orgn--ls "file-not-found") ": " chapter-index))))
       ;; Correctly ordered file lists have been made.
       ;; Make sure export backends that we need are loaded.
-      (setq org-export-registered-backends
-            (cl-remove-if-not
-             (lambda (backend)
-               (let ((name (org-export-backend-name backend)))
-                 (or (memq name (quote (ascii html icalendar latex odt md org)))
-                     (catch 'parentp
-                       (dolist (b (quote (ascii html icalendar latex odt md org)))
-                         (and (org-export-derived-backend-p b name)
-                              (throw 'parentp t)))))))
-             org-export-registered-backends))
-      (let ((new-list (mapcar #'org-export-backend-name
-                              org-export-registered-backends)))
-        (dolist (backend (quote (ascii html icalendar latex odt md org)))
-          (cond
-           ((not (load (format "ox-%s" backend) t t))
-            (message "Problems while trying to load export back-end `%s'"
-                     backend))
-           ((not (memq backend new-list)) (push backend new-list))))
-        (set-default 'org-export-backends new-list))
+      (progn
+        (setq org-export-registered-backends
+              (cl-remove-if-not
+               (lambda (backend)
+                 (let ((name (org-export-backend-name backend)))
+                   (or (memq name (quote (ascii html icalendar latex odt md org)))
+                       (catch 'parentp
+                         (dolist (b (quote (ascii html icalendar latex odt md org)))
+                           (and (org-export-derived-backend-p b name)
+                                (throw 'parentp t)))))))
+               org-export-registered-backends))
+        (let ((new-list (mapcar #'org-export-backend-name
+                                org-export-registered-backends)))
+          (dolist (backend (quote (ascii html icalendar latex odt md org)))
+            (cond
+             ((not (load (format "ox-%s" backend) t t))
+              (message "Problems while trying to load export back-end `%s'"
+                       backend))
+             ((not (memq backend new-list)) (push backend new-list))))
+          (set-default 'org-export-backends new-list)))
       (setq org-export-with-toc nil)
       (setq org-export-with-date nil)
       (setq org-export-with-tags t)
@@ -3623,31 +3625,32 @@ export files."
             (setq curr-index-property (pop curr-index-properties-list))
             (when (not (string= (cdr curr-index-property) "???"))
               (org-set-property (car curr-index-property) (cdr curr-index-property))))
-          (org-set-property (orgn--ls "matter-type-property") (upcase (orgn--ls "back-matter-heading")))
+          (org-set-property (upcase orgn--matter-type-property) (upcase orgn--back-matter-value))
           (while curr-properties-list
             (setq curr-property (pop curr-properties-list))
             (org-set-property curr-property (orgn--get-file-property-value curr-chap-file curr-property)))
           (setq content (concat content (buffer-substring (point-min) (buffer-size)) "\n"))))
       ;; Make sure export backends are reset to user-set values.
-      (setq org-export-registered-backends
-            (cl-remove-if-not
-             (lambda (backend)
-               (let ((name (org-export-backend-name backend)))
-                 (or (memq name org-export-backends-orig)
-                     (catch 'parentp
-                       (dolist (b org-export-backends-orig)
-                         (and (org-export-derived-backend-p b name)
-                              (throw 'parentp t)))))))
-             org-export-registered-backends))
-      (let ((new-list (mapcar #'org-export-backend-name
-                              org-export-registered-backends)))
-        (dolist (backend org-export-backends-orig)
-          (cond
-           ((not (load (format "ox-%s" backend) t t))
-            (message "Problems while trying to load export back-end `%s'"
-                     backend))
-           ((not (memq backend new-list)) (push backend new-list))))
-        (set-default 'org-export-backends new-list))
+      (progn
+        (setq org-export-registered-backends
+              (cl-remove-if-not
+               (lambda (backend)
+                 (let ((name (org-export-backend-name backend)))
+                   (or (memq name org-export-backends-orig)
+                       (catch 'parentp
+                         (dolist (b org-export-backends-orig)
+                           (and (org-export-derived-backend-p b name)
+                                (throw 'parentp t)))))))
+               org-export-registered-backends))
+        (let ((new-list (mapcar #'org-export-backend-name
+                                org-export-registered-backends)))
+          (dolist (backend org-export-backends-orig)
+            (cond
+             ((not (load (format "ox-%s" backend) t t))
+              (message "Problems while trying to load export back-end `%s'"
+                       backend))
+             ((not (memq backend new-list)) (push backend new-list))))
+          (set-default 'org-export-backends new-list)))
       (setq org-export-with-toc org-export-with-toc-orig)
       (setq org-export-with-date org-export-with-date-orig)
       (setq org-export-with-tags org-export-with-tags-orig)
