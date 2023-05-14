@@ -79,6 +79,15 @@
 (defconst orgn--config-filename "org-novelist-config.org" "Filename of where Org Novelist will store configuration data.")
 (defconst orgn--file-ending ".org" "The ending of the filenames used in Org Novelist.")
 (defconst orgn--mode-identifier "; -*-Org-Novelist-*-" "The Emacs mode identifier for Org Novelist.")
+(defconst orgn--aliases-property "ALIASES" "Property key for the notes name aliases in a notes file.")
+(defconst orgn--add-to-generators-property "ADD_TO_GENERATORS" "Property key for generators a notes should be added to (eg, index, glossary).")
+(defconst orgn--generate-property "GENERATE" "Property key for generators a story should apply (eg, index, glossary).")
+(defconst orgn--index-entry-property "ORG_NOVELIST_INDEX_ENTRY" "Property key for an index entry.")
+(defconst orgn--matter-type-property "ORG-NOVELIST-MATTER-TYPE" "Property key for the chapter matter type in the export property drawer.")
+(defconst orgn--front-matter-value "FRONT MATTER" "Name for the Front Matter value in the export property drawer.")
+(defconst orgn--main-matter-value "MAIN MATTER" "Name for the Main Matter value in the export property drawer.")
+(defconst orgn--back-matter-value "BACK MATTER" "Name for the Back Matter value in the export property drawer.")
+(defconst orgn--index-generator-value "index" "Value for applying an index generator.")
 
 
 ;;;; Language Packs
@@ -196,7 +205,6 @@
    "** Smells\n"
    "** Notes\n")
   "Starter content for the place notes files.")
-(defconst orgn--matter-type-property-en-GB "ORG-NOVELIST-MATTER-TYPE" "Property key for the chapter matter type in the export property drawer.")
 ;; User Queries
 (defconst orgn--story-name-query-en-GB "Story Name?" "A query to the user for what to name their story.")
 (defconst orgn--story-save-location-query-en-GB "Story Save Location?" "A query to the user for where to save their story.")
@@ -661,7 +669,7 @@ related to the current buffer."
         (let* ((chapters-folder (orgn--ls "chapters-folder"))
                (indices-folder (orgn--ls "indices-folder"))
                (chapter-index (concat (orgn--ls "chapters-file") orgn--file-ending))
-               (aliases-str (orgn--get-file-property-value file "aliases"))
+               (aliases-str (orgn--get-file-property-value file orgn--aliases-property))
                names
                curr-names
                name
@@ -1398,7 +1406,7 @@ open buffer."
                 (orgn--fold-show-all)  ; Belts and braces
                 ;; Get current title and add to aliases.
                 (setq old-object-name (orgn--get-file-property-value object-file "TITLE"))
-                (setq old-aliases (orgn--get-file-property-value object-file "ALIASES"))
+                (setq old-aliases (orgn--get-file-property-value object-file orgn--aliases-property))
                 ;; Prevent repeating names in aliases.
                 (when old-aliases
                   (setq aliases-list (delete new-object-name (delq nil (delete-dups (sort (cons old-object-name (split-string old-aliases (orgn--ls "aliases-separators") t " ")) 'string<))))))
@@ -1413,7 +1421,7 @@ open buffer."
                 (goto-char (point-max))
                 (insert appearances-subtree)
                 (orgn--set-file-property-value "TITLE" new-object-name object-file)
-                (orgn--set-file-property-value "ALIASES" new-aliases-str object-file)
+                (orgn--set-file-property-value orgn--aliases-property new-aliases-str object-file)
                 (orgn--save-current-file)
                 (orgn--rename-current-file new-object-file))
             (progn
@@ -2265,7 +2273,7 @@ open buffer."
           (setq characters-content (concat characters-content "\n")))
         (setq characters-content (concat characters-content "*** <<<" (gethash character-key existing-characters) ">>> "
                                          "\[\[file:.." / notes-folder / character-key "\]\[" (orgn--ls "view-notes") "\]\]"))
-        (setq character-aliases-str (orgn--get-file-property-value (concat story-folder / notes-folder / character-key) "aliases"))
+        (setq character-aliases-str (orgn--get-file-property-value (concat story-folder / notes-folder / character-key) orgn--aliases-property))
         (when character-aliases-str
           (setq character-aliases (sort (split-string character-aliases-str (orgn--ls "aliases-separators") t " ") 'string<)))
         (while character-aliases
@@ -2283,7 +2291,7 @@ open buffer."
           (setq places-content (concat places-content "\n")))
         (setq places-content (concat places-content "*** <<<" (gethash place-key existing-places) ">>> "
                                      "\[\[file:.." / notes-folder / place-key "\]\[" (orgn--ls "view-notes") "\]\]"))
-        (setq place-aliases-str (orgn--get-file-property-value (concat story-folder / notes-folder / place-key) "aliases"))
+        (setq place-aliases-str (orgn--get-file-property-value (concat story-folder / notes-folder / place-key) orgn--aliases-property))
         (when place-aliases-str
           (setq place-aliases (sort (split-string place-aliases-str (orgn--ls "aliases-separators") t " ") 'string<)))
         (while place-aliases
@@ -2301,7 +2309,7 @@ open buffer."
           (setq props-content (concat props-content "\n")))
         (setq props-content (concat props-content "*** <<<" (gethash prop-key existing-props) ">>> "
                                     "\[\[file:.." / notes-folder / prop-key "\]\[" (orgn--ls "view-notes") "\]\]"))
-        (setq prop-aliases-str (orgn--get-file-property-value (concat story-folder / notes-folder / prop-key) "aliases"))
+        (setq prop-aliases-str (orgn--get-file-property-value (concat story-folder / notes-folder / prop-key) orgn--aliases-property))
         (when prop-aliases-str
           (setq prop-aliases (sort (split-string prop-aliases-str (orgn--ls "aliases-separators") t " ") 'string<)))
         (while prop-aliases
@@ -3539,14 +3547,14 @@ export files."
             (setq curr-index-property (pop curr-index-properties-list))
             (when (not (string= (cdr curr-index-property) "???"))
               (org-set-property (car curr-index-property) (cdr curr-index-property))))
-          (org-set-property (orgn--ls "matter-type-property") (upcase (orgn--ls "front-matter-heading")))
+          (org-set-property (upcase orgn--matter-type-property) (upcase orgn--front-matter-value))
           (while curr-properties-list
             (setq curr-property (pop curr-properties-list))
             (org-set-property curr-property (orgn--get-file-property-value curr-chap-file curr-property)))
           (setq content (concat content (buffer-substring (point-min) (buffer-size)) "\n"))))
       (while mm-file-list
         (setq curr-chap-file (pop mm-file-list))
-        (setq curr-properties-list (delete "TITLE" (orgn--get-file-properties curr-chap-file)))
+        (setq curr-properties-list (delete "INDEX" (delete "TITLE" (orgn--get-file-properties curr-chap-file))))
         ;; Generate header for current chapter. TITLE property in file will override the one in the Chapter Index, but otherwise the Chapter Index line will be used, set to level 1.
         (when (file-readable-p (concat story-folder / indices-folder / chapter-index))
           (with-temp-buffer
@@ -3582,14 +3590,14 @@ export files."
             (setq curr-index-property (pop curr-index-properties-list))
             (when (not (string= (cdr curr-index-property) "???"))
               (org-set-property (car curr-index-property) (cdr curr-index-property))))
-          (org-set-property (orgn--ls "matter-type-property") (upcase (orgn--ls "main-matter-heading")))
+          (org-set-property (upcase orgn--matter-type-property) (upcase orgn--main-matter-value))
           (while curr-properties-list
             (setq curr-property (pop curr-properties-list))
             (org-set-property curr-property (orgn--get-file-property-value curr-chap-file curr-property)))
           (setq content (concat content (buffer-substring (point-min) (buffer-size)) "\n"))))
       (while bm-file-list
         (setq curr-chap-file (expand-file-name (pop bm-file-list)))
-        (setq curr-properties-list (delete "TITLE" (orgn--get-file-properties curr-chap-file)))
+        (setq curr-properties-list (delete "INDEX" (delete "TITLE" (orgn--get-file-properties curr-chap-file))))
         ;; Generate header for current chapter. TITLE property in file will override the one in the Chapter Index, but otherwise the Chapter Index line will be used, set to level 1.
         (when (file-readable-p (concat story-folder / indices-folder / chapter-index))
           (with-temp-buffer
