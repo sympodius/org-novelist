@@ -248,6 +248,7 @@
 ;; Pattern Matches
 (defconst orgn--sys-safe-name-en-GB "[-A-Za-z0-9]*" "Regexp to match strings produced by `org-novelist--system-safe-name-en-GB'.")
 (defconst orgn--aliases-separators-en-GB "[,\f\t\n\r\v]+" "Regexp to match the separators in a list of aliases.")
+(defconst orgn--generate-separators-en-GB orgn--aliases-separators-en-GB "Regexp to match the separators in a list of generators.")
 (defconst orgn--notes-name-search-en-GB "[[:space:][:punct:]]+%s[[:space:][:punct:]]+" "Regexp to match names of things in chapter files.")
 (defconst orgn--notes-name-org-link-search-en-GB "\\[\\[:space:\\]\\[:punct:\\]\\]+%s\\[\\[:space:\\]\\[:punct:\\]\\]+" "Regexp to match, from an Org mode link, names of things in chapter files.")
 (defconst orgn--folder-already-exists-en-GB "That folder already exists" "Inform user the folder already exists.")
@@ -835,9 +836,10 @@ The returned hash table will use filenames as keys, and place titles as
 values."
   (orgn--object-hash-table (orgn--ls "place-file-prefix") (orgn--ls "notes-folder") story-folder))
 
-(defun orgn--set-file-property-value (property value file)
+(defun orgn--set-file-property-value (property value file &optional no-overwrite)
   "Given a FILE and VALUE, change PROPERTY value of that file.
-If property not found, add it."
+If property not found, add it.
+If NO-OVERWRITE is t, don't replace existing property, just add new one."
   (when (file-exists-p file)
     (when (file-readable-p file)
       (find-file file)
@@ -845,7 +847,7 @@ If property not found, add it."
              (case-fold-search t)
              (property-found-p nil))
         (goto-char (point-min))
-        (while (re-search-forward regexp nil t)
+        (while (and (re-search-forward regexp nil t) (not no-overwrite))
           (setq property-found-p t)
           (insert " ")
           (delete-region (point) (line-end-position))
@@ -3511,7 +3513,7 @@ export files."
       ;; Process chapters.
       (while fm-file-list
         (setq curr-chap-file (expand-file-name (pop fm-file-list)))
-        (setq curr-properties-list (delete "TITLE" (orgn--get-file-properties curr-chap-file)))
+        (setq curr-properties-list (delete "INDEX" (delete "TITLE" (orgn--get-file-properties curr-chap-file))))
         ;; Generate header for current chapter. TITLE property in file will override the one in the Chapter Index, but otherwise the Chapter Index line will be used, set to level 1.
         (when (file-readable-p (concat story-folder / indices-folder / chapter-index))
           (with-temp-buffer
@@ -3533,6 +3535,8 @@ export files."
           (goto-char (buffer-size))
           (insert "\n")
           (insert (orgn--get-file-subtree curr-chap-file (orgn--ls "content-header") t))
+	  (when (member orgn--index-generator-value (split-string (orgn--get-file-property-value curr-chap-file orgn--generate-property) "[,\f\t\n\r\v]+" t " "))
+	    (insert "\n#+LATEX: \\printindex\n"))
           (cd (concat ".." /  (orgn--ls "chapters-folder")))
           (setq curr-content (org-export-as 'org))
           (cd (concat ".." / (orgn--ls "indices-folder"))))
@@ -3576,6 +3580,8 @@ export files."
           (goto-char (buffer-size))
           (insert "\n")
           (insert (orgn--get-file-subtree curr-chap-file (orgn--ls "content-header") t))
+	  (when (member orgn--index-generator-value (split-string (orgn--get-file-property-value curr-chap-file orgn--generate-property) "[,\f\t\n\r\v]+" t " "))
+	    (insert "\n#+LATEX: \\printindex\n"))
           (cd (concat ".." /  (orgn--ls "chapters-folder")))
           (setq curr-content (org-export-as 'org))
           (cd (concat ".." / (orgn--ls "indices-folder"))))
@@ -3619,6 +3625,8 @@ export files."
           (goto-char (buffer-size))
           (insert "\n")
           (insert (orgn--get-file-subtree curr-chap-file (orgn--ls "content-header") t))
+	  (when (member orgn--index-generator-value (split-string (orgn--get-file-property-value curr-chap-file orgn--generate-property) "[,\f\t\n\r\v]+" t " "))
+	    (insert "\n#+LATEX: \\printindex\n"))
           (cd (concat ".." /  (orgn--ls "chapters-folder")))
           (setq curr-content (org-export-as 'org))
           (cd (concat ".." / (orgn--ls "indices-folder"))))
@@ -3707,6 +3715,42 @@ export files."
           (orgn--set-file-property-value curr-property
                                          (orgn--get-file-property-value (concat story-folder / orgn--config-filename) curr-property)
                                          (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending)))
+        ;; Check if any generators are set and act accordingly.
+        ;; Get list of notes names to be included in index, then add to file properties list here.
+        (let* ((notes-folder (orgn--ls "notes-folder"))
+               (file-characters (orgn--character-hash-table story-folder))
+               (file-places (orgn--place-hash-table story-folder))
+               (file-props (orgn--prop-hash-table story-folder))
+               (keys (append (hash-table-keys file-characters)
+                             (hash-table-keys file-places)
+                             (hash-table-keys file-props)))
+               key
+               aliases
+               alias)
+          (while keys
+            (setq key (pop keys))
+            (if (file-exists-p (concat story-folder / notes-folder / key))
+                (if (file-readable-p (concat story-folder / notes-folder / key))
+                    (when (member orgn--index-generator-value (split-string (orgn--get-file-property-value (concat story-folder / notes-folder / key) orgn--add-to-generators-property) (orgn--ls "generate-separators") t " "))
+                      ;; Add main name.
+                      (orgn--set-file-property-value orgn--index-entry-property
+                                                     (orgn--get-file-property-value (concat story-folder / notes-folder / key) "TITLE")
+                                                     (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending) t)
+                      ;; Add aliases.
+                      (setq aliases (split-string (orgn--get-file-property-value (concat story-folder / notes-folder / key) orgn--aliases-property) (orgn--ls "aliases-separators") t " "))
+                      (while aliases
+                        (setq alias (pop aliases))
+                        (orgn--set-file-property-value orgn--index-entry-property
+                                                       (concat (orgn--get-file-property-value (concat story-folder / notes-folder / key) "TITLE") "!" alias)
+                                                       (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending) t)))
+                  (progn
+                    (setq orgn-automatic-referencing-p orgn--autoref-p)
+                    (error (concat story-folder / notes-folder / key " " (orgn--ls "is-not-readable")))
+                    (throw 'EXPORT-STORY-FAULT (concat story-folder / notes-folder / key " " (orgn--ls "is-not-readable")))))
+              (progn
+                (setq orgn-automatic-referencing-p orgn--autoref-p)
+                (error (concat (orgn--ls "file-not-found") ": " story-folder / notes-folder / key))
+                (throw 'EXPORT-STORY-FAULT (concat (orgn--ls "file-not-found") ": " story-folder / notes-folder / key))))))
         (orgn--save-current-file))  ; This is currently unchecked for when user enters an invalid filename. As such, it could result in an error that will not allow orgn-automatic-referencing-p to be reset
       ;; By this point, we should have the Org file correctly exported.
       ;; Run through the export templates in the config file.
