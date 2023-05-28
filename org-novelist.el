@@ -773,7 +773,7 @@ related to the current buffer."
                curr-names
                name
                (file-chapters (orgn--chapter-hash-table story-folder))
-               (chapter-keys (sort (hash-table-keys file-chapters) #'string<))
+               (chapter-keys (sort (hash-table-keys file-chapters) 'string<))
                chapter-key
                (chapter-index-files '())
                (regexp (orgn--ls "notes-name-search"))
