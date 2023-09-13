@@ -23,7 +23,7 @@
   - [Chapters](#chapters)
   - [Exporting](#exporting)
 - [Summary of Functions](#summary-of-functions)
-
+- [Language Packs](#language-packs)
 
 # Introduction
 Org Novelist is a system for writing novel-length fiction using [Emacs](https://www.gnu.org/software/emacs/) [Org mode](https://orgmode.org/). It works by linking notes to your story text for easy access while writing.
@@ -346,3 +346,47 @@ This ends the tutorial for the main features of Org Novelist. I designed this sy
 + `org-novelist-update-references` - Force a system update of notes references.
 + `org-novelist-rename-story` - Rename a story and, optionally, its directory.
 + `org-novelist-export-story` - Export the story to a single Org file, and any other formats specified in export settings.
+
+# Language Packs
+
+## Load a language pack
+
+Note: currently only the default language pack "en-GB" exists. It is loaded 
+automatically.
+
+To load a language pack, you need to load it in your Emacs config, e.g.
+
+```elisp
+(require 'org-novelist-language-pack-fr-CA)
+```
+
+Then you can set the `org-novelist-language-tag` accordingly (see above).
+
+## Create a language pack
+
+To create a language pack:
+
+- make a copy of the default language pack "en-GB" in the language-packs folder
+- rename it so the "en-GB" part is replaced by the
+  [language tag](https://www.w3.org/International/articles/language-tags/index.en)
+  of your language (e.g. "fr" or "fr-CA")
+- in the file, search and replace all occurrences of "en-GB" with the language
+  tag of your language
+- replace the comments at the top and bottom of the file that say "British 
+  English" with your language, e.g. "French" or "Canadian French"
+- translate all strings and documentation strings to your language, e.g. replace
+  
+  ```elisp
+  (defconst orgn--author-not-set-en-GB
+    "Author Not Set"
+    "Author not specified by user.")
+  ```
+  
+  by this:
+  ```elisp
+  (defconst orgn--author-not-set-fr
+    "Auteur non défini"
+    "Auteur non spécifié par l'utilisateur.")
+  ```
+- spell-check your work
+- consider submitting a pull request to the org-novelist GitHub repository
