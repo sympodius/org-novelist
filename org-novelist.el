@@ -1051,9 +1051,7 @@ related to the current buffer."
                                 (when (thing-at-point 'sentence t)
                                   ;; Sanitize sentences to not include links before adding.
                                   (puthash (line-number-at-pos) (orgn--sanitize-string (thing-at-point 'sentence t)) found-aliases))
-                                (forward-word))
-                              )
-                            ))
+                                (forward-word)))))
                         ;; We should now have a hash table of found references
                         (with-temp-buffer
                           (setq found-alias-keys (sort (hash-table-keys found-aliases) '<))
