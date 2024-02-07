@@ -106,8 +106,8 @@
 ;; Folder Names
 (defconst orgn--notes-folder-en-GB "Notes" "The folder name for storing note files.")
 (defconst orgn--indices-folder-en-GB "Indices" "The folder name for storing index files.")
-(defconst orgn--chapters-folder-en-GB "Chapters" "The folder for storing the chapter files.")
-(defconst orgn--exports-folder-en-GB "Exports" "The folder for storing export files.")
+(defconst orgn--chapters-folder-en-GB "Chapters" "The folder name for storing the chapter files.")
+(defconst orgn--exports-folder-en-GB "Exports" "The folder name for storing export files.")
 ;; File Names
 (defconst orgn--main-file-en-GB "main" "Name for the story's main entry-point file.")
 (defconst orgn--notes-file-en-GB "notes" "Name for the story's general notes file.")
