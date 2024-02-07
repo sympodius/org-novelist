@@ -63,6 +63,7 @@
 ;;;; Global Variables
 
 (defvar orgn--autoref-p nil "Temporary store for last known value of org-novelist-automatic-referencing-p.")
+(defvar orgn--lang-tag nil "Temporary store for the original language tag set for this session.")
 
 
 ;;;; Global Constants
@@ -75,8 +76,10 @@
 (defconst orgn--folder-separator (file-name-as-directory "/") "Assign the current system's folder separator to a global variable.")
 
 (defconst orgn--config-filename "org-novelist-config.org" "Filename of where Org Novelist will store configuration data.")
+(defconst orgn--data-filename "org-novelist-data.org" "Filename of where Org Novelist will story less mutable data.")
 (defconst orgn--file-ending ".org" "The ending of the filenames used in Org Novelist.")
 (defconst orgn--mode-identifier "; -*-Org-Novelist-*-" "The Emacs mode identifier for Org Novelist.")
+(defconst orgn--language-tag-property "LANGUAGE_TAG" "Property key for the language tag associated with an Org Novelist story.")  ; Based on https://www.w3.org/International/articles/language-tags/index.en
 (defconst orgn--aliases-property "ALIASES" "Property key for the notes name aliases in a notes file.")
 (defconst orgn--add-to-generators-property "ADD_TO_GENERATORS" "Property key for generators a notes should be added to (eg, index, glossary).")
 (defconst orgn--generate-property "GENERATE" "Property key for generators a story should apply (eg, index, glossary).")
@@ -130,29 +133,52 @@
 (defconst orgn--chapters-title-en-GB "Chapters" "Name for the story's chapter index title.")
 (defconst orgn--config-name-en-GB "Export Settings" "Display name for a link to the story's configuration file.")
 ;; File Preambles
-(defconst orgn--notes-for-en-GB "Notes for" "Part of the preamble for the general notes file.")
-(defconst orgn--research-for-en-GB "Research for" "Part of the preamble for the general research file.")
-(defconst orgn--character-index-for-en-GB "Character Index for" "Part of the preamble for the character index file.")
-(defconst orgn--place-index-for-en-GB "Place Index for" "Part of the preamble for the location index file.")
-(defconst orgn--prop-index-for-en-GB "Prop Index for" "Part of the preamble for the prop index file.")
-(defconst orgn--chapter-index-for-en-GB "Chapter Index for" "Part of the premable for the chapter index file.")
+(defconst orgn--story-name-en-GB "story name" "Placeholder for the name of the story, used in generating template preambles.")
+(defconst orgn--chapter-name-en-GB "chapter name" "Placeholder for the name of a chapter, used in generating template preambles.")
+;; <<story name>> (without the << >> brackets) must share the same value as org-novelist--story-name-en-GB.
+;; <<chapter name>> (without the << >> brackets) must share the same value as org-novelist--chapter-name-en-GB.
+(defconst orgn--notes-for-story-name-en-GB "Notes for <<story name>>" "Part of the preamble for the general notes file.")
+(defconst orgn--notes-for-chapter-name-en-GB "Notes for <<chapter name>>" "Part of the preamble for the chapter notes file.")
+(defconst orgn--research-for-story-name-en-GB "Research for <<story name>>" "Part of the preamble for the general research file.")
+(defconst orgn--character-index-for-story-name-en-GB "Character Index for <<story name>>" "Part of the preamble for the character index file.")
+(defconst orgn--place-index-for-story-name-en-GB "Place Index for <<story name>>" "Part of the preamble for the location index file.")
+(defconst orgn--prop-index-for-story-name-en-GB "Prop Index for <<story name>>" "Part of the preamble for the prop index file.")
+(defconst orgn--chapter-index-for-story-name-en-GB "Chapter Index for <<story name>>" "Part of the preamble for the chapter index file.")
 (defconst orgn--front-matter-heading-en-GB "Front Matter" "Name for the Front Matter of the book chapters, used as a heading.")
 (defconst orgn--main-matter-heading-en-GB "Main Matter" "Name for the Main Matter of the book chapters, used as a heading.")
 (defconst orgn--back-matter-heading-en-GB "Back Matter" "Name for the Back Matter of the book chapters, used as a heading.")
-(defconst orgn--file-by-file-en-GB "Select individually for each file" "Offer to the user to make selections on a file by file basis.")
 (defconst orgn--notes-en-GB "Notes" "Part of the preamble for a chapter file.")
-(defconst orgn--are-available-for-this-en-GB "are available for this" "Sentence fragment describing availablility.")
 (defconst orgn--chapter-en-GB "chapter" "Part of the preamble for a chapter file.")
-(defconst orgn--from-en-GB "from" "Part of the preamble for a chapter file.")
-(defconst orgn--content-header-en-GB "Content" "Part of the preamble for a chapter file.")
-(defconst orgn--scene-name-here-en-GB "Scene Name Here" "Part of the preamble for a chapter file.")
-(defconst orgn--indefinite-article-simple-en-GB "a" "Simple form of the indefinite article.")
 (defconst orgn--character-en-GB "character" "Part of the preamble for a character file.")
 (defconst orgn--prop-en-GB "prop" "Part of the preamble for a prop file.")
 (defconst orgn--place-en-GB "place" "Part of the preamble for a place file.")
+(defconst orgn--character-name-en-GB "character name" "Placeholder for the name of a character, used in generating template preambles.")
+(defconst orgn--prop-name-en-GB "prop name" "Placeholder for the name of a prop, used in generating template preambles.")
+(defconst orgn--place-name-en-GB "place name" "Placeholder for the name of a place, used in generating template preambles.")
+;; <<Notes>> (without the << >> brackets) must share the same value as org-novelist--notes-en-GB.
+;; <<chapter>> (without the << >> brackets) must share the same value as org-novelist--chapter-en-GB.
+;; <<story name>> (without the << >> brackets) must share the same value as org-novelist--story-name-en-GB.
+;; <<chapter name>> (without the << >> brackets) must share the same value as org-novelist--chapter-name-en-GB.
+;; <<character name>> (without the << >> brackets) must share the same value as org-novelist--character-name-en-GB.
+;; <<character>> (without the << >> brackets) must share the same value as org-novelist--character-en-GB.
+;; <<prop name>> (without the << >> brackets) must share the same value as org-novelist--prop-name-en-GB.
+;; <<prop>> (without the << >> brackets) must share the same value as org-novelist--prop-en-GB.
+;; <<place name>> (without the << >> brackets) must share the same value as org-novelist--place-name-en-GB.
+;; <<place>> (without the << >> brackets) must share the same value as org-novelist--place-en-GB.
+(defconst orgn--notes-are-available-for-this-chapter-from-story-name-en-GB "<<Notes>> are available for this <<chapter>> from <<story name>>." "Sentence describing chapter notes availability.")
+(defconst orgn--notes-for-chapter-name-a-chapter-from-story-name-en-GB "Notes for <<chapter name>>, a <<chapter>> from <<story name>>." "Sentence header for chapter notes template.")
+(defconst orgn--notes-for-character-name-a-character-from-story-name-en-GB "Notes for <<character name>>, a <<character>> from <<story name>>." "Sentence header for character notes template.")
+(defconst orgn--notes-for-prop-name-a-prop-from-story-name-en-GB "Notes for <<prop name>>, a <<prop>> from <<story name>>." "Sentence header for prop notes template.")
+(defconst orgn--notes-for-place-name-a-place-from-story-name-en-GB "Notes for <<place name>>, a <<place>> from <<story name>>." "Sentence header for place notes template.")
+(defconst orgn--content-header-en-GB "Content" "Part of the preamble for a chapter file.")
+(defconst orgn--scene-name-here-en-GB "Scene Name Here" "Part of the preamble for a chapter file.")
 (defconst orgn--glossary-header-en-GB "Glossary" "Part of the writing glossary in chapter files.")
 (defconst orgn--view-notes-en-GB "View Notes" "A link text to let the user view related notes.")
-(defconst orgn--alias-for-en-GB "is an alias for" "Text to let the user know something is an alias.")
+(defconst orgn--new-name-en-GB "New name" "Placeholder for the new name in an alias string.")
+(defconst orgn--old-name-en-GB "old name" "Placeholder for the old name in an alias string.")
+;; <<New name>> (without the << >> brackets) must share the same value as org-novelist--new-name-en-GB.
+;; <<old name>> (without the << >> brackets) must share the same value as org-novelist--old-name-en-GB.
+(defconst orgn--new-name-is-an-alias-for-old-name-en-GB "<<New name>> is an alias for <<old name>>." "Text to let the user know something is an alias.")
 (defconst orgn--appearances-in-chapters-header-en-GB "Appearances in Chapters" "Part of the references section in notes files.")
 (defconst orgn--line-en-GB "Line" "The word for the line of a chapter. Used at the start of a sentence.")
 (defconst orgn--not-yet-referenced-en-GB "Not yet referenced in story." "Display that an object has not yet been mentioned in any of the chapter files.")
@@ -214,6 +240,7 @@
 (defconst orgn--chapter-name-query-en-GB "Chapter Name?" "A query to the user for the name of a chapter.")
 (defconst orgn--chapter-location-query-en-GB "Choose Chapter Location From Available Options for \"%s\" (%s/%s/%s):" "A query to the user for what section in which to place a new chapter.")
 (defconst orgn--rebuild-chapter-index-location-query-en-GB "Rebuilding index: Where should chapters go?" "When rebuilding chapter index, ask user where to place chapters.")
+(defconst orgn--file-by-file-en-GB "Select individually for each file" "Offer to the user to make selections on a file by file basis.")
 (defconst orgn--delete-file-query-en-GB "Delete file?" "A query to show the user to see if they want to delete a file.")
 (defconst orgn--name-already-in-use-en-GB "That name is already in use. Please try again" "Tell user the chosen name is already in use.")
 (defconst orgn--okay-en-GB "Okay" "Positive acknowledgement to the user.")  ; This is also used to check that a language pack exists
@@ -225,15 +252,21 @@
 (defconst orgn--new-prop-name-query-en-GB "New Prop Name?" "A query to the user for the new name of a prop.")
 (defconst orgn--new-place-name-query-en-GB "New Place Name?" "A query to the user for the new name of a place.")
 (defconst orgn--new-story-name-query-en-GB "New Story Name?" "A query to the user for the new name for the story.")
-(defconst orgn--rename-story-folder-query-en-GB "Rename story folder as well? " "A query to the user as to whether to also rename the story folder.")
+(defconst orgn--rename-story-folder-query-en-GB "Rename story folder as well?" "A query to the user whether to also rename the story folder.")
 (defconst orgn--match-lang-tag-to-story-query-en-GB "What language was used to create this story (eg, 'en-GB')?" "A query to the user to change the session language tag.")
 ;; Error/Throw/Messages
-(defconst orgn--no-localised-function-en-GB "No localised function found for" "The local language version of the function is missing.")
-(defconst orgn--is-not-writable-en-GB "is not writable" "File is not writable.")
+(defconst orgn--function-name-en-GB "function name" "Placeholder for the name of the function, used in generating error messages.")
+(defconst orgn--filename-en-GB "filename" "Placeholder for the filename, used in generating error messages.")
+;; <<function name>> (without the << >> brackets) must share the same value as org-novelist--function-name-en-GB.
+(defconst orgn--no-localised-function-en-GB "No localised function found for <<function name>>" "The local language version of the function is missing.")
+;; <<filename>> (without the << >> brackets) must share the same value as org-novelist--filename-en-GB.
+(defconst orgn--filename-is-not-writable-en-GB "<<filename>> is not writable" "File is not writable.")
 (defconst orgn--story-folder-already-in-use-en-GB "That story folder is already in use" "Tell user the selected folder already contains an Org Novelist story.")
-(defconst orgn--not-part-of-a-story-folder-en-GB "is not part of an Org Novelist story folder" "Function run from location not appearing to be part of an Org Novelist story.")
+;; <<filename>> (without the << >> brackets) must share the same value as org-novelist--filename-en-GB.
+(defconst orgn--filename-is-not-part-of-a-story-folder-en-GB "<<filename>> is not part of an Org Novelist story folder" "Function run from location not appearing to be part of an Org Novelist story.")
 (defconst orgn--no-story-found-en-GB "No story found" "No story found in folder.")
-(defconst orgn--is-not-readable-en-GB "is not readable" "File is not readable.")
+;; <<filename>> (without the << >> brackets) must share the same value as org-novelist--filename-en-GB.
+(defconst orgn--filename-is-not-readable-en-GB "<<filename>> is not readable" "File is not readable.")
 (defconst orgn--new-chapter-created-en-GB "New chapter created" "Throw out of chapter creation loop once chapter created. Not an error.")
 (defconst orgn--no-more-headings-en-GB "No more headings" "Throw out of chapter creation loop as section heading not found. Not an error.")
 (defconst orgn--file-malformed-en-GB "File malformed" "Throw out of chapter creation function as no top heading. Recoverable error.")
@@ -243,28 +276,110 @@
 (defconst orgn--no-characters-found-en-GB "No characters found" "No characters found in story.")
 (defconst orgn--no-props-found-en-GB "No props found" "No props found in story.")
 (defconst orgn--no-places-found-en-GB "No places found" "No places found in story.")
-(defconst orgn--unrecognised-index-en-GB "is not a recognised index" "Index is not of a known type.")
-(defconst orgn--auto-ref-now-on-en-GB "Org Novelist automatic referencing has been turned ON." "Inform user that automatic referencing has been turned on.")
-(defconst orgn--auto-ref-now-off-en-GB "Org Novelist automatic referencing has been turned OFF." "Inform user that automatic referencing has been turned off.")
-(defconst orgn--language-set-to-en-GB "Org Novelist language set to" "Inform user that language has been set.")
+;; <<filename>> (without the << >> brackets) must share the same value as org-novelist--filename-en-GB.
+(defconst orgn--filename-is-not-a-recognised-index-en-GB "<<filename>> is not a recognized index" "Index is not of a known type.")
+(defconst orgn--auto-ref-now-on-en-GB "Org Novelist automatic referencing has been turned ON" "Inform user that automatic referencing has been turned on.")
+(defconst orgn--auto-ref-now-off-en-GB "Org Novelist automatic referencing has been turned OFF" "Inform user that automatic referencing has been turned off.")
+(defconst orgn--language-tag-en-GB "language tag" "Placeholder for the language code, used in generating error messages.")  ; Based on https://www.w3.org/International/articles/language-tags/index.en
+;; <<language tag>> (without the << >> brackets) must share the same value as org-novelist--language-tag-en-GB.
+(defconst orgn--language-set-to-language-tag-en-GB "Org Novelist language set to: <<language tag>>" "Inform user that language has been set.")
 (defconst orgn--language-not-found-en-GB "Selected language pack not found." "Inform user that language pack could not be found.")
+(defconst orgn--folder-already-exists-en-GB "That folder already exists" "Inform user the folder already exists.")
 ;; Pattern Matches
 (defconst orgn--sys-safe-name-en-GB "[-A-Za-z0-9]*" "Regexp to match strings produced by `org-novelist--system-safe-name-en-GB'.")
 (defconst orgn--aliases-separators-en-GB "[,\f\t\n\r\v]+" "Regexp to match the separators in a list of aliases.")
 (defconst orgn--generate-separators-en-GB orgn--aliases-separators-en-GB "Regexp to match the separators in a list of generators.")
-(defconst orgn--notes-name-search-en-GB "[[:space:][:punct:]]+%s[[:space:][:punct:]]+" "Regexp to match names of things in chapter files.")
-(defconst orgn--notes-name-org-link-search-en-GB "\\[\\[:space:\\]\\[:punct:\\]\\]+%s\\[\\[:space:\\]\\[:punct:\\]\\]+" "Regexp to match, from an Org mode link, names of things in chapter files.")
-(defconst orgn--folder-already-exists-en-GB "That folder already exists" "Inform user the folder already exists.")
+(defconst orgn--notes-name-search-en-GB "[[:space:][:punct:]]+?%s[[:space:][:punct:]]+?" "Regexp to match names of things in chapter files.")
+(defconst orgn--notes-name-org-link-search-en-GB "\\[\\[:space:\\]\\[:punct:\\]\\]+?%s\\[\\[:space:\\]\\[:punct:\\]\\]+?" "Regexp to match, from an Org mode link, names of things in chapter files.")
 
 ;;;; Internationalized Functions
 
 (defun orgn--system-safe-name-en-GB (str)
   "Convert STR to a directory safe name.
 The resultant string should be suitable for all computer systems using en-GB."
-  ;; I'm just converting things to CamelCase at the moment, and
-  ;; removing non-Latin alphabet characters.
-  ;; Make sure that the constant `org-novelist--sys-safe-name-en-GB' matches this.
-  (orgn--camelise str))
+  ;; I'm just converting things to CamelCase at the moment, and removing non-Latin alphabet characters.
+  ;; I've tried to replace special characters with simpler transliterated equivalents that the camlise function can work with ([-A-Za-z0-9]*).
+  ;; Since British English regularly loans words from French, German, Spanish, etc, I've tried to do my best to resolve a sensible list of equivalencies.
+  ;; Make sure that the language pack constant `org-novelist--sys-safe-name-en-GB' matches the output of this function.
+  (let ((special-chars (make-hash-table :test 'equal))
+	(case-fold-search nil))
+    (puthash "£" "GBP" special-chars)
+    (puthash "€" "EUR" special-chars)
+    (puthash "$" "USD" special-chars)
+    (puthash "Ð" "D" special-chars)  ; DH might be better
+    (puthash "ð" "d" special-chars)  ; dh might be better
+    (puthash "₫" "dd" special-chars)
+    (puthash "Þ" "Th" special-chars)
+    (puthash "þ" "th" special-chars)
+    (puthash "Õ" "O" special-chars)
+    (puthash "õ" "o" special-chars)
+    (puthash "Ã" "A" special-chars)
+    (puthash "ã" "a" special-chars)
+    (puthash "Ø" "Oe" special-chars)
+    (puthash "ø" "oe" special-chars)
+    (puthash "Ù" "U" special-chars)
+    (puthash "ù" "u" special-chars)
+    (puthash "Ò" "O" special-chars)
+    (puthash "ò" "o" special-chars)
+    (puthash "Ì" "I" special-chars)
+    (puthash "ì" "i" special-chars)
+    (puthash "Å" "AA" special-chars)
+    (puthash "å" "aa" special-chars)
+    (puthash "Á" "A" special-chars)
+    (puthash "á" "a" special-chars)
+    (puthash "Í" "I" special-chars)
+    (puthash "í" "i" special-chars)
+    (puthash "Ó" "O" special-chars)
+    (puthash "ó" "o" special-chars)
+    (puthash "Ú" "U" special-chars)
+    (puthash "ú" "u" special-chars)
+    (puthash "ý" "y" special-chars)
+    (puthash "Ñ" "N" special-chars)
+    (puthash "ñ" "n" special-chars)
+    (puthash "Ÿ" "Y" special-chars)
+    (puthash "ÿ" "y" special-chars)
+    (puthash "Ù" "U" special-chars)
+    (puthash "ù" "u" special-chars)
+    (puthash "Û" "U" special-chars)
+    (puthash "û" "u" special-chars)
+    ;; (puthash "Ü" "u" special-chars)  ; Not used here. I'm opting to give German priority as English is more closely related to Germanic than romance languages
+    ;; (puthash "ü" "u" special-chars)  ; Not used here. I'm opting to give German priority as English is more closely related to Germanic than romance languages
+    (puthash "Ô" "O" special-chars)
+    (puthash "ô" "o" special-chars)
+    (puthash "Œ" "OE" special-chars)
+    (puthash "œ" "oe" special-chars)
+    (puthash "Î" "I" special-chars)
+    (puthash "î" "i" special-chars)  ; For Italian, it might be better to replace this with a double i, though in other languages a single i seems fair
+    (puthash "Ï" "I" special-chars)
+    (puthash "ï" "i" special-chars)
+    (puthash "É" "E" special-chars)
+    (puthash "é" "e" special-chars)
+    (puthash "È" "E" special-chars)
+    (puthash "è" "e" special-chars)
+    (puthash "Ê" "E" special-chars)
+    (puthash "ê" "e" special-chars)
+    (puthash "Ë" "E" special-chars)
+    (puthash "ë" "e" special-chars)
+    (puthash "Ç" "C" special-chars)
+    (puthash "ç" "c" special-chars)
+    (puthash "À" "A" special-chars)
+    (puthash "à" "a" special-chars)
+    (puthash "Â" "A" special-chars)
+    (puthash "â" "a" special-chars)
+    (puthash "Æ" "AE" special-chars)
+    (puthash "æ" "ae" special-chars)
+    (puthash "Ä" "Ae" special-chars)
+    (puthash "Ö" "Oe" special-chars)
+    (puthash "Ü" "Ue" special-chars)
+    (puthash "ä" "ae" special-chars)
+    (puthash "ö" "oe" special-chars)
+    (puthash "ü" "ue" special-chars)
+    (puthash "ẞ" "SS" special-chars)
+    (puthash "ß" "ss" special-chars)
+    (puthash "ſ" "s" special-chars)
+    (puthash "ʒ" "z" special-chars)
+    (setq str (orgn--replace-chars special-chars str))
+    (orgn--camelise str)))
 
 (defun orgn--camelise-en-GB (str)
   "Convert STR to CamelCase, using only the Latin alphabet.
@@ -289,11 +404,40 @@ The default is \"en-GB\".
 Strings matching the values of `org-novelist--folder-separator' or
 `org-novelist--file-ending' will be returned without change."
   (catch 'LOCALISATION-STRING-NOT-FOUND
+    ;; Check for language tag stored in data file.
+    (catch 'NO-STORY-ROOT-FOUMD
+      (let (current-folder
+	    story-language-tag)
+	(unless (string= " *temp*" (buffer-file-name))
+	  (when (or load-file-name buffer-file-name)
+	    (setq current-folder (directory-file-name (file-name-directory (or load-file-name buffer-file-name))))))
+	(when current-folder
+	  (while (not (file-exists-p (concat current-folder / orgn--config-filename)))
+	    (when (string= current-folder (setq current-folder (expand-file-name (concat current-folder / ".." ))))
+	      (throw 'NO-STORY-ROOT-FOUND current-folder)))
+	  ;; If we get to this point, a story root folder was found and that is what current-folder is set to.
+	  (setq story-language-tag (orgn--get-file-property-value (concat (expand-file-name current-folder) / orgn--data-filename) orgn--language-tag-property))
+	  (if (not (string= "" story-language-tag))
+	      ;; A value was found for the language tag of this story. So set it up.
+	      (progn
+		;; Store original user set language in case we move back to another story with no set language tag.
+		(unless orgn--lang-tag
+		  (if (boundp 'orgn-language-tag)
+		      (setq orgn--lang-tag orgn-language-tag)
+		    (setq orgn--lang-tag "en-GB")))
+		(setq orgn-language-tag story-language-tag))
+	    ;; This story has no language tag, so revert back to user set language tag.
+	    (when orgn--lang-tag
+	      (setq orgn-language-tag orgn--lang-tag))))))
     (unless (boundp 'orgn-language-tag)
       (defvar orgn-language-tag "en-GB" "The language to use for Org Novelist. Based on https://www.w3.org/International/articles/language-tags/index.en"))
     (unless (boundp (intern (concat "org-novelist--okay-" orgn-language-tag)))
-      (setq orgn-language-tag "en-GB")
-      (message (concat (orgn--ls "language-not-found") " " (orgn--ls "language-set-to") ": " orgn-language-tag)))
+      ;; Language tag is set, but the language pack isn't loaded. Try to load it from standard location.
+      (when (file-readable-p (expand-file-name (concat (file-name-directory (symbol-file 'org-novelist--localise-string))  "language-packs" / "org-novelist-language-pack-" (downcase orgn-language-tag) ".el")))
+	(load-file (expand-file-name (concat (file-name-directory (symbol-file 'org-novelist--localise-string))  "language-packs" / "org-novelist-language-pack-" (downcase orgn-language-tag) ".el"))))
+      (unless (boundp (intern (concat "org-novelist--okay-" orgn-language-tag)))
+	(setq orgn-language-tag "en-GB")
+	(message (concat (orgn--ls "language-not-found") " " (orgn--replace-string-in-string (concat "<<" (orgn--ls "language-tag") ">>") orgn-language-tag (orgn--ls "language-set-to-language-tag"))))))
     (cond ((string-equal str-name /)  ; Special case for the folder separator string
            (if (> (length str-list) 0)
                (concat (eval /) (apply 'orgn--localise-string str-list))
@@ -317,16 +461,45 @@ Strings matching the values of `org-novelist--folder-separator' or
 To change the language, the variable `org-novelist-language-tag' must be set to
 a supported language. The default is \"en-GB\"."
   (catch 'LOCALISATION-FUNCTION-NOT-FOUND
+    ;; Check for language tag stored in data file.
+    (catch 'NO-STORY-ROOT-FOUMD
+      (let (current-folder
+	    story-language-tag)
+	(unless (string= " *temp*" (buffer-file-name))
+	  (when (or load-file-name buffer-file-name)
+	    (setq current-folder (directory-file-name (file-name-directory (or load-file-name buffer-file-name))))))
+	(when current-folder
+	  (while (not (file-exists-p (concat current-folder / orgn--config-filename)))
+	    (when (string= current-folder (setq current-folder (expand-file-name (concat current-folder / ".." ))))
+	      (throw 'NO-STORY-ROOT-FOUND current-folder)))
+	  ;; If we get to this point, a story root folder was found and that is what current-folder is set to.
+	  (setq story-language-tag (orgn--get-file-property-value (concat (expand-file-name current-folder) / orgn--data-filename) orgn--language-tag-property))
+	  (if (not (string= "" story-language-tag))
+	      ;; A value was found for the language tag of this story. So set it up.
+	      (progn
+		;; Store original user set language in case we move back to another story with no set language tag.
+		(unless orgn--lang-tag
+		  (if (boundp 'orgn-language-tag)
+		      (setq orgn--lang-tag orgn-language-tag)
+		    (setq orgn--lang-tag "en-GB")))
+		(setq orgn-language-tag story-language-tag))
+	    ;; This story has no language tag, so revert back to user set language tag.
+	    (when orgn--lang-tag
+	      (setq orgn-language-tag orgn--lang-tag))))))
     (unless (boundp 'orgn-language-tag)
       (defconst orgn-language-tag "en-GB" "The language to use for Org Novelist (based on https://www.w3.org/International/articles/language-tags/index.en)."))
     (unless (boundp (intern (concat "org-novelist--okay-" orgn-language-tag)))
-      (setq orgn-language-tag "en-GB")
-      (message (concat (orgn--ls "language-not-found") " " (orgn--ls "language-set-to") ": " orgn-language-tag)))
+      ;; Language tag is set, but the language pack isn't loaded. Try to load it from standard location.
+      (when (file-readable-p (expand-file-name (concat (file-name-directory (symbol-file 'org-novelist--localise-function))  "language-packs" / "org-novelist-language-pack-" (downcase orgn-language-tag) ".el")))
+	(load-file (expand-file-name (concat (file-name-directory (symbol-file 'org-novelist--localise-function))  "language-packs" / "org-novelist-language-pack-" (downcase orgn-language-tag) ".el"))))
+      (unless (boundp (intern (concat "org-novelist--okay-" orgn-language-tag)))
+	(setq orgn-language-tag "en-GB")
+	(message (concat (orgn--ls "language-not-found") " " (orgn--replace-string-in-string (concat "<<" (orgn--ls "language-tag") ">>") orgn-language-tag (orgn--ls "language-set-to-language-tag"))))))
     (if (fboundp (intern (concat func-name "-" orgn-language-tag)))
         (intern (concat func-name "-" orgn-language-tag))
       (progn
-        (error (concat (orgn--ls "no-localised-function") " " func-name))
-        (throw 'LOCALISATION-FUNCTION-NOT-FOUND (concat (orgn--ls "no-localised-function") " " func-name))))))
+        (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "function-name") ">>") func-name (orgn--ls "no-localised-function")))
+        (throw 'LOCALISATION-FUNCTION-NOT-FOUND (orgn--replace-string-in-string (concat "<<" (orgn--ls "function-name") ">>") func-name (orgn--ls "no-localised-function")))))))
 (defalias 'orgn--lf 'orgn--localise-function)  ; Make an alias to keep code a little cleaner
 
 
@@ -410,6 +583,10 @@ If FIXEDCASE is non-nil, do not alter the case of the replacement text."
       (setq str (orgn--replace-string-in-string ch "" str)))
     str))
 
+(defun orgn--replace-chars (char-hash str)
+  "Replace all keys from CHAR-HASH in STR with their associated values."
+  (orgn--generate-string-from-template char-hash str t))
+
 (defun orgn--camelise (str)
   "Convert STR to CamelCase, only using characters that are allowed in filenames."
   ;; Do not shorten this string to orgn--camelise as it will prevent running outwith Org Novelist mode.
@@ -476,8 +653,8 @@ Otherwise, run org-fold-show-all."
         (if (file-writable-p filename)
             (write-region (point-min) (point-max) filename)
           (progn
-            (error (concat filename " " (orgn--ls "is-not-writable")))
-            (throw 'FILE-NOT-WRITABLE (concat filename " " (orgn--ls "is-not-writable")))))))))
+            (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") filename (orgn--ls "filename-is-not-writable")))
+            (throw 'FILE-NOT-WRITABLE (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") filename (orgn--ls "filename-is-not-writable")))))))))
 
 (defun orgn--generate-file-from-template (substitutions template filename)
   "Generate a new file from TEMPLATE string and SUBSTITUTIONS hash table.
@@ -535,13 +712,13 @@ throw an error."
             (if (or load-file-name buffer-file-name)
                 (setq folder (directory-file-name (file-name-directory (or load-file-name buffer-file-name))))
               (progn
-                (user-error (concat (orgn--ls "unsaved-buffer") " " (orgn--ls "not-part-of-a-story-folder")))
-                (throw 'NOT-A-STORY-FOLDER (concat (orgn--ls "unsaved-buffer") " " (orgn--ls "not-part-of-a-story-folder"))))))
+                (user-error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") (orgn--ls "unsaved-buffer") (orgn--ls "filename-is-not-part-of-a-story-folder")))
+                (throw 'NOT-A-STORY-FOLDER (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") (orgn--ls "unsaved-buffer") (orgn--ls "filename-is-not-part-of-a-story-folder"))))))
           (setq current-folder folder)
           (while (not (file-exists-p (concat current-folder / orgn--config-filename)))
             (when (string= current-folder (setq current-folder (expand-file-name (concat folder / ".." ))))
-              (user-error (concat folder " " (orgn--ls "not-part-of-a-story-folder")))
-              (throw 'NOT-A-STORY-FOLDER (concat folder " " (orgn--ls "not-part-of-a-story-folder")))))
+              (user-error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") folder (orgn--ls "filename-is-not-part-of-a-story-folder")))
+              (throw 'NOT-A-STORY-FOLDER (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") folder (orgn--ls "filename-is-not-part-of-a-story-folder")))))
           (expand-file-name current-folder))))))
 
 (defun orgn--story-name (&optional story-folder)
@@ -567,8 +744,8 @@ related to the current buffer."
                       (error (orgn--ls "no-story-found"))
                       (throw 'CONFIG-MISSING (orgn--ls "no-story-found")))))
               (progn
-                (error (concat (orgn--ls "main-file" orgn--file-ending) " " (orgn--ls "is-not-readable")))
-                (throw 'CONFIG-MISSING (concat (orgn--ls "main-file" orgn--file-ending) " " (orgn--ls "is-not-readable")))))
+                (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") (orgn--ls "main-file" orgn--file-ending) (orgn--ls "filename-is-not-readable")))
+                (throw 'CONFIG-MISSING (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") (orgn--ls "main-file" orgn--file-ending) (orgn--ls "filename-is-not-readable")))))
           (progn
             (error (orgn--ls "no-story-found"))
             (throw 'CONFIG-MISSING (orgn--ls "no-story-found")))))
@@ -606,8 +783,8 @@ related to the current buffer."
                       (error (orgn--ls "no-story-found"))
                       (throw 'SET-STORY-NAME-FAILURE (orgn--ls "no-story-found")))))
               (progn
-                (error (concat (orgn--ls "main-file" orgn--file-ending) " " (orgn--ls "is-not-readable")))
-                (throw 'SET-STORY-NAME-FAILURE (concat (orgn--ls "main-file" orgn--file-ending) " " (orgn--ls "is-not-readable")))))
+                (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") (orgn--ls "main-file" orgn--file-ending) (orgn--ls "filename-is-not-readable")))
+                (throw 'SET-STORY-NAME-FAILURE (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") (orgn--ls "main-file" orgn--file-ending) (orgn--ls "filename-is-not-readable")))))
           (progn
             (error (orgn--ls "no-story-found"))
             (throw 'SET-STORY-NAME-FAILURE (orgn--ls "no-story-found"))))))))
@@ -781,8 +958,8 @@ that appear in that file."
                                (setq curr-entry (concat curr-entry (orgn--ls "glossary-default-prop-desc")))))))
                   (progn
                     (setq orgn-automatic-referencing-p orgn--autoref-p)
-                    (error (concat story-folder / notes-folder / key " " (orgn--ls "is-not-readable")))
-                    (throw 'EXPORT-STORY-FAULT (concat story-folder / notes-folder / key " " (orgn--ls "is-not-readable")))))
+                    (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") (concat story-folder / notes-folder / key) (orgn--ls "filename-is-not-readable")))
+                    (throw 'EXPORT-STORY-FAULT (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") (concat story-folder / notes-folder / key) (orgn--ls "filename-is-not-readable")))))
               (progn
                 (setq orgn-automatic-referencing-p orgn--autoref-p)
                 (error (concat (orgn--ls "file-not-found") ": " story-folder / notes-folder / key))
@@ -887,8 +1064,8 @@ related to the current buffer."
                                                            (orgn--ls "line") " " (number-to-string found-alias-key)
                                                            ": \"" (gethash found-alias-key found-aliases) "\"\]\]")))))
                     (progn
-                      (error (concat story-folder / chapters-folder / chapter-key " " (orgn--ls "is-not-readable")))
-                      (throw 'MAKE-REFERENCES-WORKER-FAULT (concat story-folder / chapters-folder / chapter-key " " (orgn--ls "is-not-readable")))))
+                      (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") (concat story-folder / chapters-folder / chapter-key) (orgn--ls "filename-is-not-readable")))
+                      (throw 'MAKE-REFERENCES-WORKER-FAULT (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") (concat story-folder / chapters-folder / chapter-key) (orgn--ls "filename-is-not-readable")))))
                 (progn
                   (error (concat (orgn--ls "file-not-found") ": " story-folder / chapters-folder / chapter-key))
                   (throw 'MAKE-REFERENCES-WORKER-FAULT (concat (orgn--ls "file-not-found") ": " story-folder / chapters-folder / chapter-key))))
@@ -995,6 +1172,7 @@ If NO-OVERWRITE is t, don't replace existing property, just add new one."
 
 (defun orgn--get-file-property-value (file property)
   "Given a FILE, return the value of PROPERTY."
+  ;; This function cannot use any of the language functions (orgn--ls and orgn--lf) as orgn--get-file-property-value is required in determining what language needs to be set.
   (let ((value "")
         (regexp (format "^[ \t]*#\\+%s:" (regexp-quote property)))
         (case-fold-search t)
@@ -1131,8 +1309,8 @@ open buffer."
                     (setq chapters-headlines (cons (gethash key file-chapters) chapters-headlines)))
                   (setq chapters-headlines (delq nil (delete-dups chapters-headlines))))
               (progn
-                (error (concat story-folder / indices-folder / chapters-file " " (orgn--ls "is-not-readable")))
-                (throw 'CHAPTER-HEADLINES-FAULT (concat story-folder / indices-folder / chapters-file " " (orgn--ls "is-not-readable")))))
+                (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") (concat story-folder / indices-folder / chapters-file) (orgn--ls "filename-is-not-readable")))
+                (throw 'CHAPTER-HEADLINES-FAULT (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") (concat story-folder / indices-folder / chapters-file) (orgn--ls "filename-is-not-readable")))))
           (progn
             (error (concat (orgn--ls "file-not-found") ": " story-folder / indices-folder / chapters-file))
             (throw 'CHAPTER-HEADLINES-FAULT (concat (orgn--ls "file-not-found") ": " story-folder / indices-folder / chapters-file))))))))
@@ -1174,8 +1352,8 @@ open buffer."
                     (setq objects-headlines (cons (gethash key file-objects) objects-headlines)))
                   (setq objects-headlines (delq nil (delete-dups objects-headlines))))
               (progn
-                (error (concat story-folder / indices-folder / index-file " " (orgn--ls "is-not-readable")))
-                (throw 'OBJECT-HEADLINES-FAULT (concat story-folder / indices-folder / index-file " " (orgn--ls "is-not-readable")))))
+                (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") (concat story-folder / indices-folder / index-file) (orgn--ls "filename-is-not-readable")))
+                (throw 'OBJECT-HEADLINES-FAULT (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") (concat story-folder / indices-folder / index-file) (orgn--ls "filename-is-not-readable")))))
           (progn
             (error (concat (orgn--ls "file-not-found") ": " story-folder / indices-folder / index-file))
             (throw 'OBJECT-HEADLINES-FAULT (concat (orgn--ls "file-not-found") ": " story-folder / indices-folder / index-file))))))))
@@ -1266,8 +1444,8 @@ open buffer."
             (if (file-readable-p file)
                 (orgn--string-to-file (orgn--delete-org-subtrees-from-string subtree-heading (org-file-contents file)) file)
               (progn
-                (error (concat file " " (orgn--ls "is-not-readable")))
-                (throw 'SUBTREE-DELETION-FROM-FILE-FAULT (concat file " " (orgn--ls "is-not-readable")))))
+                (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") file (orgn--ls "filename-is-not-readable")))
+                (throw 'SUBTREE-DELETION-FROM-FILE-FAULT (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") file (orgn--ls "filename-is-not-readable")))))
           (progn
             (error (concat (orgn--ls "file-not-found") ": " file))
             (throw 'SUBTREE-DELETION-FROM-FILE-FAULT (concat (orgn--ls "file-not-found") ": " file))))))))
@@ -1401,8 +1579,8 @@ open buffer."
                                        new-object-name))
                  nil t))
             (progn
-              (error (concat index-file " " (orgn--ls "is-not-readable")))
-              (throw 'OBJECT-RENAME-IN-INDEX-FAULT (concat index-file " " (orgn--ls "is-not-readable")))))
+              (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") index-file (orgn--ls "filename-is-not-readable")))
+              (throw 'OBJECT-RENAME-IN-INDEX-FAULT (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") index-file (orgn--ls "filename-is-not-readable")))))
         (progn
           (error (concat (orgn--ls "file-not-found") ": " index-file))
           (throw 'OBJECT-RENAME-IN-INDEX-FAULT (concat (orgn--ls "file-not-found") ": " index-file))))
@@ -1498,7 +1676,11 @@ open buffer."
                                                   (buffer-string)))
                 (orgn--string-to-file new-chapter-notes-contents chapter-notes-file)
                 (revert-buffer t t t)
-                (orgn--set-file-property-value "TITLE" (concat (orgn--ls "notes-for") " " new-chapter-name) chapter-notes-file)
+                (orgn--set-file-property-value "TITLE"
+					       (orgn--replace-string-in-string (concat "<<" (orgn--ls "chapter-name") ">>")
+									       new-chapter-name
+									       (orgn--ls "notes-for-chapter-name"))
+					       chapter-notes-file)
                 (orgn--rename-current-file new-chapter-notes-file))
             (progn
               ;; If no notes file found, don't show error; just continue.
@@ -1623,8 +1805,8 @@ open buffer."
                     (orgn--fold-show-all)  ; Belts and braces
                     (org-update-radio-target-regexp)))
               (progn
-                (error (concat story-folder / chapters-folder / key " " (orgn--ls "is-not-readable")))
-                (throw 'UPDATE-GLOSSARIES-FAULT (concat story-folder / chapters-folder / key " " (orgn--ls "is-not-readable")))))
+                (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") (concat story-folder / chapters-folder / key) (orgn--ls "filename-is-not-readable")))
+                (throw 'UPDATE-GLOSSARIES-FAULT (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") (concat story-folder / chapters-folder / key) (orgn--ls "filename-is-not-readable")))))
           (progn
             (error (concat (orgn--ls "file-not-found") ": " story-folder / chapters-folder / key))
             (throw 'UPDATE-GLOSSARIES-FAULT (concat (orgn--ls "file-not-found") ": " story-folder / chapters-folder / key)))))
@@ -1667,8 +1849,8 @@ open buffer."
                     (insert appearances)
                     (orgn--string-to-file (buffer-string) (concat story-folder / notes-folder / key))))
               (progn
-                (error (concat story-folder / notes-folder / key " " (orgn--ls "is-not-readable")))
-                (throw 'UPDATE-OBJECT-REFERENCES-FAULT (concat story-folder / notes-folder / key " " (orgn--ls "is-not-readable")))))
+                (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") (concat story-folder / notes-folder / key) (orgn--ls "filename-is-not-readable")))
+                (throw 'UPDATE-OBJECT-REFERENCES-FAULT (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") (concat story-folder / notes-folder / key) (orgn--ls "filename-is-not-readable")))))
           (progn
             (error (concat (orgn--ls "file-not-found") ": " story-folder / notes-folder / key))
             (throw 'UPDATE-OBJECT-REFERENCES-FAULT (concat (orgn--ls "file-not-found") ": " story-folder / notes-folder / key))))))))
@@ -1807,8 +1989,8 @@ open buffer."
           ((string-equal (orgn--ls "chapters-file" orgn--file-ending) index-file)
            (orgn--rebuild-chapters-index story-folder))
           (t
-           (error (concat index-file (orgn--ls "unrecognised-index")))
-           (throw 'REBUILD-INDEX-FAULT (concat index-file (orgn--ls "unrecognised-index")))))))
+           (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") index-file (orgn--ls "filename-is-not-a-recognised-index")))
+           (throw 'REBUILD-INDEX-FAULT (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") index-file (orgn--ls "filename-is-not-a-recognised-index")))))))
 
 (defun orgn--rebuild-indices (&optional story-folder)
   "Rebuild all story indices if malformed.
@@ -1853,8 +2035,8 @@ open buffer."
                     (when file-malformed-p
                       (orgn--rebuild-index (file-name-nondirectory index) story-folder)))
                 (progn
-                  (error (concat index " " (orgn--ls "is-not-readable")))
-                  (throw 'REBUILD-INDICES-FAULT (concat index " " (orgn--ls "is-not-readable")))))
+                  (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") index (orgn--ls "filename-is-not-readable")))
+                  (throw 'REBUILD-INDICES-FAULT (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") index (orgn--ls "filename-is-not-readable")))))
             (progn
               (orgn--string-to-file "" index)
               (orgn--rebuild-indices story-folder)
@@ -1886,8 +2068,8 @@ open buffer."
                 (when file-malformed-p
                   (orgn--rebuild-index index story-folder)))
             (progn
-              (error (concat story-folder / indices-folder / index " " (orgn--ls "is-not-readable")))
-              (throw 'REBUILD-INDICES-FAULT (concat story-folder / indices-folder / index " " (orgn--ls "is-not-readable")))))
+              (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") (concat story-folder / indices-folder / index) (orgn--ls "filename-is-not-readable")))
+              (throw 'REBUILD-INDICES-FAULT (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") (concat story-folder / indices-folder / index) (orgn--ls "filename-is-not-readable")))))
         (progn
           (orgn--string-to-file "" (concat story-folder / indices-folder / index))
           (orgn--rebuild-indices story-folder)
@@ -2054,7 +2236,7 @@ with STORY-FOLDER to override that behaviour."
   (concat
    "<<mode>>\n"
    "\#\+TITLE\: <<title>>\n"
-   "* <<notes-for>> \[\[file\:<<main-file>>\]\[<<story-name>>\]\]\n"
+   "* <<notes-for-story-name>>\n"
    "<<<file-instructions>>>\n")
   "The template for the story's general notes file.")
 
@@ -2062,35 +2244,35 @@ with STORY-FOLDER to override that behaviour."
   (concat
    "<<mode>>\n"
    "\#\+TITLE\: <<title>>\n"
-   "* <<research-for>> \[\[file\:<<main-file>>\]\[<<story-name>>\]\]\n"
+   "* <<research-for-story-name>>\n"
    "<<<file-instructions>>>\n")
   "The template for the story's general research file.")
 
 (defconst orgn--characters-template
   (concat
    "<<mode>>\n"
-   "* <<character-index-for>> \[\[file\:<<main-file>>\]\[<<story-name>>\]\]\n"
+   "* <<character-index-for-story-name>>\n"
    "<<file-instructions>>\n")
   "The template for the story's character index file.")
 
 (defconst orgn--places-template
   (concat
    "<<mode>>\n"
-   "* <<place-index-for>> \[\[file\:<<main-file>>\]\[<<story-name>>\]\]\n"
+   "* <<place-index-for-story-name>>\n"
    "<<file-instructions>>\n")
   "The template for the story's location index file.")
 
 (defconst orgn--props-template
   (concat
    "<<mode>>\n"
-   "* <<prop-index-for>> \[\[file\:<<main-file>>\]\[<<story-name>>\]\]\n"
+   "* <<prop-index-for-story-name>>\n"
    "<<file-instructions>>\n")
   "The template for the story's prop index file.")
 
 (defconst orgn--chapters-template
   (concat
    "<<mode>>\n"
-   "* <<chapter-index-for>> \[\[file\:<<main-file>>\]\[<<story-name>>\]\]\n"
+   "* <<chapter-index-for-story-name>>\n"
    "<<file-instructions>>\n")
   "The template for the story's chapter index file.")
 
@@ -2191,9 +2373,11 @@ Once template is populated, it will be written to file."
   (let ((notes-file-substitutions (make-hash-table :test 'equal)))
     (puthash "<<mode>>" orgn--mode-identifier notes-file-substitutions)
     (puthash "<<title>>" (orgn--ls "notes-title") notes-file-substitutions)
-    (puthash "<<notes-for>>" (orgn--ls "notes-for") notes-file-substitutions)
-    (puthash "<<main-file>>" (concat ".." / (orgn--ls "main-file" orgn--file-ending)) notes-file-substitutions)
-    (puthash "<<story-name>>" story-name notes-file-substitutions)
+    (puthash "<<notes-for-story-name>>"
+	     (orgn--replace-string-in-string (concat "<<" (orgn--ls "story-name") ">>")
+					     (concat "\[\[file\:.." / (orgn--ls "main-file" orgn--file-ending) "\]\[" story-name "\]\]")
+					     (orgn--ls "notes-for-story-name"))
+	     notes-file-substitutions)
     (puthash "<<file-instructions>>" (orgn--ls "notes-file-instructions") notes-file-substitutions)
     (orgn--generate-file-from-template notes-file-substitutions orgn--notes-template (concat story-folder / (orgn--ls "notes-folder" / "notes-file" orgn--file-ending)))))
 
@@ -2204,9 +2388,11 @@ Once template is populated, it will be written to file."
   (let ((research-file-substitutions (make-hash-table :test 'equal)))
     (puthash "<<mode>>" orgn--mode-identifier research-file-substitutions)
     (puthash "<<title>>" (orgn--ls "research-title") research-file-substitutions)
-    (puthash "<<research-for>>" (orgn--ls "research-for") research-file-substitutions)
-    (puthash "<<main-file>>" (concat ".." / (orgn--ls "main-file" orgn--file-ending)) research-file-substitutions)
-    (puthash "<<story-name>>" story-name research-file-substitutions)
+    (puthash "<<research-for-story-name>>"
+	     (orgn--replace-string-in-string (concat "<<" (orgn--ls "story-name") ">>")
+					     (concat "\[\[file\:.." / (orgn--ls "main-file" orgn--file-ending) "\]\[" story-name "\]\]")
+					     (orgn--ls "research-for-story-name"))
+	     research-file-substitutions)
     (puthash "<<file-instructions>>" (orgn--ls "research-file-instructions") research-file-substitutions)
     (orgn--generate-file-from-template research-file-substitutions orgn--research-template (concat story-folder / (orgn--ls "notes-folder" / "research-file" orgn--file-ending)))))
 
@@ -2216,9 +2402,11 @@ STORY-NAME is the name for the story, and STORY-FOLDER is its save location.
 Once template is populated, it will be written to file."
   (let ((characters-file-substitutions (make-hash-table :test 'equal)))
     (puthash "<<mode>>" orgn--mode-identifier characters-file-substitutions)
-    (puthash "<<character-index-for>>" (orgn--ls "character-index-for") characters-file-substitutions)
-    (puthash "<<main-file>>" (concat ".." / (orgn--ls "main-file" orgn--file-ending)) characters-file-substitutions)
-    (puthash "<<story-name>>" story-name characters-file-substitutions)
+    (puthash "<<character-index-for-story-name>>"
+	     (orgn--replace-string-in-string (concat "<<" (orgn--ls "story-name") ">>")
+					     (concat "\[\[file\:.." / (orgn--ls "main-file" orgn--file-ending) "\]\[" story-name "\]\]")
+					     (orgn--ls "character-index-for-story-name"))
+	     characters-file-substitutions)
     (puthash "<<file-instructions>>" (orgn--ls "characters-file-instructions") characters-file-substitutions)
     (orgn--generate-file-from-template characters-file-substitutions orgn--characters-template (concat story-folder / (orgn--ls "indices-folder" / "characters-file" orgn--file-ending)))))
 
@@ -2228,9 +2416,11 @@ STORY-NAME is the name for the story, and STORY-FOLDER is its save location.
 Once template is populated, it will be written to file."
   (let ((places-file-substitutions (make-hash-table :test 'equal)))
     (puthash "<<mode>>" orgn--mode-identifier places-file-substitutions)
-    (puthash "<<place-index-for>>" (orgn--ls "place-index-for") places-file-substitutions)
-    (puthash "<<main-file>>" (concat ".." / (orgn--ls "main-file" orgn--file-ending)) places-file-substitutions)
-    (puthash "<<story-name>>" story-name places-file-substitutions)
+    (puthash "<<place-index-for-story-name>>"
+	     (orgn--replace-string-in-string (concat "<<" (orgn--ls "story-name") ">>")
+					     (concat "\[\[file\:.." / (orgn--ls "main-file" orgn--file-ending) "\]\[" story-name "\]\]")
+					     (orgn--ls "place-index-for-story-name"))
+	     places-file-substitutions)
     (puthash "<<file-instructions>>" (orgn--ls "places-file-instructions") places-file-substitutions)
     (orgn--generate-file-from-template places-file-substitutions orgn--places-template (concat story-folder / (orgn--ls "indices-folder" / "places-file" orgn--file-ending)))))
 
@@ -2240,9 +2430,11 @@ STORY-NAME is the name for the story, and STORY-FOLDER is its save location.
 Once template is populated, it will be written to file."
   (let ((props-file-substitutions (make-hash-table :test 'equal)))
     (puthash "<<mode>>" orgn--mode-identifier props-file-substitutions)
-    (puthash "<<prop-index-for>>" (orgn--ls "prop-index-for") props-file-substitutions)
-    (puthash "<<main-file>>" (concat ".." / (orgn--ls "main-file" orgn--file-ending)) props-file-substitutions)
-    (puthash "<<story-name>>" story-name props-file-substitutions)
+    (puthash "<<prop-index-for-story-name>>"
+	     (orgn--replace-string-in-string (concat "<<" (orgn--ls "story-name") ">>")
+					     (concat "\[\[file\:.." / (orgn--ls "main-file" orgn--file-ending) "\]\[" story-name "\]\]")
+					     (orgn--ls "prop-index-for-story-name"))
+	     props-file-substitutions)
     (puthash "<<file-instructions>>" (orgn--ls "props-file-instructions") props-file-substitutions)
     (orgn--generate-file-from-template props-file-substitutions orgn--props-template (concat story-folder / (orgn--ls "indices-folder" / "props-file" orgn--file-ending)))))
 
@@ -2252,9 +2444,11 @@ STORY-NAME is the name for the story, and STORY-FOLDER is its save location.
 Once template is populated, it will be written to file."
   (let ((chapters-file-substitutions (make-hash-table :test 'equal)))
     (puthash "<<mode>>" orgn--mode-identifier chapters-file-substitutions)
-    (puthash "<<chapter-index-for>>" (orgn--ls "chapter-index-for") chapters-file-substitutions)
-    (puthash "<<main-file>>" (concat ".." / (orgn--ls "main-file" orgn--file-ending)) chapters-file-substitutions)
-    (puthash "<<story-name>>" story-name chapters-file-substitutions)
+    (puthash "<<chapter-index-for-story-name>>"
+	     (orgn--replace-string-in-string (concat "<<" (orgn--ls "story-name") ">>")
+					     (concat "\[\[file\:.." / (orgn--ls "main-file" orgn--file-ending) "\]\[" story-name "\]\]")
+					     (orgn--ls "chapter-index-for-story-name"))
+	     chapters-file-substitutions)
     (puthash "<<file-instructions>>" (orgn--ls "chapters-file-instructions") chapters-file-substitutions)
     (orgn--generate-file-from-template chapters-file-substitutions orgn--chapters-template (concat story-folder / (orgn--ls "indices-folder" / "chapters-file" orgn--file-ending)))))
 
@@ -2469,7 +2663,17 @@ open buffer."
           (setq character-aliases (sort (split-string character-aliases-str (orgn--ls "aliases-separators") t " ") 'string<)))
         (while character-aliases
           (setq character-alias (string-trim (pop character-aliases)))
-          (setq characters-content (concat characters-content "\n- <<<" character-alias ">>> " (orgn--ls "alias-for") " " (gethash character-key existing-characters))))))
+	  ;; (setq characters-content (concat characters-content "\n- <<<" character-alias ">>> " (orgn--ls "alias-for") " " (gethash character-key existing-characters))))))
+	  (let ((character-alias-is-an-alias-for-character-str (orgn--ls "new-name-is-an-alias-for-old-name")))
+	    (setq character-alias-is-an-alias-for-character-str
+		  (orgn--replace-string-in-string (concat "<<" (orgn--ls "new-name") ">>")
+						  (concat "<<<" character-alias ">>>")
+						  character-alias-is-an-alias-for-character-str))
+	    (setq character-alias-is-an-alias-for-character-str
+		  (orgn--replace-string-in-string (concat "<<" (orgn--ls "old-name") ">>")
+						  (gethash character-key existing-characters)
+						  character-alias-is-an-alias-for-character-str))
+	    (setq characters-content (concat characters-content "\n- " character-alias-is-an-alias-for-character-str))))))
     (when characters-content
       (setq characters-content (concat characters-content "\n")))
     (puthash "<<characters-content>>" characters-content glossary-string-substitutions)
@@ -2487,7 +2691,17 @@ open buffer."
           (setq place-aliases (sort (split-string place-aliases-str (orgn--ls "aliases-separators") t " ") 'string<)))
         (while place-aliases
           (setq place-alias (string-trim (pop place-aliases)))
-          (setq places-content (concat places-content "\n- <<<" place-alias ">>> " (orgn--ls "alias-for") " " (gethash place-key existing-places))))))
+          ;;(setq places-content (concat places-content "\n- <<<" place-alias ">>> " (orgn--ls "alias-for") " " (gethash place-key existing-places))))))
+	  (let ((place-alias-is-an-alias-for-place-str (orgn--ls "new-name-is-an-alias-for-old-name")))
+	    (setq place-alias-is-an-alias-for-place-str
+		  (orgn--replace-string-in-string (concat "<<" (orgn--ls "new-name") ">>")
+						  (concat "<<<" place-alias ">>>")
+						  place-alias-is-an-alias-for-place-str))
+	    (setq place-alias-is-an-alias-for-place-str
+		  (orgn--replace-string-in-string (concat "<<" (orgn--ls "old-name") ">>")
+						  (gethash place-key existing-places)
+						  place-alias-is-an-alias-for-place-str))
+	    (setq places-content (concat places-content "\n- " place-alias-is-an-alias-for-place-str))))))
     (when places-content
       (setq places-content (concat places-content "\n")))
     (puthash "<<places-content>>" places-content glossary-string-substitutions)
@@ -2505,7 +2719,17 @@ open buffer."
           (setq prop-aliases (sort (split-string prop-aliases-str (orgn--ls "aliases-separators") t " ") 'string<)))
         (while prop-aliases
           (setq prop-alias (string-trim (pop prop-aliases)))
-          (setq props-content (concat props-content "\n- <<<" prop-alias ">>> " (orgn--ls "alias-for") " " (gethash prop-key existing-props))))))
+          ;; (setq props-content (concat props-content "\n- <<<" prop-alias ">>> " (orgn--ls "alias-for") " " (gethash prop-key existing-props))))))
+	  (let ((prop-alias-is-an-alias-for-prop-str (orgn--ls "new-name-is-an-alias-for-old-name")))
+	    (setq prop-alias-is-an-alias-for-prop-str
+		  (orgn--replace-string-in-string (concat "<<" (orgn--ls "new-name") ">>")
+						  (concat "<<<" prop-alias ">>>")
+						  prop-alias-is-an-alias-for-prop-str))
+	    (setq prop-alias-is-an-alias-for-prop-str
+		  (orgn--replace-string-in-string (concat "<<" (orgn--ls "old-name") ">>")
+						  (gethash prop-key existing-props)
+						  prop-alias-is-an-alias-for-prop-str))
+	    (setq props-content (concat props-content "\n- " prop-alias-is-an-alias-for-prop-str))))))
     (puthash "<<props-content>>" props-content glossary-string-substitutions)
     (orgn--generate-string-from-template glossary-string-substitutions orgn--glossary-template)))
 
@@ -2558,6 +2782,7 @@ STORY-NAME is the name of the story, and STORY-FOLDER is its save location."
         (unless (file-exists-p (file-name-directory (concat story-folder / (orgn--ls "chapters-folder") /)))
           (make-directory (file-name-directory (concat story-folder / (orgn--ls "chapters-folder") /)) t))
         (orgn--string-to-file (concat orgn--mode-identifier "\n") (concat story-folder / orgn--config-filename))  ; Create an empty configuration file for the story
+	(orgn--string-to-file (format "%s\n\#\+%s\: %s" orgn--mode-identifier orgn--language-tag-property orgn-language-tag) (concat story-folder / orgn--data-filename))  ; Create an immutable data file for the story, and set the story language tag
         (orgn--populate-main-template story-name story-folder)  ; Create the main entry-point file for the story
         (orgn--populate-notes-template story-name story-folder)  ; Create the general notes file for the story
         (orgn--populate-research-template story-name story-folder)  ; Create the general research file for the story
@@ -2637,8 +2862,8 @@ chapters to have a name, even if this will not be used on export."
                   (orgn--rebuild-index chapters-file story-folder)))
             (progn
               (setq orgn-automatic-referencing-p orgn--autoref-p)
-              (error (concat story-folder / indices-folder / chapters-file " " (orgn--ls "is-not-readable")))
-              (throw 'CHAPTER-CREATION-FAULT (concat story-folder / indices-folder / chapters-file " " (orgn--ls "is-not-readable")))))
+              (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") (concat story-folder / indices-folder / chapters-file) (orgn--ls "filename-is-not-readable")))
+              (throw 'CHAPTER-CREATION-FAULT (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") (concat story-folder / indices-folder / chapters-file) (orgn--ls "filename-is-not-readable")))))
         (progn
           (orgn--string-to-file "" (concat story-folder / indices-folder / chapters-file))
           (orgn-new-chapter chapter-name)  ; Call this function again
@@ -2775,8 +3000,8 @@ chapters to have a name, even if this will not be used on export."
               (find-file chapters-file)
             (progn
               (setq orgn-automatic-referencing-p orgn--autoref-p)
-              (error (concat chapters-file " " (orgn--ls "is-not-readable")))
-              (throw 'CHAPTER-DELETION-FAULT (concat chapters-file " " (orgn--ls "is-not-readable")))))
+              (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") chapters-file (orgn--ls "filename-is-not-readable")))
+              (throw 'CHAPTER-DELETION-FAULT (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") chapters-file (orgn--ls "filename-is-not-readable")))))
         (progn
           (setq orgn-automatic-referencing-p orgn--autoref-p)
           (error (concat (orgn--ls "file-not-found") ": " chapters-file))
@@ -2825,8 +3050,8 @@ chapters to have a name, even if this will not be used on export."
               (find-file chapters-file)
             (progn
               (setq orgn-automatic-referencing-p orgn--autoref-p)
-              (error (concat chapters-file " " (orgn--ls "is-not-readable")))
-              (throw 'RENAME-CHAPTER-FAULT-AT-INDEX (concat chapters-file " " (orgn--ls "is-not-readable")))))
+              (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") chapters-file (orgn--ls "filename-is-not-readable")))
+              (throw 'RENAME-CHAPTER-FAULT-AT-INDEX (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") chapters-file (orgn--ls "filename-is-not-readable")))))
         (progn
           (setq orgn-automatic-referencing-p orgn--autoref-p)
           (error (concat (orgn--ls "file-not-found") ": " chapters-file))
@@ -2956,8 +3181,8 @@ CHARACTER-NAME will be the name given to the character."
               (find-file characters-file)
             (progn
               (setq orgn-automatic-referencing-p orgn--autoref-p)
-              (error (concat characters-file " " (orgn--ls "is-not-readable")))
-              (throw 'CHARACTER-DELETION-FAULT (concat characters-file " " (orgn--ls "is-not-readable")))))
+              (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") characters-file (orgn--ls "filename-is-not-readable")))
+              (throw 'CHARACTER-DELETION-FAULT (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") characters-file (orgn--ls "filename-is-not-readable")))))
         (progn
           (setq orgn-automatic-referencing-p orgn--autoref-p)
           (error (concat (orgn--ls "file-not-found") ": " characters-file))
@@ -3003,8 +3228,8 @@ CHARACTER-NAME will be the name given to the character."
               (find-file characters-file)
             (progn
               (setq orgn-automatic-referencing-p orgn--autoref-p)
-              (error (concat characters-file " " (orgn--ls "is-not-readable")))
-              (throw 'RENAME-CHARACTER-FAULT-AT-INDEX (concat characters-file " " (orgn--ls "is-not-readable")))))
+              (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") characters-file (orgn--ls "filename-is-not-readable")))
+              (throw 'RENAME-CHARACTER-FAULT-AT-INDEX (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") characters-file (orgn--ls "filename-is-not-readable")))))
         (progn
           (setq orgn-automatic-referencing-p orgn--autoref-p)
           (error (concat (orgn--ls "file-not-found") ": " characters-file))
@@ -3127,8 +3352,8 @@ PROP-NAME will be the name given to the prop."
               (find-file props-file)
             (progn
               (setq orgn-automatic-referencing-p orgn--autoref-p)
-              (error (concat props-file " " (orgn--ls "is-not-readable")))
-              (throw 'PROP-DELETION-FAULT (concat props-file " " (orgn--ls "is-not-readable")))))
+              (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") props-file (orgn--ls "filename-is-not-readable")))
+              (throw 'PROP-DELETION-FAULT (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") props-file (orgn--ls "filename-is-not-readable")))))
         (progn
           (setq orgn-automatic-referencing-p orgn--autoref-p)
           (error (concat (orgn--ls "file-not-found") ": " props-file))
@@ -3174,8 +3399,8 @@ PROP-NAME will be the name given to the prop."
               (find-file props-file)
             (progn
               (setq orgn-automatic-referencing-p orgn--autoref-p)
-              (error (concat props-file " " (orgn--ls "is-not-readable")))
-              (throw 'RENAME-PROP-FAULT-AT-INDEX (concat props-file " " (orgn--ls "is-not-readable")))))
+              (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") props-file (orgn--ls "filename-is-not-readable")))
+              (throw 'RENAME-PROP-FAULT-AT-INDEX (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") props-file (orgn--ls "filename-is-not-readable")))))
         (progn
           (setq orgn-automatic-referencing-p orgn--autoref-p)
           (error (concat (orgn--ls "file-not-found") ": " props-file))
@@ -3298,8 +3523,8 @@ PLACE-NAME will be the name given to the place."
               (find-file places-file)
             (progn
               (setq orgn-automatic-referencing-p orgn--autoref-p)
-              (error (concat places-file " " (orgn--ls "is-not-readable")))
-              (throw 'PLACE-DELETION-FAULT (concat places-file " " (orgn--ls "is-not-readable")))))
+              (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") places-file (orgn--ls "filename-is-not-readable")))
+              (throw 'PLACE-DELETION-FAULT (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") places-file (orgn--ls "filename-is-not-readable")))))
         (progn
           (setq orgn-automatic-referencing-p orgn--autoref-p)
           (error (concat (orgn--ls "file-not-found") ": " places-file))
@@ -3345,8 +3570,8 @@ PLACE-NAME will be the name given to the place."
               (find-file places-file)
             (progn
               (setq orgn-automatic-referencing-p orgn--autoref-p)
-              (error (concat places-file " " (orgn--ls "is-not-readable")))
-              (throw 'RENAME-PLACE-FAULT-AT-INDEX (concat places-file " " (orgn--ls "is-not-readable")))))
+              (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") places-file (orgn--ls "filename-is-not-readable")))
+              (throw 'RENAME-PLACE-FAULT-AT-INDEX (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") places-file (orgn--ls "filename-is-not-readable")))))
         (progn
           (setq orgn-automatic-referencing-p orgn--autoref-p)
           (error (concat (orgn--ls "file-not-found") ": " places-file))
@@ -3437,8 +3662,8 @@ PLACE-NAME will be the name given to the place."
               (progn
                 (setq orgn-automatic-referencing-p orgn--autoref-p)
                 (find-file (concat story-folder / (orgn--ls "main-file") orgn--file-ending))
-                (user-error (concat (expand-file-name (concat story-folder / ".." / new-story-folder-name)) " " (orgn--ls "is-not-writable")))
-                (throw 'RENAME-STORY-FAULT (concat (expand-file-name (concat story-folder / ".." / new-story-folder-name)) " " (orgn--ls "is-not-writable")))))
+                (user-error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") (expand-file-name (concat story-folder / ".." / new-story-folder-name)) (orgn--ls "filename-is-not-writable")))
+                (throw 'RENAME-STORY-FAULT (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") (expand-file-name (concat story-folder / ".." / new-story-folder-name)) (orgn--ls "filename-is-not-writable")))))
           (progn
             (setq orgn-automatic-referencing-p orgn--autoref-p)
             (find-file (concat story-folder / (orgn--ls "main-file") orgn--file-ending))
@@ -3642,8 +3867,8 @@ export files."
                   (setq bm-file-list (reverse bm-file-list))))
             (progn
               (setq orgn-automatic-referencing-p orgn--autoref-p)
-              (error (concat chapter-index " " (orgn--ls "is-not-readable")))
-              (throw 'EXPORT-STORY-FAULT (concat chapter-index " " (orgn--ls "is-not-readable")))))
+              (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") chapter-index (orgn--ls "filename-is-not-readable")))
+              (throw 'EXPORT-STORY-FAULT (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") chapter-index (orgn--ls "filename-is-not-readable")))))
         (progn
           (setq orgn-automatic-referencing-p orgn--autoref-p)
           (error (concat (orgn--ls "file-not-found") ": " chapter-index))
@@ -3959,8 +4184,8 @@ export files."
                                                        (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending) t)))
                   (progn
                     (setq orgn-automatic-referencing-p orgn--autoref-p)
-                    (error (concat story-folder / notes-folder / key " " (orgn--ls "is-not-readable")))
-                    (throw 'EXPORT-STORY-FAULT (concat story-folder / notes-folder / key " " (orgn--ls "is-not-readable")))))
+                    (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") (concat story-folder / notes-folder / key) (orgn--ls "filename-is-not-readable")))
+                    (throw 'EXPORT-STORY-FAULT (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") (concat story-folder / notes-folder / key) (orgn--ls "filename-is-not-readable")))))
               (progn
                 (setq orgn-automatic-referencing-p orgn--autoref-p)
                 (error (concat (orgn--ls "file-not-found") ": " story-folder / notes-folder / key))
