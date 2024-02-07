@@ -156,7 +156,7 @@
 (defconst orgn--appearances-in-chapters-header-en-GB "Appearances in Chapters" "Part of the references section in notes files.")
 (defconst orgn--line-en-GB "Line" "The word for the line of a chapter. Used at the start of a sentence.")
 (defconst orgn--not-yet-referenced-en-GB "Not yet referenced in story." "Display that an object has not yet been mentioned in any of the chapter files.")
-(defconst orgn--exports-header-en-GB "Exports" "Heading for configuration file to use to list export tempaltes.")
+(defconst orgn--exports-header-en-GB "Exports" "Heading for configuration file to use to list export templates.")
 ;; File Content
 (defconst orgn--chapter-notes-content-en-GB
   (concat
@@ -205,9 +205,9 @@
    "** Notes\n")
   "Starter content for the place notes files.")
 (defconst orgn--alias-en-GB "Alias" "Alias section announcement for glossaries.")
-(defconst orgn--glossary-default-character-desc-en-GB "A character in the story." "The default desciption in the index for a character in the story.")
-(defconst orgn--glossary-default-place-desc-en-GB "A place in the story." "The default desciption in the index for a place in the story.")
-(defconst orgn--glossary-default-prop-desc-en-GB "A prop in the story." "The default desciption in the index for a prop in the story.")
+(defconst orgn--glossary-default-character-desc-en-GB "A character in the story." "The default description in the index for a character in the story.")
+(defconst orgn--glossary-default-place-desc-en-GB "A place in the story." "The default description in the index for a place in the story.")
+(defconst orgn--glossary-default-prop-desc-en-GB "A prop in the story." "The default description in the index for a prop in the story.")
 ;; User Queries
 (defconst orgn--story-name-query-en-GB "Story Name?" "A query to the user for what to name their story.")
 (defconst orgn--story-save-location-query-en-GB "Story Save Location?" "A query to the user for where to save their story.")
@@ -256,7 +256,7 @@
 (defconst orgn--notes-name-org-link-search-en-GB "\\[\\[:space:\\]\\[:punct:\\]\\]+%s\\[\\[:space:\\]\\[:punct:\\]\\]+" "Regexp to match, from an Org mode link, names of things in chapter files.")
 (defconst orgn--folder-already-exists-en-GB "That folder already exists" "Inform user the folder already exists.")
 
-;;;; Internationalised Functions
+;;;; Internationalized Functions
 
 (defun orgn--system-safe-name-en-GB (str)
   "Convert STR to a directory safe name.
