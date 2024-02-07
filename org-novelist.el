@@ -364,8 +364,9 @@ A corresponding language pack must be included with Org Novelist."
 
 ;;;; String Manipulation Worker Functions
 
-(defun orgn--replace-string-in-string (old-str new-str content)
-  "Given a string, CONTENT, replace any occurrences of OLD-STR with NEW-STR."
+(defun orgn--replace-string-in-string (old-str new-str content &optional fixedcase)
+  "Given a string, CONTENT, replace any occurrences of OLD-STR with NEW-STR.
+If FIXEDCASE is non-nil, do not alter the case of the replacement text."
   ;; This function was written as a non-regexp version of (replace-regexp-in-string REGEXP REP STRING).
   (unless old-str
     (setq old-str ""))
@@ -377,7 +378,7 @@ A corresponding language pack must be included with Org Novelist."
     (insert content)
     (goto-char (point-min))
     (while (search-forward old-str nil t)
-      (replace-match new-str nil t))
+      (replace-match new-str fixedcase t))
     (buffer-string)))
 
 (defun orgn--remove-chars (char-list str)
@@ -449,13 +450,14 @@ Otherwise, run org-fold-show-all."
 The new file, FILENAME, will be saved to disk."
   (orgn--string-to-file (orgn--generate-string-from-template substitutions template) filename))
 
-(defun orgn--generate-string-from-template (substitutions template)
-  "Generate a new string from TEMPLATE string and SUBSTITUTIONS hash table."
+(defun orgn--generate-string-from-template (substitutions template &optional fixedcase)
+  "Generate a new string from TEMPLATE string and SUBSTITUTIONS hash table.
+If FIXEDCASE is non-nil, do not alter the case of the replacement text."
   (let ((keys (hash-table-keys substitutions))
         key)
     (while keys
       (setq key (pop keys))
-      (setq template (orgn--replace-string-in-string key (gethash key substitutions) template)))
+      (setq template (orgn--replace-string-in-string key (gethash key substitutions) template fixedcase)))
     template))
 
 (defun orgn--replace-true-headline-in-org-heading (new-headline org-heading-components &optional new-level)
