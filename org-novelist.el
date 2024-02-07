@@ -361,6 +361,26 @@ A corresponding language pack must be included with Org Novelist."
   :group 'org-novelist
   :type 'boolean)
 
+(defcustom orgn-user-chapter-notes-content nil
+  "Override the default chapter notes template with your own contents."
+  :group 'org-novelist
+  :type 'string)
+
+(defcustom orgn-user-character-notes-content nil
+  "Override the default character notes template with your own contents."
+  :group 'org-novelist
+  :type 'string)
+
+(defcustom orgn-user-place-notes-content nil
+  "Override the default place notes template with your own contents."
+  :group 'org-novelist
+  :type 'string)
+
+(defcustom orgn-user-prop-notes-content nil
+  "Override the default prop notes template with your own contents."
+  :group 'org-novelist
+  :type 'string)
+
 
 ;;;; String Manipulation Worker Functions
 
@@ -2060,9 +2080,7 @@ with STORY-FOLDER to override that behaviour."
   (concat
    "<<mode>>\n"
    "\#\+TITLE\: <<title>>\n"
-   "\[\[file:<<chapter-notes-file>>\]\[<<chapter-notes>>\]\] <<are-available-for-this>> "
-   "\[\[file:<<chapter-index-file>>\]\[<<chapter>>\]\] <<from>> "
-   "\[\[file:<<main-file>>\]\[<<story-name>>\]\].\n"
+   "<<notes-are-available-for-this-chapter-from-story-name>>\n"
    "* <<content-header>>\n"
    "\# <<scene-name-here>>\n")
   "The template for the story's chapter files.")
@@ -2071,9 +2089,7 @@ with STORY-FOLDER to override that behaviour."
   (concat
    "<<mode>>\n"
    "\#\+TITLE\: <<title>>\n"
-   "* <<notes-for>> \[\[file:<<chapter-file>>\]\[<<chapter-name>>\]\], <<indefinite-article>> "
-   "\[\[file:<<chapter-index-file>>\]\[<<chapter>>\]\] <<from>> "
-   "\[\[file:<<main-file>>\]\[<<story-name>>\]\].\n"
+   "* <<notes-for-chapter-name-a-chapter-from-story-name>>\n"
    "<<chapter-notes-content>>")
   "The template for the story's chapter notes files.")
 
@@ -2081,9 +2097,7 @@ with STORY-FOLDER to override that behaviour."
   (concat
    "<<mode>>\n"
    "\#\+TITLE\: <<title>>\n"
-   "* <<notes-for>> /<<character-name>>/, <<indefinite-article>> "
-   "\[\[file:<<character-index-file>>\]\[<<character>>\]\] <<from>> "
-   "\[\[file:<<main-file>>\]\[<<story-name>>\]\].\n"
+   "* <<notes-for-character-name-a-character-from-story-name>>\n"
    "<<character-notes-content>>")
   "The template for the story's character notes files.")
 
@@ -2091,9 +2105,7 @@ with STORY-FOLDER to override that behaviour."
   (concat
    "<<mode>>\n"
    "\#\+TITLE\: <<title>>\n"
-   "* <<notes-for>> /<<prop-name>>/, <<indefinite-article>> "
-   "\[\[file:<<prop-index-file>>\]\[<<prop>>\]\] <<from>> "
-   "\[\[file:<<main-file>>\]\[<<story-name>>\]\].\n"
+   "* <<notes-for-prop-name-a-prop-from-story-name>>\n"
    "<<prop-notes-content>>")
   "The template for the story's prop notes files.")
 
@@ -2101,9 +2113,7 @@ with STORY-FOLDER to override that behaviour."
   (concat
    "<<mode>>\n"
    "\#\+TITLE\: <<title>>\n"
-   "* <<notes-for>> /<<place-name>>/, <<indefinite-article>> "
-   "\[\[file:<<place-index-file>>\]\[<<place>>\]\] <<from>> "
-   "\[\[file:<<main-file>>\]\[<<story-name>>\]\].\n"
+   "* <<notes-for-place-name-a-place-from-story-name>>\n"
    "<<place-notes-content>>")
   "The template for the story's place notes files.")
 
@@ -2236,17 +2246,26 @@ STORY-NAME is the name for the story, and STORY-FOLDER is its save location.
 CHAPTER-FILE is the file name for the chapter. CHAPTER-TITLE is the name for
 the chapter.
 Once template is populated, it will be written to file."
-  (let ((chapter-file-substitutions (make-hash-table :test 'equal)))
+  (let ((chapter-file-substitutions (make-hash-table :test 'equal))
+	(notes-are-available-for-this-chapter-from-story-name (orgn--ls "notes-are-available-for-this-chapter-from-story-name")))
+    (setq notes-are-available-for-this-chapter-from-story-name
+	  (orgn--replace-string-in-string
+	   (concat "<<" (orgn--ls "notes") ">>")
+	   (concat "\[\[file:.." / (orgn--ls "notes-folder") / chapter-file (orgn--ls "notes-suffix") orgn--file-ending "\]\[" (orgn--ls "notes") "\]\]")
+	   notes-are-available-for-this-chapter-from-story-name))
+    (setq notes-are-available-for-this-chapter-from-story-name
+	  (orgn--replace-string-in-string
+	   (concat "<<" (orgn--ls "chapter") ">>")
+	   (concat "\[\[file:.." / (orgn--ls "indices-folder" / "chapters-file" orgn--file-ending) "\]\[" (orgn--ls "chapter") "\]\]")
+	   notes-are-available-for-this-chapter-from-story-name))
+    (setq notes-are-available-for-this-chapter-from-story-name
+	  (orgn--replace-string-in-string
+	   (concat "<<" (orgn--ls "story-name") ">>")
+	   (concat "\[\[file:.." / (orgn--ls "main-file" orgn--file-ending) "\]\[" story-name "\]\]")
+	   notes-are-available-for-this-chapter-from-story-name))
     (puthash "<<mode>>" orgn--mode-identifier chapter-file-substitutions)
     (puthash "<<title>>" chapter-title chapter-file-substitutions)
-    (puthash "<<chapter-notes-file>>" (concat ".." / (orgn--ls "notes-folder") / chapter-file (orgn--ls "notes-suffix") orgn--file-ending) chapter-file-substitutions)
-    (puthash "<<chapter-notes>>" (orgn--ls "notes") chapter-file-substitutions)
-    (puthash "<<are-available-for-this>>" (orgn--ls "are-available-for-this") chapter-file-substitutions)
-    (puthash "<<chapter-index-file>>" (concat ".." / (orgn--ls "indices-folder" / "chapters-file" orgn--file-ending)) chapter-file-substitutions)
-    (puthash "<<chapter>>" (orgn--ls "chapter") chapter-file-substitutions)
-    (puthash "<<from>>" (orgn--ls "from") chapter-file-substitutions)
-    (puthash "<<main-file>>" (concat ".." / (orgn--ls "main-file" orgn--file-ending)) chapter-file-substitutions)
-    (puthash "<<story-name>>" story-name chapter-file-substitutions)
+    (puthash "<<notes-are-available-for-this-chapter-from-story-name>>" notes-are-available-for-this-chapter-from-story-name chapter-file-substitutions)
     (puthash "<<content-header>>" (orgn--ls "content-header") chapter-file-substitutions)
     (puthash "<<scene-name-here>>" (orgn--ls "scene-name-here") chapter-file-substitutions)
     (orgn--generate-file-from-template chapter-file-substitutions orgn--chapter-template (concat story-folder / (orgn--ls "chapters-folder") / chapter-file orgn--file-ending))))
@@ -2257,19 +2276,35 @@ STORY-NAME is the name for the story, and STORY-FOLDER is its save location.
 CHAPTER-FILE is the file name for the chapter. CHAPTER-TITLE is the name for
 the chapter.
 Once template is populated, it will be written to file."
-  (let ((chapter-notes-file-substitutions (make-hash-table :test 'equal)))
+  (let ((chapter-notes-file-substitutions (make-hash-table :test 'equal))
+	(notes-for-chapter-name-a-chapter-from-story-name (orgn--ls "notes-for-chapter-name-a-chapter-from-story-name")))
+    (setq notes-for-chapter-name-a-chapter-from-story-name
+	  (orgn--replace-string-in-string
+	   (concat "<<" (orgn--ls "chapter-name") ">>")
+	   (concat "\[\[file:.." / (orgn--ls "chapters-folder") / chapter-file orgn--file-ending "\]\[" chapter-title "\]\]")
+	   notes-for-chapter-name-a-chapter-from-story-name))
+    (setq notes-for-chapter-name-a-chapter-from-story-name
+	  (orgn--replace-string-in-string
+	   (concat "<<" (orgn--ls "chapter") ">>")
+	   (concat "\[\[file:.." / (orgn--ls "indices-folder" / "chapters-file" orgn--file-ending) "\]\[" (orgn--ls "chapter") "\]\]")
+	   notes-for-chapter-name-a-chapter-from-story-name))
+    (setq notes-for-chapter-name-a-chapter-from-story-name
+	  (orgn--replace-string-in-string
+	   (concat "<<" (orgn--ls "story-name") ">>")
+	   (concat "\[\[file:.." / (orgn--ls "main-file" orgn--file-ending) "\]\[" story-name "\]\]")
+	   notes-for-chapter-name-a-chapter-from-story-name))
     (puthash "<<mode>>" orgn--mode-identifier chapter-notes-file-substitutions)
-    (puthash "<<title>>" (concat (orgn--ls "notes-for") " " chapter-title) chapter-notes-file-substitutions)
-    (puthash "<<notes-for>>" (orgn--ls "notes-for") chapter-notes-file-substitutions)
-    (puthash "<<chapter-file>>" (concat ".." / (orgn--ls "chapters-folder") / chapter-file orgn--file-ending) chapter-notes-file-substitutions)
-    (puthash "<<chapter-name>>" chapter-title chapter-notes-file-substitutions)
-    (puthash"<<indefinite-article>>" (orgn--ls "indefinite-article-simple") chapter-notes-file-substitutions)
-    (puthash "<<chapter-index-file>>" (concat ".." / (orgn--ls "indices-folder" / "chapters-file" orgn--file-ending)) chapter-notes-file-substitutions)
-    (puthash "<<chapter>>" (orgn--ls "chapter") chapter-notes-file-substitutions)
-    (puthash "<<from>>" (orgn--ls "from") chapter-notes-file-substitutions)
-    (puthash "<<main-file>>" (concat ".." / (orgn--ls "main-file" orgn--file-ending)) chapter-notes-file-substitutions)
-    (puthash "<<story-name>>" story-name chapter-notes-file-substitutions)
-    (puthash "<<chapter-notes-content>>" (orgn--ls "chapter-notes-content") chapter-notes-file-substitutions)
+    (puthash "<<title>>"
+	     (orgn--replace-string-in-string (concat "<<" (orgn--ls "chapter-name") ">>")
+					     chapter-title
+					     (orgn--ls "notes-for-chapter-name"))
+	     chapter-notes-file-substitutions)
+    (puthash "<<notes-for-chapter-name-a-chapter-from-story-name>>" notes-for-chapter-name-a-chapter-from-story-name chapter-notes-file-substitutions)
+    (if orgn-user-chapter-notes-content
+	(if (not (string= orgn-user-chapter-notes-content ""))
+	    (puthash "<<chapter-notes-content>>" orgn-user-chapter-notes-content chapter-notes-file-substitutions)
+	  (puthash "<<chapter-notes-content>>" (orgn--ls "chapter-notes-content") chapter-notes-file-substitutions))
+      (puthash "<<chapter-notes-content>>" (orgn--ls "chapter-notes-content") chapter-notes-file-substitutions))
     (orgn--generate-file-from-template chapter-notes-file-substitutions orgn--chapter-notes-template (concat story-folder / (orgn--ls "notes-folder") / chapter-file (orgn--ls "notes-suffix") orgn--file-ending))))
 
 (defun orgn--populate-character-notes-template (story-name story-folder character-file character-name)
@@ -2278,18 +2313,31 @@ STORY-NAME is the name for the story, and STORY-FOLDER is its save location.
 CHARACTER-FILE is the file name for the character notes. CHARACTER-NAME is the
 name for the character.
 Once template is populated, it will be written to file."
-  (let ((character-notes-file-substitutions (make-hash-table :test 'equal)))
+  (let ((character-notes-file-substitutions (make-hash-table :test 'equal))
+	(notes-for-character-name-a-character-from-story-name (orgn--ls "notes-for-character-name-a-character-from-story-name")))
+    (setq notes-for-character-name-a-character-from-story-name
+	  (orgn--replace-string-in-string
+	   (concat "<<" (orgn--ls "character-name") ">>")
+	   character-name
+	   notes-for-character-name-a-character-from-story-name))
+    (setq notes-for-character-name-a-character-from-story-name
+	  (orgn--replace-string-in-string
+	   (concat "<<" (orgn--ls "character") ">>")
+	   (concat "\[\[file:.." / (orgn--ls "indices-folder" / "characters-file" orgn--file-ending) "\]\[" (orgn--ls "character") "\]\]")
+	   notes-for-character-name-a-character-from-story-name))
+    (setq notes-for-character-name-a-character-from-story-name
+	  (orgn--replace-string-in-string
+	   (concat "<<" (orgn--ls "story-name") ">>")
+	   (concat "\[\[file:.." / (orgn--ls "main-file" orgn--file-ending) "\]\[" story-name "\]\]")
+	   notes-for-character-name-a-character-from-story-name))
     (puthash "<<mode>>" orgn--mode-identifier character-notes-file-substitutions)
     (puthash "<<title>>" character-name character-notes-file-substitutions)
-    (puthash "<<notes-for>>" (orgn--ls "notes-for") character-notes-file-substitutions)
-    (puthash "<<character-name>>" character-name character-notes-file-substitutions)
-    (puthash"<<indefinite-article>>" (orgn--ls "indefinite-article-simple") character-notes-file-substitutions)
-    (puthash "<<character-index-file>>" (concat ".." / (orgn--ls "indices-folder" / "characters-file" orgn--file-ending)) character-notes-file-substitutions)
-    (puthash "<<character>>" (orgn--ls "character") character-notes-file-substitutions)
-    (puthash "<<from>>" (orgn--ls "from") character-notes-file-substitutions)
-    (puthash "<<main-file>>" (concat ".." / (orgn--ls "main-file" orgn--file-ending)) character-notes-file-substitutions)
-    (puthash "<<story-name>>" story-name character-notes-file-substitutions)
-    (puthash "<<character-notes-content>>" (orgn--ls "character-notes-content") character-notes-file-substitutions)
+    (puthash "<<notes-for-character-name-a-character-from-story-name>>" notes-for-character-name-a-character-from-story-name character-notes-file-substitutions)
+    (if orgn-user-character-notes-content
+	(if (not (string= orgn-user-character-notes-content ""))
+	    (puthash "<<character-notes-content>>" orgn-user-character-notes-content character-notes-file-substitutions)
+	  (puthash "<<character-notes-content>>" (orgn--ls "character-notes-content") character-notes-file-substitutions))
+      (puthash "<<character-notes-content>>" (orgn--ls "character-notes-content") character-notes-file-substitutions))
     (orgn--generate-file-from-template character-notes-file-substitutions orgn--character-notes-template (concat story-folder / (orgn--ls "notes-folder") / character-file orgn--file-ending))))
 
 (defun orgn--populate-prop-notes-template (story-name story-folder prop-file prop-name)
@@ -2298,18 +2346,31 @@ STORY-NAME is the name for the story, and STORY-FOLDER is its save location.
 PROP-FILE is the file name for the prop notes. PROP-NAME is the
 name for the prop.
 Once template is populated, it will be written to file."
-  (let ((prop-notes-file-substitutions (make-hash-table :test 'equal)))
+  (let ((prop-notes-file-substitutions (make-hash-table :test 'equal))
+	(notes-for-prop-name-a-prop-from-story-name (orgn--ls "notes-for-prop-name-a-prop-from-story-name")))
+    (setq notes-for-prop-name-a-prop-from-story-name
+	  (orgn--replace-string-in-string
+	   (concat "<<" (orgn--ls "prop-name") ">>")
+	   prop-name
+	   notes-for-prop-name-a-prop-from-story-name))
+    (setq notes-for-prop-name-a-prop-from-story-name
+	  (orgn--replace-string-in-string
+	   (concat "<<" (orgn--ls "prop") ">>")
+	   (concat "\[\[file:.." / (orgn--ls "indices-folder" / "props-file" orgn--file-ending) "\]\[" (orgn--ls "prop") "\]\]")
+	   notes-for-prop-name-a-prop-from-story-name))
+    (setq notes-for-prop-name-a-prop-from-story-name
+	  (orgn--replace-string-in-string
+	   (concat "<<" (orgn--ls "story-name") ">>")
+	   (concat "\[\[file:.." / (orgn--ls "main-file" orgn--file-ending) "\]\[" story-name "\]\]")
+	   notes-for-prop-name-a-prop-from-story-name))
     (puthash "<<mode>>" orgn--mode-identifier prop-notes-file-substitutions)
     (puthash "<<title>>" prop-name prop-notes-file-substitutions)
-    (puthash "<<notes-for>>" (orgn--ls "notes-for") prop-notes-file-substitutions)
-    (puthash "<<prop-name>>" prop-name prop-notes-file-substitutions)
-    (puthash"<<indefinite-article>>" (orgn--ls "indefinite-article-simple") prop-notes-file-substitutions)
-    (puthash "<<prop-index-file>>" (concat ".." / (orgn--ls "indices-folder" / "props-file" orgn--file-ending)) prop-notes-file-substitutions)
-    (puthash "<<prop>>" (orgn--ls "prop") prop-notes-file-substitutions)
-    (puthash "<<from>>" (orgn--ls "from") prop-notes-file-substitutions)
-    (puthash "<<main-file>>" (concat ".." / (orgn--ls "main-file" orgn--file-ending)) prop-notes-file-substitutions)
-    (puthash "<<story-name>>" story-name prop-notes-file-substitutions)
-    (puthash "<<prop-notes-content>>" (orgn--ls "prop-notes-content") prop-notes-file-substitutions)
+    (puthash "<<notes-for-prop-name-a-prop-from-story-name>>" notes-for-prop-name-a-prop-from-story-name prop-notes-file-substitutions)
+    (if orgn-user-prop-notes-content
+	(if (not (string= orgn-user-prop-notes-content ""))
+	    (puthash "<<prop-notes-content>>" orgn-user-prop-notes-content prop-notes-file-substitutions)
+	  (puthash "<<prop-notes-content>>" (orgn--ls "prop-notes-content") prop-notes-file-substitutions))
+      (puthash "<<prop-notes-content>>" (orgn--ls "prop-notes-content") prop-notes-file-substitutions))
     (orgn--generate-file-from-template prop-notes-file-substitutions orgn--prop-notes-template (concat story-folder / (orgn--ls "notes-folder") / prop-file orgn--file-ending))))
 
 (defun orgn--populate-place-notes-template (story-name story-folder place-file place-name)
@@ -2318,18 +2379,31 @@ STORY-NAME is the name for the story, and STORY-FOLDER is its save location.
 PLACE-FILE is the file name for the place notes. PLACE-NAME is the
 name for the place.
 Once template is populated, it will be written to file."
-  (let ((place-notes-file-substitutions (make-hash-table :test 'equal)))
+  (let ((place-notes-file-substitutions (make-hash-table :test 'equal))
+	(notes-for-place-name-a-place-from-story-name (orgn--ls "notes-for-place-name-a-place-from-story-name")))
+    (setq notes-for-place-name-a-place-from-story-name
+	  (orgn--replace-string-in-string
+	   (concat "<<" (orgn--ls "place-name") ">>")
+	   place-name
+	   notes-for-place-name-a-place-from-story-name))
+    (setq notes-for-place-name-a-place-from-story-name
+	  (orgn--replace-string-in-string
+	   (concat "<<" (orgn--ls "place") ">>")
+	   (concat "\[\[file:.." / (orgn--ls "indices-folder" / "places-file" orgn--file-ending) "\]\[" (orgn--ls "place") "\]\]")
+	   notes-for-place-name-a-place-from-story-name))
+    (setq notes-for-place-name-a-place-from-story-name
+	  (orgn--replace-string-in-string
+	   (concat "<<" (orgn--ls "story-name") ">>")
+	   (concat "\[\[file:.." / (orgn--ls "main-file" orgn--file-ending) "\]\[" story-name "\]\]")
+	   notes-for-place-name-a-place-from-story-name))
     (puthash "<<mode>>" orgn--mode-identifier place-notes-file-substitutions)
     (puthash "<<title>>" place-name place-notes-file-substitutions)
-    (puthash "<<notes-for>>" (orgn--ls "notes-for") place-notes-file-substitutions)
-    (puthash "<<place-name>>" place-name place-notes-file-substitutions)
-    (puthash"<<indefinite-article>>" (orgn--ls "indefinite-article-simple") place-notes-file-substitutions)
-    (puthash "<<place-index-file>>" (concat ".." / (orgn--ls "indices-folder" / "places-file" orgn--file-ending)) place-notes-file-substitutions)
-    (puthash "<<place>>" (orgn--ls "place") place-notes-file-substitutions)
-    (puthash "<<from>>" (orgn--ls "from") place-notes-file-substitutions)
-    (puthash "<<main-file>>" (concat ".." / (orgn--ls "main-file" orgn--file-ending)) place-notes-file-substitutions)
-    (puthash "<<story-name>>" story-name place-notes-file-substitutions)
-    (puthash "<<place-notes-content>>" (orgn--ls "place-notes-content") place-notes-file-substitutions)
+    (puthash "<<notes-for-place-name-a-place-from-story-name>>" notes-for-place-name-a-place-from-story-name place-notes-file-substitutions)
+    (if orgn-user-place-notes-content
+	(if (not (string= orgn-user-place-notes-content ""))
+	    (puthash "<<place-notes-content>>" orgn-user-place-notes-content place-notes-file-substitutions)
+	  (puthash "<<place-notes-content>>" (orgn--ls "place-notes-content") place-notes-file-substitutions))
+      (puthash "<<place-notes-content>>" (orgn--ls "place-notes-content") place-notes-file-substitutions))
     (orgn--generate-file-from-template place-notes-file-substitutions orgn--place-notes-template (concat story-folder / (orgn--ls "notes-folder") / place-file orgn--file-ending))))
 
 (defun orgn--populate-glossary-string (&optional story-folder)
