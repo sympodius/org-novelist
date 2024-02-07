@@ -421,7 +421,21 @@ The resultant string should be suitable for the current operating system."
   (funcall (orgn--lf "org-novelist--system-safe-name") str))
 
 (defun orgn--sanitize-string (str)
-  "Given a string, STR, remove characters that might cause processing problems."
+  "Given a string, STR, deal with anything that might cause processing problems."
+  (with-temp-buffer
+    (insert str)
+    (goto-char (point-min))
+    (let (pos)
+      (while (re-search-forward "\\[\\[" nil t)
+	(forward-char -2)
+	(setq pos (point))
+	(when (re-search-forward "\\]\\[" nil t)
+	  (delete-region pos (point)))
+	(when (re-search-forward "\\]\\]" nil t)
+	  (setq pos (point))
+	  (forward-char -2)
+	  (delete-region (point) pos))))
+    (setq str (buffer-string)))
   (setq str (orgn--replace-string-in-string "\\" "\\\\" str))  ; Escape any backslashs
   (setq str (orgn--replace-string-in-string "\"" "\\\"" str))  ; Escape any quotes (this must be run after escaping backslashes)
   str)
@@ -710,6 +724,7 @@ that appear in that file."
              (glossary-str ""))
         (while keys
           (setq key (pop keys))
+	  (setq curr-entry "")
           (setq entry-found nil)
           (when file-restriction
             (when (file-readable-p file-restriction)
@@ -729,7 +744,6 @@ that appear in that file."
             (if (file-exists-p (concat story-folder / notes-folder / key))
                 (if (file-readable-p (concat story-folder / notes-folder / key))
                     (when (member orgn--glossary-generator-value (split-string (orgn--get-file-property-value (concat story-folder / notes-folder / key) orgn--add-to-generators-property) (orgn--ls "generate-separators") t " "))
-                      (setq curr-entry "")
                       ;; Main name.
                       (setq title-words (split-string (orgn--get-file-property-value (concat story-folder / notes-folder / key) "TITLE") " " t " "))
                       (while title-words
@@ -774,7 +788,7 @@ that appear in that file."
                 (error (concat (orgn--ls "file-not-found") ": " story-folder / notes-folder / key))
                 (throw 'EXPORT-STORY-FAULT (concat (orgn--ls "file-not-found") ": " story-folder / notes-folder / key))))
             (setq glossary-str (concat glossary-str curr-entry "\n\n"))))
-        (eval (string-chop-newline glossary-str))))))  ; glossary-str contains the complete glossary for the story
+        (eval (concat (string-trim glossary-str) "\n"))))))  ; glossary-str contains the complete glossary for the story
 
 (defun orgn--make-file-chapter-references-string (file &optional story-folder)
   "Create a new list of references in an Org Novelist story for FILE.
@@ -854,11 +868,15 @@ related to the current buffer."
                           (while curr-names
                             (setq name (string-trim (pop curr-names)))
                             (goto-char (point-min))
-                            (while (re-search-forward (format regexp name) nil t)
-                              (backward-word)
-                              (when (thing-at-point 'sentence t)
-                                (puthash (line-number-at-pos) (thing-at-point 'sentence t) found-aliases))
-                              (forward-word))))
+                            (when (re-search-forward (regexp-quote (orgn--ls "content-header")) nil t)  ; Don't include anything before the content header in the search
+                              (while (re-search-forward (format regexp name) nil t)
+                                (backward-word)
+                                (when (thing-at-point 'sentence t)
+                                  ;; Sanitize sentences to not include links before adding.
+                                  (puthash (line-number-at-pos) (orgn--sanitize-string (thing-at-point 'sentence t)) found-aliases))
+                                (forward-word))
+                              )
+                            ))
                         ;; We should now have a hash table of found references
                         (with-temp-buffer
                           (setq found-alias-keys (sort (hash-table-keys found-aliases) '<))
@@ -3384,7 +3402,7 @@ PLACE-NAME will be the name given to the place."
       (setq new-story-name (orgn--sanitize-string (read-string (concat (orgn--ls "new-story-name-query") " "))))
       (setq new-story-folder-name (orgn--system-safe-name new-story-name))
       ;; Ask user if they want to rename folder as well.
-      (setq rename-story-folder-p (yes-or-no-p (orgn--ls "rename-story-folder-query")))
+      (setq rename-story-folder-p (yes-or-no-p (concat (orgn--ls "rename-story-folder-query") " ")))
       (while story-files
         (setq curr-file (pop story-files))
         ;; If filename starts with a period, don't add it.
