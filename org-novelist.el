@@ -4232,26 +4232,6 @@ Once changed, inform user of new state."
       (message (orgn--ls "auto-ref-now-on"))
     (message (orgn--ls "auto-ref-now-off"))))
 
-;; (defun orgn-match-language-tag-to-story (lang-tag)
-;;   "Change the language to LANG-TAG for the current session.
-;; Based on https://www.w3.org/International/articles/language-tags/index.en
-;; A corresponding language pack must be included with Org Novelist.
-
-;; This function will only be of use if the story doesn't have a language tag setup
-;; in its org-novelist-data.org file. Should that exist, it will always override
-;; this function."
-;;   (interactive (list (read-string (concat (orgn--ls "match-lang-tag-to-story-query") " "))))
-;;   (let ((mess ""))
-;;     (unless (boundp (intern (concat "org-novelist--okay-" lang-tag)))
-;;       ;; Wanted language tag is not known, but the language pack might not be loaded. Try to load it from standard location.
-;;       (when (file-readable-p (expand-file-name (concat (file-name-directory (symbol-file 'org-novelist--localise-string))  "language-packs" / "org-novelist-language-pack-" (downcase lang-tag) ".el")))
-;; 	(load-file (expand-file-name (concat (file-name-directory (symbol-file 'org-novelist--localise-string))  "language-packs" / "org-novelist-language-pack-" (downcase lang-tag) ".el")))))
-;;     (if (boundp (intern (concat "org-novelist--okay-" lang-tag)))
-;;         (setq orgn-language-tag lang-tag)
-;;       (setq mess (concat (orgn--ls "language-not-found") " ")))
-;;     (setq mess (concat mess (orgn--replace-string-in-string (concat "<<" (orgn--ls "language-tag") ">>") orgn-language-tag (orgn--ls "language-set-to-language-tag"))))
-;;     (message mess)))
-
 
 ;;;###autoload
 (define-derived-mode org-novelist-mode org-mode "Org Novelist"
