@@ -1361,8 +1361,7 @@ open buffer."
                                        (orgn--ls / objects-folder /)
                                        (concat (orgn--ls object-file-prefix) (orgn--system-safe-name new-object-name) orgn--file-ending)
                                        new-object-name))
-                 nil t)
-                )
+                 nil t))
             (progn
               (error (concat index-file " " (orgn--ls "is-not-readable")))
               (throw 'OBJECT-RENAME-IN-INDEX-FAULT (concat index-file " " (orgn--ls "is-not-readable")))))
