@@ -45,8 +45,6 @@
 ;; following of links, programmatic updating of crossreferences, and
 ;; the ability to programatically export to other formats.
 ;;
-;; This is the first public release of Org Novelist.
-;;
 ;; Installation, Activation, and Documentation
 ;; -------------------------------------------
 ;; See the corresponding section of the website at
