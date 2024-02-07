@@ -89,7 +89,7 @@ You will then be prompted to enter a name for your story.
 
 After the name is set, you will be asked where to save the story folder.
 
-You will now have a new buffer, `main.org`. This file is the entry point for your story and contains links to the other sections and files that you will use. You can write a brief summary of your story here if you like, but it is purely for your own reference. The only parts of this file that must be left unchanged are the first line which lets Emacs know this is an Org Novelist file, and the first header line which let's Org Novelist know what the story is called.
+You will now have a new buffer, `main.org`. This file is the entry point for your story and contains links to the other sections and files that you will use. You can write a brief summary of your story here if you like, but it is purely for your own reference. The only parts of this file that must be left unchanged are the first line (which lets Emacs know this is an Org Novelist file), and the first header line (which let's Org Novelist know what the story is called).
 
 If you wish to rename your story, it is better to use the command: `org-novelist-rename-story`
 
