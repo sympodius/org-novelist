@@ -42,8 +42,8 @@
 ;; methodology can be done without the use of Emacs or the Org Novelist
 ;; package, but using the package within Emacs will provide helper
 ;; functions that make the methodology much easier to use; allowing the
-;; following of links, programmatic updating of crossreferences, and
-;; the ability to programatically export to other formats.
+;; following of links, programmatic updating of cross-references, and
+;; the ability to programmatically export to other formats.
 ;;
 ;; Installation, Activation, and Documentation
 ;; -------------------------------------------
@@ -298,7 +298,7 @@
   "Convert STR to a directory safe name.
 The resultant string should be suitable for all computer systems using en-GB."
   ;; I'm just converting things to CamelCase at the moment, and removing non-Latin alphabet characters.
-  ;; I've tried to replace special characters with simpler transliterated equivalents that the camlise function can work with ([-A-Za-z0-9]*).
+  ;; I've tried to replace special characters with simpler transliterated equivalents that the camelise function can work with ([-A-Za-z0-9]*).
   ;; Since British English regularly loans words from French, German, Spanish, etc, I've tried to do my best to resolve a sensible list of equivalencies.
   ;; Make sure that the language pack constant `org-novelist--sys-safe-name-en-GB' matches the output of this function.
   (let ((special-chars (make-hash-table :test 'equal))
@@ -405,7 +405,7 @@ Strings matching the values of `org-novelist--folder-separator' or
 `org-novelist--file-ending' will be returned without change."
   (catch 'LOCALISATION-STRING-NOT-FOUND
     ;; Check for language tag stored in data file.
-    (catch 'NO-STORY-ROOT-FOUMD
+    (catch 'NO-STORY-ROOT-FOUND
       (let (current-folder
 	    story-language-tag)
 	(unless (string= " *temp*" (buffer-file-name))
@@ -462,7 +462,7 @@ To change the language, the variable `org-novelist-language-tag' must be set to
 a supported language. The default is \"en-GB\"."
   (catch 'LOCALISATION-FUNCTION-NOT-FOUND
     ;; Check for language tag stored in data file.
-    (catch 'NO-STORY-ROOT-FOUMD
+    (catch 'NO-STORY-ROOT-FOUND
       (let (current-folder
 	    story-language-tag)
 	(unless (string= " *temp*" (buffer-file-name))
