@@ -1161,26 +1161,27 @@ The returned hash table will use filenames as keys, and place titles as
 values."
   (orgn--object-hash-table (orgn--ls "place-file-prefix") (orgn--ls "notes-folder") story-folder))
 
-(defun orgn--set-file-property-value (property value file &optional no-overwrite)
+(defun orgn--set-file-property-value (property value &optional file no-overwrite)
   "Given a FILE and VALUE, change PROPERTY value of that file.
 If property not found, add it.
 If NO-OVERWRITE is t, don't replace existing property, just add new one."
-  (when (file-exists-p file)
-    (when (file-readable-p file)
-      (find-file file)
-      (let* ((regexp (format "^[ \t]*#\\+%s:" (regexp-quote property)))
-             (case-fold-search t)
-             (property-found-p nil))
-        (goto-char (point-min))
-        (while (and (re-search-forward regexp nil t) (not no-overwrite))
-          (setq property-found-p t)
-          (insert " ")
-          (delete-region (point) (line-end-position))
-          (insert value))
-        (unless property-found-p
-          (goto-char (point-min))
-          (end-of-line)
-          (insert (format "\n\#\+%s\: %s" property value)))))))
+  (when file
+    (when (file-exists-p file)
+      (when (file-readable-p file)
+        (find-file file))))
+  (let* ((regexp (format "^[ \t]*#\\+%s:" (regexp-quote property)))
+         (case-fold-search t)
+         (property-found-p nil))
+    (goto-char (point-min))
+    (while (and (re-search-forward regexp nil t) (not no-overwrite))
+      (setq property-found-p t)
+      (insert " ")
+      (delete-region (point) (line-end-position))
+      (insert value))
+    (unless property-found-p
+      (goto-char (point-min))
+      (end-of-line)
+      (insert (format "\n\#\+%s\: %s" property value)))))
 
 (defun orgn--get-file-property-value (file property)
   "Given a FILE, return the value of PROPERTY."
