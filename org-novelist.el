@@ -302,7 +302,7 @@ The resultant string should be suitable for all computer systems using en-GB."
   ;; Since British English regularly loans words from French, German, Spanish, etc, I've tried to do my best to resolve a sensible list of equivalencies.
   ;; Make sure that the language pack constant `org-novelist--sys-safe-name-en-GB' matches the output of this function.
   (let ((special-chars (make-hash-table :test 'equal))
-	(case-fold-search nil))
+        (case-fold-search nil))
     (puthash "£" "GBP" special-chars)
     (puthash "€" "EUR" special-chars)
     (puthash "$" "USD" special-chars)
@@ -407,37 +407,37 @@ Strings matching the values of `org-novelist--folder-separator' or
     ;; Check for language tag stored in data file.
     (catch 'NO-STORY-ROOT-FOUND
       (let (current-folder
-	    story-language-tag)
-	(unless (string= " *temp*" (buffer-file-name))
-	  (when (or load-file-name buffer-file-name)
-	    (setq current-folder (directory-file-name (file-name-directory (or load-file-name buffer-file-name))))))
-	(when current-folder
-	  (while (not (file-exists-p (concat current-folder / orgn--config-filename)))
-	    (when (string= current-folder (setq current-folder (expand-file-name (concat current-folder / ".." ))))
-	      (throw 'NO-STORY-ROOT-FOUND current-folder)))
-	  ;; If we get to this point, a story root folder was found and that is what current-folder is set to.
-	  (setq story-language-tag (orgn--get-file-property-value (concat (expand-file-name current-folder) / orgn--data-filename) orgn--language-tag-property))
-	  (if (not (string= "" story-language-tag))
-	      ;; A value was found for the language tag of this story. So set it up.
-	      (progn
-		;; Store original user set language in case we move back to another story with no set language tag.
-		(unless orgn--lang-tag
-		  (if (boundp 'orgn-language-tag)
-		      (setq orgn--lang-tag orgn-language-tag)
-		    (setq orgn--lang-tag "en-GB")))
-		(setq orgn-language-tag story-language-tag))
-	    ;; This story has no language tag, so revert back to user set language tag.
-	    (when orgn--lang-tag
-	      (setq orgn-language-tag orgn--lang-tag))))))
+            story-language-tag)
+        (unless (string= " *temp*" (buffer-file-name))
+          (when (or load-file-name buffer-file-name)
+            (setq current-folder (directory-file-name (file-name-directory (or load-file-name buffer-file-name))))))
+        (when current-folder
+          (while (not (file-exists-p (concat current-folder / orgn--config-filename)))
+            (when (string= current-folder (setq current-folder (expand-file-name (concat current-folder / ".." ))))
+              (throw 'NO-STORY-ROOT-FOUND current-folder)))
+          ;; If we get to this point, a story root folder was found and that is what current-folder is set to.
+          (setq story-language-tag (orgn--get-file-property-value (concat (expand-file-name current-folder) / orgn--data-filename) orgn--language-tag-property))
+          (if (not (string= "" story-language-tag))
+              ;; A value was found for the language tag of this story. So set it up.
+              (progn
+                ;; Store original user set language in case we move back to another story with no set language tag.
+                (unless orgn--lang-tag
+                  (if (boundp 'orgn-language-tag)
+                      (setq orgn--lang-tag orgn-language-tag)
+                    (setq orgn--lang-tag "en-GB")))
+                (setq orgn-language-tag story-language-tag))
+            ;; This story has no language tag, so revert back to user set language tag.
+            (when orgn--lang-tag
+              (setq orgn-language-tag orgn--lang-tag))))))
     (unless (boundp 'orgn-language-tag)
       (defvar orgn-language-tag "en-GB" "The language to use for Org Novelist. Based on https://www.w3.org/International/articles/language-tags/index.en"))
     (unless (boundp (intern (concat "org-novelist--okay-" orgn-language-tag)))
       ;; Language tag is set, but the language pack isn't loaded. Try to load it from standard location.
       (when (file-readable-p (expand-file-name (concat (file-name-directory (symbol-file 'org-novelist--localise-string))  "language-packs" / "org-novelist-language-pack-" (downcase orgn-language-tag) ".el")))
-	(load-file (expand-file-name (concat (file-name-directory (symbol-file 'org-novelist--localise-string))  "language-packs" / "org-novelist-language-pack-" (downcase orgn-language-tag) ".el"))))
+        (load-file (expand-file-name (concat (file-name-directory (symbol-file 'org-novelist--localise-string))  "language-packs" / "org-novelist-language-pack-" (downcase orgn-language-tag) ".el"))))
       (unless (boundp (intern (concat "org-novelist--okay-" orgn-language-tag)))
-	(setq orgn-language-tag "en-GB")
-	(message (concat (orgn--ls "language-not-found") " " (orgn--replace-string-in-string (concat "<<" (orgn--ls "language-tag") ">>") orgn-language-tag (orgn--ls "language-set-to-language-tag"))))))
+        (setq orgn-language-tag "en-GB")
+        (message (concat (orgn--ls "language-not-found") " " (orgn--replace-string-in-string (concat "<<" (orgn--ls "language-tag") ">>") orgn-language-tag (orgn--ls "language-set-to-language-tag"))))))
     (cond ((string-equal str-name /)  ; Special case for the folder separator string
            (if (> (length str-list) 0)
                (concat (eval /) (apply 'orgn--localise-string str-list))
@@ -464,37 +464,37 @@ a supported language. The default is \"en-GB\"."
     ;; Check for language tag stored in data file.
     (catch 'NO-STORY-ROOT-FOUND
       (let (current-folder
-	    story-language-tag)
-	(unless (string= " *temp*" (buffer-file-name))
-	  (when (or load-file-name buffer-file-name)
-	    (setq current-folder (directory-file-name (file-name-directory (or load-file-name buffer-file-name))))))
-	(when current-folder
-	  (while (not (file-exists-p (concat current-folder / orgn--config-filename)))
-	    (when (string= current-folder (setq current-folder (expand-file-name (concat current-folder / ".." ))))
-	      (throw 'NO-STORY-ROOT-FOUND current-folder)))
-	  ;; If we get to this point, a story root folder was found and that is what current-folder is set to.
-	  (setq story-language-tag (orgn--get-file-property-value (concat (expand-file-name current-folder) / orgn--data-filename) orgn--language-tag-property))
-	  (if (not (string= "" story-language-tag))
-	      ;; A value was found for the language tag of this story. So set it up.
-	      (progn
-		;; Store original user set language in case we move back to another story with no set language tag.
-		(unless orgn--lang-tag
-		  (if (boundp 'orgn-language-tag)
-		      (setq orgn--lang-tag orgn-language-tag)
-		    (setq orgn--lang-tag "en-GB")))
-		(setq orgn-language-tag story-language-tag))
-	    ;; This story has no language tag, so revert back to user set language tag.
-	    (when orgn--lang-tag
-	      (setq orgn-language-tag orgn--lang-tag))))))
+            story-language-tag)
+        (unless (string= " *temp*" (buffer-file-name))
+          (when (or load-file-name buffer-file-name)
+            (setq current-folder (directory-file-name (file-name-directory (or load-file-name buffer-file-name))))))
+        (when current-folder
+          (while (not (file-exists-p (concat current-folder / orgn--config-filename)))
+            (when (string= current-folder (setq current-folder (expand-file-name (concat current-folder / ".." ))))
+              (throw 'NO-STORY-ROOT-FOUND current-folder)))
+          ;; If we get to this point, a story root folder was found and that is what current-folder is set to.
+          (setq story-language-tag (orgn--get-file-property-value (concat (expand-file-name current-folder) / orgn--data-filename) orgn--language-tag-property))
+          (if (not (string= "" story-language-tag))
+              ;; A value was found for the language tag of this story. So set it up.
+              (progn
+                ;; Store original user set language in case we move back to another story with no set language tag.
+                (unless orgn--lang-tag
+                  (if (boundp 'orgn-language-tag)
+                      (setq orgn--lang-tag orgn-language-tag)
+                    (setq orgn--lang-tag "en-GB")))
+                (setq orgn-language-tag story-language-tag))
+            ;; This story has no language tag, so revert back to user set language tag.
+            (when orgn--lang-tag
+              (setq orgn-language-tag orgn--lang-tag))))))
     (unless (boundp 'orgn-language-tag)
       (defconst orgn-language-tag "en-GB" "The language to use for Org Novelist (based on https://www.w3.org/International/articles/language-tags/index.en)."))
     (unless (boundp (intern (concat "org-novelist--okay-" orgn-language-tag)))
       ;; Language tag is set, but the language pack isn't loaded. Try to load it from standard location.
       (when (file-readable-p (expand-file-name (concat (file-name-directory (symbol-file 'org-novelist--localise-function))  "language-packs" / "org-novelist-language-pack-" (downcase orgn-language-tag) ".el")))
-	(load-file (expand-file-name (concat (file-name-directory (symbol-file 'org-novelist--localise-function))  "language-packs" / "org-novelist-language-pack-" (downcase orgn-language-tag) ".el"))))
+        (load-file (expand-file-name (concat (file-name-directory (symbol-file 'org-novelist--localise-function))  "language-packs" / "org-novelist-language-pack-" (downcase orgn-language-tag) ".el"))))
       (unless (boundp (intern (concat "org-novelist--okay-" orgn-language-tag)))
-	(setq orgn-language-tag "en-GB")
-	(message (concat (orgn--ls "language-not-found") " " (orgn--replace-string-in-string (concat "<<" (orgn--ls "language-tag") ">>") orgn-language-tag (orgn--ls "language-set-to-language-tag"))))))
+        (setq orgn-language-tag "en-GB")
+        (message (concat (orgn--ls "language-not-found") " " (orgn--replace-string-in-string (concat "<<" (orgn--ls "language-tag") ">>") orgn-language-tag (orgn--ls "language-set-to-language-tag"))))))
     (if (fboundp (intern (concat func-name "-" orgn-language-tag)))
         (intern (concat func-name "-" orgn-language-tag))
       (progn
@@ -604,14 +604,14 @@ The resultant string should be suitable for the current operating system."
     (goto-char (point-min))
     (let (pos)
       (while (re-search-forward "\\[\\[" nil t)
-	(forward-char -2)
-	(setq pos (point))
-	(when (re-search-forward "\\]\\[" nil t)
-	  (delete-region pos (point)))
-	(when (re-search-forward "\\]\\]" nil t)
-	  (setq pos (point))
-	  (forward-char -2)
-	  (delete-region (point) pos))))
+        (forward-char -2)
+        (setq pos (point))
+        (when (re-search-forward "\\]\\[" nil t)
+          (delete-region pos (point)))
+        (when (re-search-forward "\\]\\]" nil t)
+          (setq pos (point))
+          (forward-char -2)
+          (delete-region (point) pos))))
     (setq str (buffer-string)))
   (setq str (orgn--replace-string-in-string "\\" "\\\\" str))  ; Escape any backslashs
   (setq str (orgn--replace-string-in-string "\"" "\\\"" str))  ; Escape any quotes (this must be run after escaping backslashes)
@@ -901,7 +901,7 @@ that appear in that file."
              (glossary-str ""))
         (while keys
           (setq key (pop keys))
-	  (setq curr-entry "")
+          (setq curr-entry "")
           (setq entry-found nil)
           (when file-restriction
             (when (file-readable-p file-restriction)
@@ -1675,10 +1675,10 @@ open buffer."
                 (orgn--string-to-file new-chapter-notes-contents chapter-notes-file)
                 (revert-buffer t t t)
                 (orgn--set-file-property-value "TITLE"
-					       (orgn--replace-string-in-string (concat "<<" (orgn--ls "chapter-name") ">>")
-									       new-chapter-name
-									       (orgn--ls "notes-for-chapter-name"))
-					       chapter-notes-file)
+                                               (orgn--replace-string-in-string (concat "<<" (orgn--ls "chapter-name") ">>")
+                                                                               new-chapter-name
+                                                                               (orgn--ls "notes-for-chapter-name"))
+                                               chapter-notes-file)
                 (orgn--rename-current-file new-chapter-notes-file))
             (progn
               ;; If no notes file found, don't show error; just continue.
@@ -2378,10 +2378,10 @@ Once template is populated, it will be written to file."
     (puthash "<<mode>>" orgn--mode-identifier notes-file-substitutions)
     (puthash "<<title>>" (orgn--ls "notes-title") notes-file-substitutions)
     (puthash "<<notes-for-story-name>>"
-	     (orgn--replace-string-in-string (concat "<<" (orgn--ls "story-name") ">>")
-					     (concat "\[\[file\:.." / (orgn--ls "main-file" orgn--file-ending) "\]\[" story-name "\]\]")
-					     (orgn--ls "notes-for-story-name"))
-	     notes-file-substitutions)
+             (orgn--replace-string-in-string (concat "<<" (orgn--ls "story-name") ">>")
+                                             (concat "\[\[file\:.." / (orgn--ls "main-file" orgn--file-ending) "\]\[" story-name "\]\]")
+                                             (orgn--ls "notes-for-story-name"))
+             notes-file-substitutions)
     (puthash "<<file-instructions>>" (orgn--ls "notes-file-instructions") notes-file-substitutions)
     (orgn--generate-file-from-template notes-file-substitutions orgn--notes-template (concat story-folder / (orgn--ls "notes-folder" / "notes-file" orgn--file-ending)))))
 
@@ -2393,10 +2393,10 @@ Once template is populated, it will be written to file."
     (puthash "<<mode>>" orgn--mode-identifier research-file-substitutions)
     (puthash "<<title>>" (orgn--ls "research-title") research-file-substitutions)
     (puthash "<<research-for-story-name>>"
-	     (orgn--replace-string-in-string (concat "<<" (orgn--ls "story-name") ">>")
-					     (concat "\[\[file\:.." / (orgn--ls "main-file" orgn--file-ending) "\]\[" story-name "\]\]")
-					     (orgn--ls "research-for-story-name"))
-	     research-file-substitutions)
+             (orgn--replace-string-in-string (concat "<<" (orgn--ls "story-name") ">>")
+                                             (concat "\[\[file\:.." / (orgn--ls "main-file" orgn--file-ending) "\]\[" story-name "\]\]")
+                                             (orgn--ls "research-for-story-name"))
+             research-file-substitutions)
     (puthash "<<file-instructions>>" (orgn--ls "research-file-instructions") research-file-substitutions)
     (orgn--generate-file-from-template research-file-substitutions orgn--research-template (concat story-folder / (orgn--ls "notes-folder" / "research-file" orgn--file-ending)))))
 
@@ -2407,10 +2407,10 @@ Once template is populated, it will be written to file."
   (let ((characters-file-substitutions (make-hash-table :test 'equal)))
     (puthash "<<mode>>" orgn--mode-identifier characters-file-substitutions)
     (puthash "<<character-index-for-story-name>>"
-	     (orgn--replace-string-in-string (concat "<<" (orgn--ls "story-name") ">>")
-					     (concat "\[\[file\:.." / (orgn--ls "main-file" orgn--file-ending) "\]\[" story-name "\]\]")
-					     (orgn--ls "character-index-for-story-name"))
-	     characters-file-substitutions)
+             (orgn--replace-string-in-string (concat "<<" (orgn--ls "story-name") ">>")
+                                             (concat "\[\[file\:.." / (orgn--ls "main-file" orgn--file-ending) "\]\[" story-name "\]\]")
+                                             (orgn--ls "character-index-for-story-name"))
+             characters-file-substitutions)
     (puthash "<<file-instructions>>" (orgn--ls "characters-file-instructions") characters-file-substitutions)
     (orgn--generate-file-from-template characters-file-substitutions orgn--characters-template (concat story-folder / (orgn--ls "indices-folder" / "characters-file" orgn--file-ending)))))
 
@@ -2421,10 +2421,10 @@ Once template is populated, it will be written to file."
   (let ((places-file-substitutions (make-hash-table :test 'equal)))
     (puthash "<<mode>>" orgn--mode-identifier places-file-substitutions)
     (puthash "<<place-index-for-story-name>>"
-	     (orgn--replace-string-in-string (concat "<<" (orgn--ls "story-name") ">>")
-					     (concat "\[\[file\:.." / (orgn--ls "main-file" orgn--file-ending) "\]\[" story-name "\]\]")
-					     (orgn--ls "place-index-for-story-name"))
-	     places-file-substitutions)
+             (orgn--replace-string-in-string (concat "<<" (orgn--ls "story-name") ">>")
+                                             (concat "\[\[file\:.." / (orgn--ls "main-file" orgn--file-ending) "\]\[" story-name "\]\]")
+                                             (orgn--ls "place-index-for-story-name"))
+             places-file-substitutions)
     (puthash "<<file-instructions>>" (orgn--ls "places-file-instructions") places-file-substitutions)
     (orgn--generate-file-from-template places-file-substitutions orgn--places-template (concat story-folder / (orgn--ls "indices-folder" / "places-file" orgn--file-ending)))))
 
@@ -2435,10 +2435,10 @@ Once template is populated, it will be written to file."
   (let ((props-file-substitutions (make-hash-table :test 'equal)))
     (puthash "<<mode>>" orgn--mode-identifier props-file-substitutions)
     (puthash "<<prop-index-for-story-name>>"
-	     (orgn--replace-string-in-string (concat "<<" (orgn--ls "story-name") ">>")
-					     (concat "\[\[file\:.." / (orgn--ls "main-file" orgn--file-ending) "\]\[" story-name "\]\]")
-					     (orgn--ls "prop-index-for-story-name"))
-	     props-file-substitutions)
+             (orgn--replace-string-in-string (concat "<<" (orgn--ls "story-name") ">>")
+                                             (concat "\[\[file\:.." / (orgn--ls "main-file" orgn--file-ending) "\]\[" story-name "\]\]")
+                                             (orgn--ls "prop-index-for-story-name"))
+             props-file-substitutions)
     (puthash "<<file-instructions>>" (orgn--ls "props-file-instructions") props-file-substitutions)
     (orgn--generate-file-from-template props-file-substitutions orgn--props-template (concat story-folder / (orgn--ls "indices-folder" / "props-file" orgn--file-ending)))))
 
@@ -2449,10 +2449,10 @@ Once template is populated, it will be written to file."
   (let ((chapters-file-substitutions (make-hash-table :test 'equal)))
     (puthash "<<mode>>" orgn--mode-identifier chapters-file-substitutions)
     (puthash "<<chapter-index-for-story-name>>"
-	     (orgn--replace-string-in-string (concat "<<" (orgn--ls "story-name") ">>")
-					     (concat "\[\[file\:.." / (orgn--ls "main-file" orgn--file-ending) "\]\[" story-name "\]\]")
-					     (orgn--ls "chapter-index-for-story-name"))
-	     chapters-file-substitutions)
+             (orgn--replace-string-in-string (concat "<<" (orgn--ls "story-name") ">>")
+                                             (concat "\[\[file\:.." / (orgn--ls "main-file" orgn--file-ending) "\]\[" story-name "\]\]")
+                                             (orgn--ls "chapter-index-for-story-name"))
+             chapters-file-substitutions)
     (puthash "<<file-instructions>>" (orgn--ls "chapters-file-instructions") chapters-file-substitutions)
     (orgn--generate-file-from-template chapters-file-substitutions orgn--chapters-template (concat story-folder / (orgn--ls "indices-folder" / "chapters-file" orgn--file-ending)))))
 
@@ -2463,22 +2463,22 @@ CHAPTER-FILE is the file name for the chapter. CHAPTER-TITLE is the name for
 the chapter.
 Once template is populated, it will be written to file."
   (let ((chapter-file-substitutions (make-hash-table :test 'equal))
-	(notes-are-available-for-this-chapter-from-story-name (orgn--ls "notes-are-available-for-this-chapter-from-story-name")))
+        (notes-are-available-for-this-chapter-from-story-name (orgn--ls "notes-are-available-for-this-chapter-from-story-name")))
     (setq notes-are-available-for-this-chapter-from-story-name
-	  (orgn--replace-string-in-string
-	   (concat "<<" (orgn--ls "notes") ">>")
-	   (concat "\[\[file:.." / (orgn--ls "notes-folder") / chapter-file (orgn--ls "notes-suffix") orgn--file-ending "\]\[" (orgn--ls "notes") "\]\]")
-	   notes-are-available-for-this-chapter-from-story-name))
+          (orgn--replace-string-in-string
+           (concat "<<" (orgn--ls "notes") ">>")
+           (concat "\[\[file:.." / (orgn--ls "notes-folder") / chapter-file (orgn--ls "notes-suffix") orgn--file-ending "\]\[" (orgn--ls "notes") "\]\]")
+           notes-are-available-for-this-chapter-from-story-name))
     (setq notes-are-available-for-this-chapter-from-story-name
-	  (orgn--replace-string-in-string
-	   (concat "<<" (orgn--ls "chapter") ">>")
-	   (concat "\[\[file:.." / (orgn--ls "indices-folder" / "chapters-file" orgn--file-ending) "\]\[" (orgn--ls "chapter") "\]\]")
-	   notes-are-available-for-this-chapter-from-story-name))
+          (orgn--replace-string-in-string
+           (concat "<<" (orgn--ls "chapter") ">>")
+           (concat "\[\[file:.." / (orgn--ls "indices-folder" / "chapters-file" orgn--file-ending) "\]\[" (orgn--ls "chapter") "\]\]")
+           notes-are-available-for-this-chapter-from-story-name))
     (setq notes-are-available-for-this-chapter-from-story-name
-	  (orgn--replace-string-in-string
-	   (concat "<<" (orgn--ls "story-name") ">>")
-	   (concat "\[\[file:.." / (orgn--ls "main-file" orgn--file-ending) "\]\[" story-name "\]\]")
-	   notes-are-available-for-this-chapter-from-story-name))
+          (orgn--replace-string-in-string
+           (concat "<<" (orgn--ls "story-name") ">>")
+           (concat "\[\[file:.." / (orgn--ls "main-file" orgn--file-ending) "\]\[" story-name "\]\]")
+           notes-are-available-for-this-chapter-from-story-name))
     (puthash "<<mode>>" orgn--mode-identifier chapter-file-substitutions)
     (puthash "<<title>>" chapter-title chapter-file-substitutions)
     (puthash "<<notes-are-available-for-this-chapter-from-story-name>>" notes-are-available-for-this-chapter-from-story-name chapter-file-substitutions)
@@ -2493,33 +2493,33 @@ CHAPTER-FILE is the file name for the chapter. CHAPTER-TITLE is the name for
 the chapter.
 Once template is populated, it will be written to file."
   (let ((chapter-notes-file-substitutions (make-hash-table :test 'equal))
-	(notes-for-chapter-name-a-chapter-from-story-name (orgn--ls "notes-for-chapter-name-a-chapter-from-story-name")))
+        (notes-for-chapter-name-a-chapter-from-story-name (orgn--ls "notes-for-chapter-name-a-chapter-from-story-name")))
     (setq notes-for-chapter-name-a-chapter-from-story-name
-	  (orgn--replace-string-in-string
-	   (concat "<<" (orgn--ls "chapter-name") ">>")
-	   (concat "\[\[file:.." / (orgn--ls "chapters-folder") / chapter-file orgn--file-ending "\]\[" chapter-title "\]\]")
-	   notes-for-chapter-name-a-chapter-from-story-name))
+          (orgn--replace-string-in-string
+           (concat "<<" (orgn--ls "chapter-name") ">>")
+           (concat "\[\[file:.." / (orgn--ls "chapters-folder") / chapter-file orgn--file-ending "\]\[" chapter-title "\]\]")
+           notes-for-chapter-name-a-chapter-from-story-name))
     (setq notes-for-chapter-name-a-chapter-from-story-name
-	  (orgn--replace-string-in-string
-	   (concat "<<" (orgn--ls "chapter") ">>")
-	   (concat "\[\[file:.." / (orgn--ls "indices-folder" / "chapters-file" orgn--file-ending) "\]\[" (orgn--ls "chapter") "\]\]")
-	   notes-for-chapter-name-a-chapter-from-story-name))
+          (orgn--replace-string-in-string
+           (concat "<<" (orgn--ls "chapter") ">>")
+           (concat "\[\[file:.." / (orgn--ls "indices-folder" / "chapters-file" orgn--file-ending) "\]\[" (orgn--ls "chapter") "\]\]")
+           notes-for-chapter-name-a-chapter-from-story-name))
     (setq notes-for-chapter-name-a-chapter-from-story-name
-	  (orgn--replace-string-in-string
-	   (concat "<<" (orgn--ls "story-name") ">>")
-	   (concat "\[\[file:.." / (orgn--ls "main-file" orgn--file-ending) "\]\[" story-name "\]\]")
-	   notes-for-chapter-name-a-chapter-from-story-name))
+          (orgn--replace-string-in-string
+           (concat "<<" (orgn--ls "story-name") ">>")
+           (concat "\[\[file:.." / (orgn--ls "main-file" orgn--file-ending) "\]\[" story-name "\]\]")
+           notes-for-chapter-name-a-chapter-from-story-name))
     (puthash "<<mode>>" orgn--mode-identifier chapter-notes-file-substitutions)
     (puthash "<<title>>"
-	     (orgn--replace-string-in-string (concat "<<" (orgn--ls "chapter-name") ">>")
-					     chapter-title
-					     (orgn--ls "notes-for-chapter-name"))
-	     chapter-notes-file-substitutions)
+             (orgn--replace-string-in-string (concat "<<" (orgn--ls "chapter-name") ">>")
+                                             chapter-title
+                                             (orgn--ls "notes-for-chapter-name"))
+             chapter-notes-file-substitutions)
     (puthash "<<notes-for-chapter-name-a-chapter-from-story-name>>" notes-for-chapter-name-a-chapter-from-story-name chapter-notes-file-substitutions)
     (if orgn-user-chapter-notes-content
-	(if (not (string= orgn-user-chapter-notes-content ""))
-	    (puthash "<<chapter-notes-content>>" orgn-user-chapter-notes-content chapter-notes-file-substitutions)
-	  (puthash "<<chapter-notes-content>>" (orgn--ls "chapter-notes-content") chapter-notes-file-substitutions))
+        (if (not (string= orgn-user-chapter-notes-content ""))
+            (puthash "<<chapter-notes-content>>" orgn-user-chapter-notes-content chapter-notes-file-substitutions)
+          (puthash "<<chapter-notes-content>>" (orgn--ls "chapter-notes-content") chapter-notes-file-substitutions))
       (puthash "<<chapter-notes-content>>" (orgn--ls "chapter-notes-content") chapter-notes-file-substitutions))
     (orgn--generate-file-from-template chapter-notes-file-substitutions orgn--chapter-notes-template (concat story-folder / (orgn--ls "notes-folder") / chapter-file (orgn--ls "notes-suffix") orgn--file-ending))))
 
@@ -2530,29 +2530,29 @@ CHARACTER-FILE is the file name for the character notes. CHARACTER-NAME is the
 name for the character.
 Once template is populated, it will be written to file."
   (let ((character-notes-file-substitutions (make-hash-table :test 'equal))
-	(notes-for-character-name-a-character-from-story-name (orgn--ls "notes-for-character-name-a-character-from-story-name")))
+        (notes-for-character-name-a-character-from-story-name (orgn--ls "notes-for-character-name-a-character-from-story-name")))
     (setq notes-for-character-name-a-character-from-story-name
-	  (orgn--replace-string-in-string
-	   (concat "<<" (orgn--ls "character-name") ">>")
-	   character-name
-	   notes-for-character-name-a-character-from-story-name))
+          (orgn--replace-string-in-string
+           (concat "<<" (orgn--ls "character-name") ">>")
+           character-name
+           notes-for-character-name-a-character-from-story-name))
     (setq notes-for-character-name-a-character-from-story-name
-	  (orgn--replace-string-in-string
-	   (concat "<<" (orgn--ls "character") ">>")
-	   (concat "\[\[file:.." / (orgn--ls "indices-folder" / "characters-file" orgn--file-ending) "\]\[" (orgn--ls "character") "\]\]")
-	   notes-for-character-name-a-character-from-story-name))
+          (orgn--replace-string-in-string
+           (concat "<<" (orgn--ls "character") ">>")
+           (concat "\[\[file:.." / (orgn--ls "indices-folder" / "characters-file" orgn--file-ending) "\]\[" (orgn--ls "character") "\]\]")
+           notes-for-character-name-a-character-from-story-name))
     (setq notes-for-character-name-a-character-from-story-name
-	  (orgn--replace-string-in-string
-	   (concat "<<" (orgn--ls "story-name") ">>")
-	   (concat "\[\[file:.." / (orgn--ls "main-file" orgn--file-ending) "\]\[" story-name "\]\]")
-	   notes-for-character-name-a-character-from-story-name))
+          (orgn--replace-string-in-string
+           (concat "<<" (orgn--ls "story-name") ">>")
+           (concat "\[\[file:.." / (orgn--ls "main-file" orgn--file-ending) "\]\[" story-name "\]\]")
+           notes-for-character-name-a-character-from-story-name))
     (puthash "<<mode>>" orgn--mode-identifier character-notes-file-substitutions)
     (puthash "<<title>>" character-name character-notes-file-substitutions)
     (puthash "<<notes-for-character-name-a-character-from-story-name>>" notes-for-character-name-a-character-from-story-name character-notes-file-substitutions)
     (if orgn-user-character-notes-content
-	(if (not (string= orgn-user-character-notes-content ""))
-	    (puthash "<<character-notes-content>>" orgn-user-character-notes-content character-notes-file-substitutions)
-	  (puthash "<<character-notes-content>>" (orgn--ls "character-notes-content") character-notes-file-substitutions))
+        (if (not (string= orgn-user-character-notes-content ""))
+            (puthash "<<character-notes-content>>" orgn-user-character-notes-content character-notes-file-substitutions)
+          (puthash "<<character-notes-content>>" (orgn--ls "character-notes-content") character-notes-file-substitutions))
       (puthash "<<character-notes-content>>" (orgn--ls "character-notes-content") character-notes-file-substitutions))
     (orgn--generate-file-from-template character-notes-file-substitutions orgn--character-notes-template (concat story-folder / (orgn--ls "notes-folder") / character-file orgn--file-ending))))
 
@@ -2563,29 +2563,29 @@ PROP-FILE is the file name for the prop notes. PROP-NAME is the
 name for the prop.
 Once template is populated, it will be written to file."
   (let ((prop-notes-file-substitutions (make-hash-table :test 'equal))
-	(notes-for-prop-name-a-prop-from-story-name (orgn--ls "notes-for-prop-name-a-prop-from-story-name")))
+        (notes-for-prop-name-a-prop-from-story-name (orgn--ls "notes-for-prop-name-a-prop-from-story-name")))
     (setq notes-for-prop-name-a-prop-from-story-name
-	  (orgn--replace-string-in-string
-	   (concat "<<" (orgn--ls "prop-name") ">>")
-	   prop-name
-	   notes-for-prop-name-a-prop-from-story-name))
+          (orgn--replace-string-in-string
+           (concat "<<" (orgn--ls "prop-name") ">>")
+           prop-name
+           notes-for-prop-name-a-prop-from-story-name))
     (setq notes-for-prop-name-a-prop-from-story-name
-	  (orgn--replace-string-in-string
-	   (concat "<<" (orgn--ls "prop") ">>")
-	   (concat "\[\[file:.." / (orgn--ls "indices-folder" / "props-file" orgn--file-ending) "\]\[" (orgn--ls "prop") "\]\]")
-	   notes-for-prop-name-a-prop-from-story-name))
+          (orgn--replace-string-in-string
+           (concat "<<" (orgn--ls "prop") ">>")
+           (concat "\[\[file:.." / (orgn--ls "indices-folder" / "props-file" orgn--file-ending) "\]\[" (orgn--ls "prop") "\]\]")
+           notes-for-prop-name-a-prop-from-story-name))
     (setq notes-for-prop-name-a-prop-from-story-name
-	  (orgn--replace-string-in-string
-	   (concat "<<" (orgn--ls "story-name") ">>")
-	   (concat "\[\[file:.." / (orgn--ls "main-file" orgn--file-ending) "\]\[" story-name "\]\]")
-	   notes-for-prop-name-a-prop-from-story-name))
+          (orgn--replace-string-in-string
+           (concat "<<" (orgn--ls "story-name") ">>")
+           (concat "\[\[file:.." / (orgn--ls "main-file" orgn--file-ending) "\]\[" story-name "\]\]")
+           notes-for-prop-name-a-prop-from-story-name))
     (puthash "<<mode>>" orgn--mode-identifier prop-notes-file-substitutions)
     (puthash "<<title>>" prop-name prop-notes-file-substitutions)
     (puthash "<<notes-for-prop-name-a-prop-from-story-name>>" notes-for-prop-name-a-prop-from-story-name prop-notes-file-substitutions)
     (if orgn-user-prop-notes-content
-	(if (not (string= orgn-user-prop-notes-content ""))
-	    (puthash "<<prop-notes-content>>" orgn-user-prop-notes-content prop-notes-file-substitutions)
-	  (puthash "<<prop-notes-content>>" (orgn--ls "prop-notes-content") prop-notes-file-substitutions))
+        (if (not (string= orgn-user-prop-notes-content ""))
+            (puthash "<<prop-notes-content>>" orgn-user-prop-notes-content prop-notes-file-substitutions)
+          (puthash "<<prop-notes-content>>" (orgn--ls "prop-notes-content") prop-notes-file-substitutions))
       (puthash "<<prop-notes-content>>" (orgn--ls "prop-notes-content") prop-notes-file-substitutions))
     (orgn--generate-file-from-template prop-notes-file-substitutions orgn--prop-notes-template (concat story-folder / (orgn--ls "notes-folder") / prop-file orgn--file-ending))))
 
@@ -2596,29 +2596,29 @@ PLACE-FILE is the file name for the place notes. PLACE-NAME is the
 name for the place.
 Once template is populated, it will be written to file."
   (let ((place-notes-file-substitutions (make-hash-table :test 'equal))
-	(notes-for-place-name-a-place-from-story-name (orgn--ls "notes-for-place-name-a-place-from-story-name")))
+        (notes-for-place-name-a-place-from-story-name (orgn--ls "notes-for-place-name-a-place-from-story-name")))
     (setq notes-for-place-name-a-place-from-story-name
-	  (orgn--replace-string-in-string
-	   (concat "<<" (orgn--ls "place-name") ">>")
-	   place-name
-	   notes-for-place-name-a-place-from-story-name))
+          (orgn--replace-string-in-string
+           (concat "<<" (orgn--ls "place-name") ">>")
+           place-name
+           notes-for-place-name-a-place-from-story-name))
     (setq notes-for-place-name-a-place-from-story-name
-	  (orgn--replace-string-in-string
-	   (concat "<<" (orgn--ls "place") ">>")
-	   (concat "\[\[file:.." / (orgn--ls "indices-folder" / "places-file" orgn--file-ending) "\]\[" (orgn--ls "place") "\]\]")
-	   notes-for-place-name-a-place-from-story-name))
+          (orgn--replace-string-in-string
+           (concat "<<" (orgn--ls "place") ">>")
+           (concat "\[\[file:.." / (orgn--ls "indices-folder" / "places-file" orgn--file-ending) "\]\[" (orgn--ls "place") "\]\]")
+           notes-for-place-name-a-place-from-story-name))
     (setq notes-for-place-name-a-place-from-story-name
-	  (orgn--replace-string-in-string
-	   (concat "<<" (orgn--ls "story-name") ">>")
-	   (concat "\[\[file:.." / (orgn--ls "main-file" orgn--file-ending) "\]\[" story-name "\]\]")
-	   notes-for-place-name-a-place-from-story-name))
+          (orgn--replace-string-in-string
+           (concat "<<" (orgn--ls "story-name") ">>")
+           (concat "\[\[file:.." / (orgn--ls "main-file" orgn--file-ending) "\]\[" story-name "\]\]")
+           notes-for-place-name-a-place-from-story-name))
     (puthash "<<mode>>" orgn--mode-identifier place-notes-file-substitutions)
     (puthash "<<title>>" place-name place-notes-file-substitutions)
     (puthash "<<notes-for-place-name-a-place-from-story-name>>" notes-for-place-name-a-place-from-story-name place-notes-file-substitutions)
     (if orgn-user-place-notes-content
-	(if (not (string= orgn-user-place-notes-content ""))
-	    (puthash "<<place-notes-content>>" orgn-user-place-notes-content place-notes-file-substitutions)
-	  (puthash "<<place-notes-content>>" (orgn--ls "place-notes-content") place-notes-file-substitutions))
+        (if (not (string= orgn-user-place-notes-content ""))
+            (puthash "<<place-notes-content>>" orgn-user-place-notes-content place-notes-file-substitutions)
+          (puthash "<<place-notes-content>>" (orgn--ls "place-notes-content") place-notes-file-substitutions))
       (puthash "<<place-notes-content>>" (orgn--ls "place-notes-content") place-notes-file-substitutions))
     (orgn--generate-file-from-template place-notes-file-substitutions orgn--place-notes-template (concat story-folder / (orgn--ls "notes-folder") / place-file orgn--file-ending))))
 
@@ -2667,17 +2667,17 @@ open buffer."
           (setq character-aliases (sort (split-string character-aliases-str (orgn--ls "aliases-separators") t " ") 'string<)))
         (while character-aliases
           (setq character-alias (string-trim (pop character-aliases)))
-	  ;; (setq characters-content (concat characters-content "\n- <<<" character-alias ">>> " (orgn--ls "alias-for") " " (gethash character-key existing-characters))))))
-	  (let ((character-alias-is-an-alias-for-character-str (orgn--ls "new-name-is-an-alias-for-old-name")))
-	    (setq character-alias-is-an-alias-for-character-str
-		  (orgn--replace-string-in-string (concat "<<" (orgn--ls "new-name") ">>")
-						  (concat "<<<" character-alias ">>>")
-						  character-alias-is-an-alias-for-character-str))
-	    (setq character-alias-is-an-alias-for-character-str
-		  (orgn--replace-string-in-string (concat "<<" (orgn--ls "old-name") ">>")
-						  (gethash character-key existing-characters)
-						  character-alias-is-an-alias-for-character-str))
-	    (setq characters-content (concat characters-content "\n- " character-alias-is-an-alias-for-character-str))))))
+          ;; (setq characters-content (concat characters-content "\n- <<<" character-alias ">>> " (orgn--ls "alias-for") " " (gethash character-key existing-characters))))))
+          (let ((character-alias-is-an-alias-for-character-str (orgn--ls "new-name-is-an-alias-for-old-name")))
+            (setq character-alias-is-an-alias-for-character-str
+                  (orgn--replace-string-in-string (concat "<<" (orgn--ls "new-name") ">>")
+                                                  (concat "<<<" character-alias ">>>")
+                                                  character-alias-is-an-alias-for-character-str))
+            (setq character-alias-is-an-alias-for-character-str
+                  (orgn--replace-string-in-string (concat "<<" (orgn--ls "old-name") ">>")
+                                                  (gethash character-key existing-characters)
+                                                  character-alias-is-an-alias-for-character-str))
+            (setq characters-content (concat characters-content "\n- " character-alias-is-an-alias-for-character-str))))))
     (when characters-content
       (setq characters-content (concat characters-content "\n")))
     (puthash "<<characters-content>>" characters-content glossary-string-substitutions)
@@ -2696,16 +2696,16 @@ open buffer."
         (while place-aliases
           (setq place-alias (string-trim (pop place-aliases)))
           ;;(setq places-content (concat places-content "\n- <<<" place-alias ">>> " (orgn--ls "alias-for") " " (gethash place-key existing-places))))))
-	  (let ((place-alias-is-an-alias-for-place-str (orgn--ls "new-name-is-an-alias-for-old-name")))
-	    (setq place-alias-is-an-alias-for-place-str
-		  (orgn--replace-string-in-string (concat "<<" (orgn--ls "new-name") ">>")
-						  (concat "<<<" place-alias ">>>")
-						  place-alias-is-an-alias-for-place-str))
-	    (setq place-alias-is-an-alias-for-place-str
-		  (orgn--replace-string-in-string (concat "<<" (orgn--ls "old-name") ">>")
-						  (gethash place-key existing-places)
-						  place-alias-is-an-alias-for-place-str))
-	    (setq places-content (concat places-content "\n- " place-alias-is-an-alias-for-place-str))))))
+          (let ((place-alias-is-an-alias-for-place-str (orgn--ls "new-name-is-an-alias-for-old-name")))
+            (setq place-alias-is-an-alias-for-place-str
+                  (orgn--replace-string-in-string (concat "<<" (orgn--ls "new-name") ">>")
+                                                  (concat "<<<" place-alias ">>>")
+                                                  place-alias-is-an-alias-for-place-str))
+            (setq place-alias-is-an-alias-for-place-str
+                  (orgn--replace-string-in-string (concat "<<" (orgn--ls "old-name") ">>")
+                                                  (gethash place-key existing-places)
+                                                  place-alias-is-an-alias-for-place-str))
+            (setq places-content (concat places-content "\n- " place-alias-is-an-alias-for-place-str))))))
     (when places-content
       (setq places-content (concat places-content "\n")))
     (puthash "<<places-content>>" places-content glossary-string-substitutions)
@@ -2724,16 +2724,16 @@ open buffer."
         (while prop-aliases
           (setq prop-alias (string-trim (pop prop-aliases)))
           ;; (setq props-content (concat props-content "\n- <<<" prop-alias ">>> " (orgn--ls "alias-for") " " (gethash prop-key existing-props))))))
-	  (let ((prop-alias-is-an-alias-for-prop-str (orgn--ls "new-name-is-an-alias-for-old-name")))
-	    (setq prop-alias-is-an-alias-for-prop-str
-		  (orgn--replace-string-in-string (concat "<<" (orgn--ls "new-name") ">>")
-						  (concat "<<<" prop-alias ">>>")
-						  prop-alias-is-an-alias-for-prop-str))
-	    (setq prop-alias-is-an-alias-for-prop-str
-		  (orgn--replace-string-in-string (concat "<<" (orgn--ls "old-name") ">>")
-						  (gethash prop-key existing-props)
-						  prop-alias-is-an-alias-for-prop-str))
-	    (setq props-content (concat props-content "\n- " prop-alias-is-an-alias-for-prop-str))))))
+          (let ((prop-alias-is-an-alias-for-prop-str (orgn--ls "new-name-is-an-alias-for-old-name")))
+            (setq prop-alias-is-an-alias-for-prop-str
+                  (orgn--replace-string-in-string (concat "<<" (orgn--ls "new-name") ">>")
+                                                  (concat "<<<" prop-alias ">>>")
+                                                  prop-alias-is-an-alias-for-prop-str))
+            (setq prop-alias-is-an-alias-for-prop-str
+                  (orgn--replace-string-in-string (concat "<<" (orgn--ls "old-name") ">>")
+                                                  (gethash prop-key existing-props)
+                                                  prop-alias-is-an-alias-for-prop-str))
+            (setq props-content (concat props-content "\n- " prop-alias-is-an-alias-for-prop-str))))))
     (puthash "<<props-content>>" props-content glossary-string-substitutions)
     (orgn--generate-string-from-template glossary-string-substitutions orgn--glossary-template)))
 
@@ -2786,7 +2786,7 @@ STORY-NAME is the name of the story, and STORY-FOLDER is its save location."
         (unless (file-exists-p (file-name-directory (concat story-folder / (orgn--ls "chapters-folder") /)))
           (make-directory (file-name-directory (concat story-folder / (orgn--ls "chapters-folder") /)) t))
         (orgn--string-to-file (concat orgn--mode-identifier "\n") (concat story-folder / orgn--config-filename))  ; Create an empty configuration file for the story
-	(orgn--string-to-file (format "%s\n\#\+%s\: %s" orgn--mode-identifier orgn--language-tag-property orgn-language-tag) (concat story-folder / orgn--data-filename))  ; Create an immutable data file for the story, and set the story language tag
+        (orgn--string-to-file (format "%s\n\#\+%s\: %s" orgn--mode-identifier orgn--language-tag-property orgn-language-tag) (concat story-folder / orgn--data-filename))  ; Create an immutable data file for the story, and set the story language tag
         (orgn--populate-main-template story-name story-folder)  ; Create the main entry-point file for the story
         (orgn--populate-notes-template story-name story-folder)  ; Create the general notes file for the story
         (orgn--populate-research-template story-name story-folder)  ; Create the general research file for the story
