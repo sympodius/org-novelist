@@ -628,6 +628,17 @@ Otherwise, run org-fold-show-all."
       (org-fold-show-all)
     (org-show-all)))
 
+(defun orgn--format-time-string (format-string &optional time-zone)
+  "Run the deprecated `org-format-time-string' when Org version is less than 9.6.
+Otherwise, run `format-time-string'.
+FORMAT-STRING is the output format.
+TIME-ZONE is the given time. If omitted or nil, use local time."
+  (if (or (> (string-to-number (nth 0 (split-string (org-version) "\\."))) 9)
+          (and (= (string-to-number (nth 0 (split-string (org-version) "\\."))) 9)
+               (>= (string-to-number (nth 1 (split-string (org-version) "\\."))) 6)))
+      (format-time-string format-string time-zone)
+    (org-format-time-string format-string time-zone)))
+
 (defun orgn--delete-line ()
   "If Emacs version is less than 29, delete line the old fashioned way."
   (let ((inhibit-field-text-motion t))
@@ -4148,7 +4159,7 @@ export files."
        story-name
        orgn-author
        orgn-author-email
-       (format-time-string "[%Y-%m-%d %a %H:%M]")
+       (orgn--format-time-string "[%Y-%m-%d %a %H:%M]")
        (string-chop-newline content)
        (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
       ;; Although Org export file is made, the file level properties may need to be overridden by the config file.
