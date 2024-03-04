@@ -622,8 +622,9 @@ The resultant string should be suitable for the current operating system."
 (defun orgn--fold-show-all ()
   "Run the deprecated org-show-all when Org version is less than 9.6.
 Otherwise, run org-fold-show-all."
-  (if (and (>= (string-to-number (nth 0 (split-string (org-version) "\\."))) 9)
-           (>= (string-to-number (nth 1 (split-string (org-version) "\\."))) 6))
+  (if (or (> (string-to-number (nth 0 (split-string (org-version) "\\."))) 9)
+          (and (= (string-to-number (nth 0 (split-string (org-version) "\\."))) 9)
+               (>= (string-to-number (nth 1 (split-string (org-version) "\\."))) 6)))
       (org-fold-show-all)
     (org-show-all)))
 
