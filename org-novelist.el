@@ -3978,16 +3978,14 @@ export files."
               (setq curr-glossary-str "")))
           ;; Maybe add index?
           (when (member orgn--index-generator-value (split-string (orgn--get-file-property-value curr-chap-file orgn--generate-property) (orgn--ls "generate-separators") t " "))
-            (insert "\n#+LATEX: \\printindex\n"))
-          (cd (concat ".." /  (orgn--ls "chapters-folder")))
-          (setq curr-content (org-export-as 'org))
-          (cd (concat ".." / (orgn--ls "indices-folder"))))
+            (insert "\n#+LATEX: \\printindex"))
+          (org-align-tags t)
+          (setq curr-content (buffer-string)))
         (with-temp-buffer
           (insert curr-content)
           (org-novelist-mode)
           (orgn--fold-show-all)  ; Belts and braces
           (goto-char (point-min))
-          (orgn--delete-line)
           ;; If the chapter index had any properties, we should probably include them as well. Doing it here will allow file level properties to override the index properties.
           (while curr-index-properties-list
             (setq curr-index-property (pop curr-index-properties-list))
@@ -4031,16 +4029,14 @@ export files."
               (setq curr-glossary-str "")))
           ;; Maybe add index?
           (when (member orgn--index-generator-value (split-string (orgn--get-file-property-value curr-chap-file orgn--generate-property) (orgn--ls "generate-separators") t " "))
-            (insert "\n#+LATEX: \\printindex\n"))
-          (cd (concat ".." /  (orgn--ls "chapters-folder")))
-          (setq curr-content (org-export-as 'org))
-          (cd (concat ".." / (orgn--ls "indices-folder"))))
+            (insert "\n#+LATEX: \\printindex"))
+          (org-align-tags t)
+          (setq curr-content (buffer-string)))
         (with-temp-buffer
           (insert curr-content)
           (org-novelist-mode)
           (orgn--fold-show-all)  ; Belts and braces
           (goto-char (point-min))
-          (orgn--delete-line)
           ;; If the chapter index had any properties, we should probably include them as well. Doing it here will allow file level properties to override the index properties.
           (while curr-index-properties-list
             (setq curr-index-property (pop curr-index-properties-list))
@@ -4084,16 +4080,14 @@ export files."
               (setq curr-glossary-str "")))
           ;; Maybe add index?
           (when (member orgn--index-generator-value (split-string (orgn--get-file-property-value curr-chap-file orgn--generate-property) (orgn--ls "generate-separators") t " "))
-            (insert "\n#+LATEX: \\printindex\n"))
-          (cd (concat ".." /  (orgn--ls "chapters-folder")))
-          (setq curr-content (org-export-as 'org))
-          (cd (concat ".." / (orgn--ls "indices-folder"))))
+            (insert "\n#+LATEX: \\printindex"))
+          (org-align-tags t)
+          (setq curr-content (buffer-string)))
         (with-temp-buffer
           (insert curr-content)
           (org-novelist-mode)
           (orgn--fold-show-all)  ; Belts and braces
           (goto-char (point-min))
-          (orgn--delete-line)
           ;; If the chapter index had any properties, we should probably include them as well. Doing it here will allow file level properties to override the index properties.
           (while curr-index-properties-list
             (setq curr-index-property (pop curr-index-properties-list))
