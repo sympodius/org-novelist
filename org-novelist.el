@@ -64,6 +64,8 @@
 
 (defvar orgn--autoref-p nil "Temporary store for last known value of org-novelist-automatic-referencing-p.")
 (defvar orgn--lang-tag nil "Temporary store for the original language tag set for this session.")
+(defvar orgn-mode-map)
+(defvar orgn-menu)
 
 
 ;;;; Global Constants
@@ -4231,6 +4233,36 @@ Once changed, inform user of new state."
   (if orgn-automatic-referencing-p
       (message (orgn--ls "auto-ref-now-on"))
     (message (orgn--ls "auto-ref-now-off"))))
+
+
+;; Define the Org Novelist mode menus.
+;; I've yet to find a way to internationalise these strings, so they're hard coded for now.
+(easy-menu-define orgn-menu orgn-mode-map "Org Novelist menu."
+  `("Org Novelist"
+    ("Story"
+     ["New Story..." orgn-new-story t]
+     ["Rename Story..." orgn-rename-story t]
+     ["Export Story" orgn-export-story t])
+    ("Chapters"
+     ["New Chapter..." orgn-new-chapter t]
+     ["Rename Chapter..." orgn-rename-chapter t]
+     ["Destroy Chapter..." orgn-destroy-chapter t])
+    ("Notes"
+     ("Characters"
+      ["New Character..." orgn-new-character t]
+      ["Rename Character..." orgn-rename-character t]
+      ["Destroy Character..." orgn-destroy-character t])
+     ("Props"
+      ["New Prop..." orgn-new-prop t]
+      ["Rename Prop..." orgn-rename-prop t]
+      ["Destroy Prop..." orgn-destroy-prop t])
+     ("Places"
+      ["New Place..." orgn-new-place t]
+      ["Rename Place..." orgn-rename-place t]
+      ["Destroy Place..." orgn-destroy-place t]))
+    ("References"
+     ["Update References" orgn-update-references t]
+     ["Toggle Automatic Referencing" orgn-toggle-automatic-referencing t])))
 
 
 ;;;###autoload
