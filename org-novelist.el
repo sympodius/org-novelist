@@ -417,7 +417,7 @@ Strings matching the values of `org-novelist--folder-separator' or
             (when (string= current-folder (setq current-folder (expand-file-name (concat current-folder / ".." ))))
               (throw 'NO-STORY-ROOT-FOUND current-folder)))
           ;; If we get to this point, a story root folder was found and that is what current-folder is set to.
-          (setq story-language-tag (orgn--get-file-property-value (concat (expand-file-name current-folder) / orgn--data-filename) orgn--language-tag-property))
+          (setq story-language-tag (orgn--get-file-property-value orgn--language-tag-property (concat (expand-file-name current-folder) / orgn--data-filename)))
           (if (not (string= "" story-language-tag))
               ;; A value was found for the language tag of this story. So set it up.
               (progn
@@ -474,7 +474,7 @@ a supported language. The default is \"en-GB\"."
             (when (string= current-folder (setq current-folder (expand-file-name (concat current-folder / ".." ))))
               (throw 'NO-STORY-ROOT-FOUND current-folder)))
           ;; If we get to this point, a story root folder was found and that is what current-folder is set to.
-          (setq story-language-tag (orgn--get-file-property-value (concat (expand-file-name current-folder) / orgn--data-filename) orgn--language-tag-property))
+          (setq story-language-tag (orgn--get-file-property-value orgn--language-tag-property (concat (expand-file-name current-folder) / orgn--data-filename)))
           (if (not (string= "" story-language-tag))
               ;; A value was found for the language tag of this story. So set it up.
               (progn
@@ -923,9 +923,9 @@ that appear in that file."
                 (org-novelist-mode)
                 (orgn--fold-show-all)
                 (goto-char (point-min))
-                (when (re-search-forward (regexp-quote (orgn--get-file-property-value (concat story-folder / notes-folder / key) "TITLE")) nil t)
+                (when (re-search-forward (regexp-quote (orgn--get-file-property-value "TITLE" (concat story-folder / notes-folder / key))) nil t)
                   (setq entry-found t))
-                (setq aliases (split-string (orgn--get-file-property-value (concat story-folder / notes-folder / key) orgn--aliases-property) (orgn--ls "aliases-separators") t " "))
+                (setq aliases (split-string (orgn--get-file-property-value orgn--aliases-property (concat story-folder / notes-folder / key)) (orgn--ls "aliases-separators") t " "))
                 (while aliases
                   (setq alias (pop aliases))
                   (when (re-search-forward (regexp-quote alias) nil t)
@@ -933,9 +933,9 @@ that appear in that file."
           (when (or (not file-restriction) entry-found)  ; Add check here for if key name/alias was found in file-restriction
             (if (file-exists-p (concat story-folder / notes-folder / key))
                 (if (file-readable-p (concat story-folder / notes-folder / key))
-                    (when (member orgn--glossary-generator-value (split-string (orgn--get-file-property-value (concat story-folder / notes-folder / key) orgn--add-to-generators-property) (orgn--ls "generate-separators") t " "))
+                    (when (member orgn--glossary-generator-value (split-string (orgn--get-file-property-value orgn--add-to-generators-property (concat story-folder / notes-folder / key)) (orgn--ls "generate-separators") t " "))
                       ;; Main name.
-                      (setq title-words (split-string (orgn--get-file-property-value (concat story-folder / notes-folder / key) "TITLE") " " t " "))
+                      (setq title-words (split-string (orgn--get-file-property-value "TITLE" (concat story-folder / notes-folder / key)) " " t " "))
                       (while title-words
                         (setq title-word (pop title-words))
                         (setq curr-entry (concat curr-entry "/" title-word "/"))
@@ -943,7 +943,7 @@ that appear in that file."
                           (setq curr-entry (concat curr-entry " "))))
                       (setq curr-entry (concat curr-entry " \\nbsp\\nbsp\\nbsp\\nbsp\\nbsp "))
                       ;; Aliases.
-                      (setq aliases (split-string (orgn--get-file-property-value (concat story-folder / notes-folder / key) orgn--aliases-property) (orgn--ls "aliases-separators") t " "))
+                      (setq aliases (split-string (orgn--get-file-property-value orgn--aliases-property (concat story-folder / notes-folder / key)) (orgn--ls "aliases-separators") t " "))
                       (when aliases
                         (setq curr-entry (concat curr-entry "(" (orgn--ls "alias") ": ")))
                       (setq alias nil)
@@ -960,7 +960,7 @@ that appear in that file."
                       (when alias
                         (setq curr-entry (concat curr-entry ") --- ")))
                       ;; If description given, add it. Otherwise, use default for type.
-                      (setq curr-desc (orgn--get-file-property-value (concat story-folder / notes-folder / key) "DESCRIPTION"))
+                      (setq curr-desc (orgn--get-file-property-value "DESCRIPTION" (concat story-folder / notes-folder / key)))
                       (if (not (string= "" curr-desc))
                           (setq curr-entry (concat curr-entry curr-desc))
                         (cond ((member key (hash-table-keys file-characters))
@@ -992,7 +992,7 @@ related to the current buffer."
         (let* ((chapters-folder (orgn--ls "chapters-folder"))
                (indices-folder (orgn--ls "indices-folder"))
                (chapter-index (concat (orgn--ls "chapters-file") orgn--file-ending))
-               (aliases-str (orgn--get-file-property-value file orgn--aliases-property))
+               (aliases-str (orgn--get-file-property-value orgn--aliases-property file))
                names
                curr-names
                name
@@ -1010,7 +1010,7 @@ related to the current buffer."
                (prepped-file-contents ""))
           (when aliases-str
             (setq names (sort (split-string aliases-str (orgn--ls "aliases-separators") t " ") 'string<)))
-          (setq names (cons (orgn--get-file-property-value file "TITLE") names))
+          (setq names (cons (orgn--get-file-property-value "TITLE" file) names))
           (unless (equal names '(nil))
             ;; Make sure order of chapter-keys matches the chapter index order, with any unknown files at the end in alphabetical order.
             (orgn--reorder-matter-in-chapter-index story-folder)
@@ -1119,7 +1119,7 @@ values."
     (while files
       (setq curr-file (car files))
       (setq files (cdr files))
-      (if (setq curr-name (orgn--get-file-property-value curr-file "TITLE"))
+      (if (setq curr-name (orgn--get-file-property-value "TITLE" curr-file))
           (puthash (file-name-nondirectory curr-file) curr-name names)
         (puthash (file-name-nondirectory curr-file) (file-name-nondirectory curr-file) names)))
     (eval names)))
@@ -1163,6 +1163,7 @@ values."
 (defun orgn--set-file-property-value (property value &optional file no-overwrite)
   "Given a FILE and VALUE, change PROPERTY value of that file.
 If property not found, add it.
+If no file given, attmept to use current buffer.
 If NO-OVERWRITE is t, don't replace existing property, just add new one."
   (when file
     (when (file-exists-p file)
@@ -1182,24 +1183,28 @@ If NO-OVERWRITE is t, don't replace existing property, just add new one."
       (end-of-line)
       (insert (format "\n\#\+%s\: %s" property value)))))
 
-(defun orgn--get-file-property-value (file property)
-  "Given a FILE, return the value of PROPERTY."
+(defun orgn--get-file-property-value (property &optional file)
+  "Given an Org FILE, return the value of PROPERTY.
+If FILE not provided, work on current buffer."
   ;; This function cannot use any of the language functions (orgn--ls and orgn--lf) as orgn--get-file-property-value is required in determining what language needs to be set.
   (let ((value "")
         (regexp (format "^[ \t]*#\\+%s:" (regexp-quote property)))
         (case-fold-search t)
-        beg)
+        beg
+	(curr-buff-str (buffer-string)))
     (with-temp-buffer
-      (when (file-exists-p file)
-        (when (file-readable-p file)
-          (insert-file-contents file)
-          (goto-char (point-min))
-          (while (re-search-forward regexp nil t)
-            (when (looking-at-p " ")
-              (forward-char))
-            (setq beg (point))
-            (end-of-line)
-            (setq value (org-trim (buffer-substring beg (point))))))))
+      (if file
+	  (when (file-exists-p file)
+            (when (file-readable-p file)
+              (insert-file-contents file)))
+	(insert curr-buff-str))
+      (goto-char (point-min))
+      (while (re-search-forward regexp nil t)
+        (when (looking-at-p " ")
+          (forward-char))
+        (setq beg (point))
+        (end-of-line)
+        (setq value (org-trim (buffer-substring beg (point))))))
     value))
 
 (defun orgn--delete-file-property-value (file property)
@@ -1736,8 +1741,8 @@ open buffer."
                 (org-novelist-mode)
                 (orgn--fold-show-all)  ; Belts and braces
                 ;; Get current title and add to aliases.
-                (setq old-object-name (orgn--get-file-property-value object-file "TITLE"))
-                (setq old-aliases (orgn--get-file-property-value object-file orgn--aliases-property))
+                (setq old-object-name (orgn--get-file-property-value "TITLE" object-file))
+                (setq old-aliases (orgn--get-file-property-value orgn--aliases-property object-file))
                 ;; Prevent repeating names in aliases.
                 (when old-aliases
                   (setq aliases-list (delete new-object-name (delq nil (delete-dups (sort (cons old-object-name (split-string old-aliases (orgn--ls "aliases-separators") t " ")) 'string<))))))
@@ -2676,7 +2681,7 @@ open buffer."
           (setq characters-content (concat characters-content "\n")))
         (setq characters-content (concat characters-content "*** <<<" (gethash character-key existing-characters) ">>> "
                                          "\[\[file:.." / notes-folder / character-key "\]\[" (orgn--ls "view-notes") "\]\]"))
-        (setq character-aliases-str (orgn--get-file-property-value (concat story-folder / notes-folder / character-key) orgn--aliases-property))
+        (setq character-aliases-str (orgn--get-file-property-value orgn--aliases-property (concat story-folder / notes-folder / character-key)))
         (when character-aliases-str
           (setq character-aliases (sort (split-string character-aliases-str (orgn--ls "aliases-separators") t " ") 'string<)))
         (while character-aliases
@@ -2704,7 +2709,7 @@ open buffer."
           (setq places-content (concat places-content "\n")))
         (setq places-content (concat places-content "*** <<<" (gethash place-key existing-places) ">>> "
                                      "\[\[file:.." / notes-folder / place-key "\]\[" (orgn--ls "view-notes") "\]\]"))
-        (setq place-aliases-str (orgn--get-file-property-value (concat story-folder / notes-folder / place-key) orgn--aliases-property))
+        (setq place-aliases-str (orgn--get-file-property-value orgn--aliases-property (concat story-folder / notes-folder / place-key)))
         (when place-aliases-str
           (setq place-aliases (sort (split-string place-aliases-str (orgn--ls "aliases-separators") t " ") 'string<)))
         (while place-aliases
@@ -2732,7 +2737,7 @@ open buffer."
           (setq props-content (concat props-content "\n")))
         (setq props-content (concat props-content "*** <<<" (gethash prop-key existing-props) ">>> "
                                     "\[\[file:.." / notes-folder / prop-key "\]\[" (orgn--ls "view-notes") "\]\]"))
-        (setq prop-aliases-str (orgn--get-file-property-value (concat story-folder / notes-folder / prop-key) orgn--aliases-property))
+        (setq prop-aliases-str (orgn--get-file-property-value orgn--aliases-property (concat story-folder / notes-folder / prop-key)))
         (when prop-aliases-str
           (setq prop-aliases (sort (split-string prop-aliases-str (orgn--ls "aliases-separators") t " ") 'string<)))
         (while prop-aliases
@@ -3955,13 +3960,13 @@ export files."
             (orgn--fold-show-all)  ; Belts and braces
             (goto-char (point-min))
             (re-search-forward (file-relative-name curr-chap-file) nil t)
-            (setq curr-header (orgn--replace-true-headline-in-org-heading (orgn--get-file-property-value curr-chap-file "TITLE") (org-heading-components) 1))
+            (setq curr-header (orgn--replace-true-headline-in-org-heading (orgn--get-file-property-value "TITLE" curr-chap-file) (org-heading-components) 1))
             (setq curr-index-properties-list (org-entry-properties nil 'standard))))
         (with-temp-buffer
           (org-novelist-mode)
           (orgn--fold-show-all)  ; Belts and braces
           (if (string=  curr-header "")
-              (insert "* " (orgn--get-file-property-value curr-chap-file "TITLE") "\n")
+              (insert "* " (orgn--get-file-property-value "TITLE" curr-chap-file) "\n")
             (insert curr-header "\n"))
           (setq curr-header "")
           ;; Chapter title setup, add contents.
@@ -3969,14 +3974,14 @@ export files."
           (insert "\n")
           (insert (orgn--get-file-subtree curr-chap-file (orgn--ls "content-header") t))
           ;; Maybe add glossary?
-          (when (member orgn--glossary-generator-value (split-string (orgn--get-file-property-value curr-chap-file orgn--generate-property) (orgn--ls "generate-separators") t " "))
+          (when (member orgn--glossary-generator-value (split-string (orgn--get-file-property-value orgn--generate-property curr-chap-file) (orgn--ls "generate-separators") t " "))
             (setq curr-glossary-str (orgn--make-export-glossary-string story-folder curr-chap-file))
             (unless (string= curr-glossary-str "")
               (insert "* " (orgn--ls "glossary-header") " :no_header_preamble:no_toc_entry:plain_pagestyle:\n")
               (insert curr-glossary-str)
               (setq curr-glossary-str "")))
           ;; Maybe add index?
-          (when (member orgn--index-generator-value (split-string (orgn--get-file-property-value curr-chap-file orgn--generate-property) (orgn--ls "generate-separators") t " "))
+          (when (member orgn--index-generator-value (split-string (orgn--get-file-property-value orgn--generate-property curr-chap-file) (orgn--ls "generate-separators") t " "))
             (insert "\n#+LATEX: \\printindex"))
           (org-align-tags t)
           (setq curr-content (buffer-string)))
@@ -3993,7 +3998,7 @@ export files."
           (org-set-property (upcase orgn--matter-type-property) (upcase orgn--front-matter-value))
           (while curr-properties-list
             (setq curr-property (pop curr-properties-list))
-            (org-set-property curr-property (orgn--get-file-property-value curr-chap-file curr-property)))
+            (org-set-property curr-property (orgn--get-file-property-value curr-property curr-chap-file)))
           (setq content (concat content (buffer-substring (point-min) (buffer-size)) "\n"))))
       (while mm-file-list
         (setq curr-chap-file (pop mm-file-list))
@@ -4006,13 +4011,13 @@ export files."
             (orgn--fold-show-all)  ; Belts and braces
             (goto-char (point-min))
             (re-search-forward (file-relative-name curr-chap-file) nil t)
-            (setq curr-header (orgn--replace-true-headline-in-org-heading (orgn--get-file-property-value curr-chap-file "TITLE") (org-heading-components) 1))
+            (setq curr-header (orgn--replace-true-headline-in-org-heading (orgn--get-file-property-value "TITLE" curr-chap-file) (org-heading-components) 1))
             (setq curr-index-properties-list (org-entry-properties nil 'standard))))
         (with-temp-buffer
           (org-novelist-mode)
           (orgn--fold-show-all)  ; Belts and braces
           (if (string=  curr-header "")
-              (insert "* " (orgn--get-file-property-value curr-chap-file "TITLE") "\n")
+              (insert "* " (orgn--get-file-property-value "TITLE" curr-chap-file) "\n")
             (insert curr-header "\n"))
           (setq curr-header "")
           ;; Chapter title setup, add contents.
@@ -4020,14 +4025,14 @@ export files."
           (insert "\n")
           (insert (orgn--get-file-subtree curr-chap-file (orgn--ls "content-header") t))
           ;; Maybe add glossary?
-          (when (member orgn--glossary-generator-value (split-string (orgn--get-file-property-value curr-chap-file orgn--generate-property) (orgn--ls "generate-separators") t " "))
+          (when (member orgn--glossary-generator-value (split-string (orgn--get-file-property-value orgn--generate-property curr-chap-file) (orgn--ls "generate-separators") t " "))
             (setq curr-glossary-str (orgn--make-export-glossary-string story-folder curr-chap-file))
             (unless (string= curr-glossary-str "")
               (insert "* " (orgn--ls "glossary-header") " :no_header_preamble:no_toc_entry:plain_pagestyle:\n")
               (insert curr-glossary-str)
               (setq curr-glossary-str "")))
           ;; Maybe add index?
-          (when (member orgn--index-generator-value (split-string (orgn--get-file-property-value curr-chap-file orgn--generate-property) (orgn--ls "generate-separators") t " "))
+          (when (member orgn--index-generator-value (split-string (orgn--get-file-property-value orgn--generate-property curr-chap-file) (orgn--ls "generate-separators") t " "))
             (insert "\n#+LATEX: \\printindex"))
           (org-align-tags t)
           (setq curr-content (buffer-string)))
@@ -4044,7 +4049,7 @@ export files."
           (org-set-property (upcase orgn--matter-type-property) (upcase orgn--main-matter-value))
           (while curr-properties-list
             (setq curr-property (pop curr-properties-list))
-            (org-set-property curr-property (orgn--get-file-property-value curr-chap-file curr-property)))
+            (org-set-property curr-property (orgn--get-file-property-value curr-property curr-chap-file)))
           (setq content (concat content (buffer-substring (point-min) (buffer-size)) "\n"))))
       (while bm-file-list
         (setq curr-chap-file (expand-file-name (pop bm-file-list)))
@@ -4057,13 +4062,13 @@ export files."
             (orgn--fold-show-all)  ; Belts and braces
             (goto-char (point-min))
             (re-search-forward (file-relative-name curr-chap-file) nil t)
-            (setq curr-header (orgn--replace-true-headline-in-org-heading (orgn--get-file-property-value curr-chap-file "TITLE") (org-heading-components) 1))
+            (setq curr-header (orgn--replace-true-headline-in-org-heading (orgn--get-file-property-value "TITLE" curr-chap-file) (org-heading-components) 1))
             (setq curr-index-properties-list (org-entry-properties nil 'standard))))
         (with-temp-buffer
           (org-novelist-mode)
           (orgn--fold-show-all)  ; Belts and braces
           (if (string=  curr-header "")
-              (insert "* " (orgn--get-file-property-value curr-chap-file "TITLE") "\n")
+              (insert "* " (orgn--get-file-property-value "TITLE" curr-chap-file) "\n")
             (insert curr-header "\n"))
           (setq curr-header "")
           ;; Chapter title setup, add contents.
@@ -4071,14 +4076,14 @@ export files."
           (insert "\n")
           (insert (orgn--get-file-subtree curr-chap-file (orgn--ls "content-header") t))
           ;; Maybe add glossary?
-          (when (member orgn--glossary-generator-value (split-string (orgn--get-file-property-value curr-chap-file orgn--generate-property) (orgn--ls "generate-separators") t " "))
+          (when (member orgn--glossary-generator-value (split-string (orgn--get-file-property-value orgn--generate-property curr-chap-file) (orgn--ls "generate-separators") t " "))
             (setq curr-glossary-str (orgn--make-export-glossary-string story-folder curr-chap-file))
             (unless (string= curr-glossary-str "")
               (insert "* " (orgn--ls "glossary-header") " :no_header_preamble:no_toc_entry:plain_pagestyle:\n")
               (insert curr-glossary-str)
               (setq curr-glossary-str "")))
           ;; Maybe add index?
-          (when (member orgn--index-generator-value (split-string (orgn--get-file-property-value curr-chap-file orgn--generate-property) (orgn--ls "generate-separators") t " "))
+          (when (member orgn--index-generator-value (split-string (orgn--get-file-property-value orgn--generate-property curr-chap-file) (orgn--ls "generate-separators") t " "))
             (insert "\n#+LATEX: \\printindex"))
           (org-align-tags t)
           (setq curr-content (buffer-string)))
@@ -4095,7 +4100,7 @@ export files."
           (org-set-property (upcase orgn--matter-type-property) (upcase orgn--back-matter-value))
           (while curr-properties-list
             (setq curr-property (pop curr-properties-list))
-            (org-set-property curr-property (orgn--get-file-property-value curr-chap-file curr-property)))
+            (org-set-property curr-property (orgn--get-file-property-value curr-property curr-chap-file)))
           (setq content (concat content (buffer-substring (point-min) (buffer-size)) "\n"))))
       ;; Make sure export backends are reset to user-set values.
       (progn
@@ -4164,7 +4169,7 @@ export files."
         (while curr-properties-list
           (setq curr-property (pop curr-properties-list))
           (orgn--set-file-property-value curr-property
-                                         (orgn--get-file-property-value (concat story-folder / orgn--config-filename) curr-property)
+                                         (orgn--get-file-property-value curr-property (concat story-folder / orgn--config-filename))
                                          (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending)))
         ;; Check if any generators are set and act accordingly.
         ;; Get list of notes names to be included in index, then add to file properties list here.
@@ -4182,17 +4187,17 @@ export files."
             (setq key (pop keys))
             (if (file-exists-p (concat story-folder / notes-folder / key))
                 (if (file-readable-p (concat story-folder / notes-folder / key))
-                    (when (member orgn--index-generator-value (split-string (orgn--get-file-property-value (concat story-folder / notes-folder / key) orgn--add-to-generators-property) (orgn--ls "generate-separators") t " "))
+                    (when (member orgn--index-generator-value (split-string (orgn--get-file-property-value orgn--add-to-generators-property (concat story-folder / notes-folder / key)) (orgn--ls "generate-separators") t " "))
                       ;; Add main name.
                       (orgn--set-file-property-value orgn--index-entry-property
-                                                     (orgn--get-file-property-value (concat story-folder / notes-folder / key) "TITLE")
+                                                     (orgn--get-file-property-value "TITLE" (concat story-folder / notes-folder / key))
                                                      (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending) t)
                       ;; Add aliases.
-                      (setq aliases (split-string (orgn--get-file-property-value (concat story-folder / notes-folder / key) orgn--aliases-property) (orgn--ls "aliases-separators") t " "))
+                      (setq aliases (split-string (orgn--get-file-property-value orgn--aliases-property (concat story-folder / notes-folder / key)) (orgn--ls "aliases-separators") t " "))
                       (while aliases
                         (setq alias (pop aliases))
                         (orgn--set-file-property-value orgn--index-entry-property
-                                                       (concat (orgn--get-file-property-value (concat story-folder / notes-folder / key) "TITLE") "!" alias)
+                                                       (concat (orgn--get-file-property-value "TITLE" (concat story-folder / notes-folder / key)) "!" alias)
                                                        (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending) t)))
                   (progn
                     (setq orgn-automatic-referencing-p orgn--autoref-p)
@@ -4203,7 +4208,7 @@ export files."
                 (error (concat (orgn--ls "file-not-found") ": " story-folder / notes-folder / key))
                 (throw 'EXPORT-STORY-FAULT (concat (orgn--ls "file-not-found") ": " story-folder / notes-folder / key))))))
         ;; Get list of notes names to be included in glossary, then add to end of file.
-        (when (member orgn--glossary-generator-value (split-string (orgn--get-file-property-value (concat story-folder / orgn--config-filename) orgn--generate-property) (orgn--ls "generate-separators") t " "))
+        (when (member orgn--glossary-generator-value (split-string (orgn--get-file-property-value orgn--generate-property (concat story-folder / orgn--config-filename)) (orgn--ls "generate-separators") t " "))
           (when (file-exists-p (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
             (when (file-writable-p (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
               (find-file (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
