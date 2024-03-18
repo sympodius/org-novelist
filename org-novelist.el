@@ -4217,15 +4217,16 @@ export files."
                               ":PROPERTIES:\n"
                               ":" orgn--matter-type-property ": " orgn--back-matter-value "\n"
                               ":END:\n"))
-              (insert (orgn--make-export-glossary-string story-folder)))))
-        ;; If buffer contains any printindex commands, or has an index generator included, then made sure to include the LaTeX header for makeindex.
-        (goto-char (point-min))
-        (when (or (member orgn--index-generator-value (split-string (orgn--get-file-property-value (concat story-folder / orgn--config-filename) orgn--generate-property) (orgn--ls "generate-separators") t " "))
-                  (re-search-forward "#\\+latex: \\\\printindex" nil t))
-          (orgn--set-file-property-value "LATEX_HEADER" "\\makeindex" (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending) t)
-          (orgn--set-file-property-value "LATEX_HEADER" "\\usepackage{makeidx}" (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending) t))
-        (goto-char (point-min))
-        (orgn--save-current-file))  ; This is currently unchecked for when user enters an invalid filename. As such, it could result in an error that will not allow orgn-automatic-referencing-p to be reset. This is saving the file opened by the various calls to `orgn--set-file-property-value'
+              (insert (orgn--make-export-glossary-string story-folder))
+              ;; If buffer contains any printindex commands, or has an index generator included, then made sure to include the LaTeX header for makeindex.
+              (goto-char (point-min))
+              (when (or (member orgn--index-generator-value (split-string (orgn--get-file-property-value orgn--generate-property (concat story-folder / orgn--config-filename)) (orgn--ls "generate-separators") t " "))
+                        (re-search-forward "#\\+latex: \\\\printindex" nil t))
+                (orgn--set-file-property-value "LATEX_HEADER" "\\makeindex" (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending) t)
+                (orgn--set-file-property-value "LATEX_HEADER" "\\usepackage{makeidx}" (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending) t))
+              (goto-char (point-min))
+	      (org-export-expand-include-keyword nil (concat ".." /  (orgn--ls "chapters-folder")))  ;; Make sure any include directives are expanded and included in the exported Org file.
+              (orgn--save-current-file)))))  ; This is currently unchecked for when user enters an invalid filename. As such, it could result in an error that will not allow orgn-automatic-referencing-p to be reset. This is saving the file opened by the various calls to `orgn--set-file-property-value'
       ;; By this point, we should have the Org file correctly exported.
       ;; Run through the export templates in the config file.
       (setq exports-hash (orgn--exports-hash-table story-folder))
