@@ -70,10 +70,7 @@
 
 ;;;; Global Constants
 
-;; This constant allows the system to work on Linux and Windows (and
-;; any other system, though I've only tested those two). I think it's
-;; faster for Emacs than calling the `file-name-as-directory' function
-;; every time I need it, and using the alias keeps the code cleaner.
+;; This constant allows the system to work on Linux and Windows (and any other system, though I've only tested those two). I think it's faster for Emacs than calling the `file-name-as-directory' function every time I need it, and using the alias keeps the code cleaner.
 (defvaralias 'orgn--folder-separator '/ "Add in an alias to make code cleaner when constructing file locations.")
 (defconst orgn--folder-separator (file-name-as-directory "/") "Assign the current system's folder separator to a global variable.")
 
