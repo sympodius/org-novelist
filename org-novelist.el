@@ -64,7 +64,7 @@
 
 (defvar orgn--autoref-p nil "Temporary store for last known value of org-novelist-automatic-referencing-p.")
 (defvar orgn--lang-tag nil "Temporary store for the original language tag set for this session.")
-(defvar orgn-mode-map)
+(defvar-keymap orgn-mode-map)
 (defvar orgn-menu)
 
 
