@@ -378,7 +378,7 @@ You can also add a description of the item on the next line. This will replace t
 #+DESCRIPTION: A castle on the banks of the river Clyde.
 ```
 
-Org Novelist now knows that you want this item included when generating glossaries for your story during export. Next, you must tell Org Novelist where in our exported file you want your glossaries to appear.
+Org Novelist now knows that you want this item included when generating glossaries for your story during export. Next, you must tell Org Novelist where in your exported file you want your glossaries to appear.
 
 ### Place Glossaries
 To place a glossary for the entire story at the end of the exported file, you can add an instruction in your story's `org-novelist-config.org` file. From you story's `main.org` file, follow the link to `Export Settings`. Underneath the top line specifying this is an Org Novelist file, and above a possible `Exports` heading, add the following line:
