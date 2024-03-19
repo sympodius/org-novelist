@@ -1262,20 +1262,20 @@ If FILE not provided, work on current buffer."
         (setq value (org-trim (buffer-substring beg (point))))))
     value))
 
-(defun orgn--delete-file-property-value (file property)
-  "Given a FILE, delete the entry for PROPERTY."
-  ;; This function is currently not used (as of version 0.0.1). I coded it up thinking I'd need it, but so far it's not come up.
+(defun orgn--delete-file-property-value (property &optional file)
+  "Given a FILE, delete the entry for PROPERTY.
+If FILE not provided, work on current buffer."
+  ;; This function is currently not used (as of version 0.0.3). I coded it up thinking I'd need it, but so far it's not come up.
+  (when file
+    (when (file-exists-p file)
+      (when (file-readable-p file)
+        (find-file file))))
   (let ((regexp (format "^[ \t]*#\\+%s:" (regexp-quote property)))
         (case-fold-search t))
-    (with-temp-buffer
-      (when (file-exists-p file)
-        (when (file-readable-p file)
-          (insert-file-contents file)
-          (goto-char (point-min))
-          (while (re-search-forward regexp nil t)
-            (beginning-of-line)
-            (orgn--delete-line))))
-      (orgn--string-to-file (buffer-string) file))))
+    (goto-char (point-min))
+    (while (re-search-forward regexp nil t)
+      (beginning-of-line)
+      (orgn--delete-line))))
 
 (defun orgn--get-file-properties (file)
   "Given a FILE, return the properties."
