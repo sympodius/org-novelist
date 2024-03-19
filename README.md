@@ -397,7 +397,7 @@ It is also possible to include chapter level glossaries in your exported file. T
 
 Now, after exporting, there will be a glossary at the end of this chapter as well, including only the items that appeared in that chapter. Again, it will only try to add items you have already marked for inclusion.
 
-You can make export glossaries for as many or as few of your chapters as you like. You do not need to generate a story glossary in order to generate chapter glossaries. You are free to use both, one or the other, or none. Keep in mind, however, that if the Glossary is empty, it will still be generated, just without any contents under the headings in your exported file.
+You can make export glossaries for as many or as few of your chapters as you like. You do not need to generate a story glossary in order to generate chapter glossaries. You are free to use both, one or the other, or none.
 
 ## Index Generator
 When exporting, Org Novelist can also mark the exported Org file with information for creating an index. Org Novelist itself will not generate the final index, as this will be dependent on export templates and the final published form of the story. If you wish to see an example of how this will end up, you can check out the *Cubes* PDF and ePub export templates at [https://github.com/sympodius/org-novelist-export-templates/](https://github.com/sympodius/org-novelist-export-templates/), both of which generate Indices for stories when required using the information Org Novelist generates on export.
