@@ -82,8 +82,8 @@
 (defconst orgn--aliases-property "ALIASES" "Property key for the notes name aliases in a notes file.")
 (defconst orgn--add-to-generators-property "ADD_TO_GENERATORS" "Property key for generators notes should be added to (eg, index, glossary).")
 (defconst orgn--generate-property "GENERATE" "Property key for generators a story should apply (eg, index, glossary).")
-(defconst orgn--generator-story-dir-property "GENERATOR_STORY_DIR" "Property key to override the story folder generators use to find notes.")
-(defconst orgn--generator-story-dir-separator "|\\?|" "Regexp to match the separators in a list of generator story directories.")
+(defconst orgn--linked-stories-property "LINKED_STORIES" "Property key to link story notes across stories.")
+(defconst orgn--linked-stories-separator "|\\?|" "Regexp to match the separators in a list of generator story directories.")
 (defconst orgn--index-entry-property "ORG_NOVELIST_INDEX_ENTRY" "Property key for an index entry.")
 (defconst orgn--matter-type-property "ORG-NOVELIST-MATTER-TYPE" "Property key for the chapter matter type in the export property drawer.")
 (defconst orgn--front-matter-value "FRONT MATTER" "Name for the Front Matter value in the export property drawer.")
@@ -889,8 +889,9 @@ PLACE-NAME should be the name of the place."
   (when story-folder
     (orgn--populate-glossary-string story-folder)))
 
-(defun orgn--make-export-glossary-string (story-folder &optional file-restriction heading &rest folder-list)
-  "Create an export glossary without header for STORY-FOLDER.
+(defun orgn--make-export-glossary-string (story-folder orig-folder &optional file-restriction heading &rest folder-list)
+  "Create an export glossary without header for STORY-FOLDER, and ORIG-FOLDER.
+ORIG-FOLDER is the folder of the actual story where the glossary will go.
 If a file is passed as FILE-RESTRICTION, restrict glossary string to terms
 that appear in that file. HEADING can further restrict to terms appearing
 only within that subtree, but only if used with FILE-RESTRICTION.
@@ -926,43 +927,41 @@ story folders as well."
             other-keys
             other-key
             (glossary-str ""))
-        ;; (message "****** I GOT IN ******")
         ;; Add additional notes from other story folders if required.
-        ;; (while folder-list
-        ;;   (setq curr-story-folder (orgn--story-root-folder (expand-file-name (car (pop folder-list)) story-folder)))
-        ;;   (setq curr-file-characters (orgn--character-hash-table curr-story-folder))
-        ;;   (setq curr-file-places (orgn--place-hash-table curr-story-folder))
-        ;;   (setq curr-file-props (orgn--prop-hash-table curr-story-folder))
-        ;;   (setq other-keys (sort (append (hash-table-keys curr-file-characters)
-        ;;                               (hash-table-keys curr-file-places)
-        ;;                               (hash-table-keys curr-file-props)) 'string<))
-        ;;   (while other-keys
-        ;;     (setq other-key (pop other-keys))
-        ;;     (cond ((member other-key (hash-table-keys curr-file-characters))
-        ;;            (puthash (concat curr-story-folder / notes-folder / other-key) (gethash other-key curr-file-characters) file-characters))
-        ;;           ((member other-key (hash-table-keys curr-file-places))
-        ;;            (puthash (concat curr-story-folder / notes-folder / other-key) (gethash other-key curr-file-places) file-places))
-        ;;           (t
-        ;;            (puthash (concat curr-story-folder / notes-folder / other-key) (gethash other-key curr-file-props) file-props)))))
+        (when (car folder-list)
+          (setq folder-list (car folder-list))
+          (while folder-list
+            (setq curr-story-folder (string-trim-right (orgn--story-root-folder (expand-file-name (pop folder-list) (expand-file-name orig-folder))) "/"))
+            (setq curr-file-characters (orgn--character-hash-table curr-story-folder))
+            (setq curr-file-places (orgn--place-hash-table curr-story-folder))
+            (setq curr-file-props (orgn--prop-hash-table curr-story-folder))
+            (setq other-keys (append (hash-table-keys curr-file-characters)
+                                     (hash-table-keys curr-file-places)
+                                     (hash-table-keys curr-file-props)))
+            (while other-keys
+              (setq other-key (pop other-keys))
+              (cond ((member other-key (hash-table-keys curr-file-characters))
+                     (puthash (concat curr-story-folder / notes-folder / other-key) (gethash other-key curr-file-characters) file-characters))
+                    ((member other-key (hash-table-keys curr-file-places))
+                     (puthash (concat curr-story-folder / notes-folder / other-key) (gethash other-key curr-file-places) file-places))
+                    (t
+                     (puthash (concat curr-story-folder / notes-folder / other-key) (gethash other-key curr-file-props) file-props))))))
         ;; Prcoess full file names into keys from original notes.
-        (setq proc-keys (sort (append (hash-table-keys orig-file-characters)
-                                      (hash-table-keys orig-file-places)
-                                      (hash-table-keys orig-file-props)) 'string<))
+        (setq proc-keys (append (hash-table-keys orig-file-characters)
+                                (hash-table-keys orig-file-places)
+                                (hash-table-keys orig-file-props)))
         (while proc-keys
           (setq proc-key (pop proc-keys))
           (cond ((member proc-key (hash-table-keys orig-file-characters))
-                 ;;(puthash (concat story-folder / notes-folder / proc-key) (gethash proc-key orig-file-characters) file-characters))
-                 (puthash proc-key (gethash proc-key orig-file-characters) file-characters))
+                 (puthash (concat story-folder / notes-folder / proc-key) (gethash proc-key orig-file-characters) file-characters))
                 ((member proc-key (hash-table-keys orig-file-places))
-                 ;;(puthash (concat story-folder / notes-folder / proc-key) (gethash proc-key orig-file-places) file-places))
-                 (puthash proc-key (gethash proc-key orig-file-places) file-places))
+                 (puthash (concat story-folder / notes-folder / proc-key) (gethash proc-key orig-file-places) file-places))
                 (t
-                 ;;(puthash (concat story-folder / notes-folder / proc-key) (gethash proc-key orig-file-props) file-props))))
-                 (puthash proc-key (gethash proc-key orig-file-props) file-props))))
+                 (puthash (concat story-folder / notes-folder / proc-key) (gethash proc-key orig-file-props) file-props))))
         ;; Get all keys from all included story folders.
         (setq keys (sort (append (hash-table-keys file-characters)
                                  (hash-table-keys file-places)
-                                 (hash-table-keys file-props)) 'string<))
+                                 (hash-table-keys file-props)) (lambda (x y) (string< (file-name-base x) (file-name-base y)))))
         ;; Process keys
         (while keys
           (setq key (pop keys))
@@ -978,19 +977,19 @@ story folders as well."
                 (orgn--fold-show-all)
                 (org-export-expand-include-keyword nil (concat story-folder / (orgn--ls "chapters-folder")))  ;; Make sure any include directives are expanded and included in the search
                 (goto-char (point-min))
-                (when (re-search-forward (format (orgn--ls "notes-name-search") (regexp-quote (orgn--get-file-property-value "TITLE" (concat story-folder / notes-folder / key)))) nil t)
+                (when (re-search-forward (format (orgn--ls "notes-name-search") (regexp-quote (orgn--get-file-property-value "TITLE" key))) nil t)
                   (setq entry-found t))
-                (setq aliases (split-string (orgn--get-file-property-value orgn--aliases-property (concat story-folder / notes-folder / key)) (orgn--ls "aliases-separators") t " "))
+                (setq aliases (split-string (orgn--get-file-property-value orgn--aliases-property key) (orgn--ls "aliases-separators") t " "))
                 (while aliases
                   (setq alias (pop aliases))
                   (when (re-search-forward (format (orgn--ls "notes-name-search") (regexp-quote alias)) nil t)
                     (setq entry-found t))))))
           (when (or (not file-restriction) entry-found)  ; Add check here for if key name/alias was found in file-restriction
-            (if (file-exists-p (concat story-folder / notes-folder / key))
-                (if (file-readable-p (concat story-folder / notes-folder / key))
-                    (when (member orgn--glossary-generator-value (split-string (orgn--get-file-property-value orgn--add-to-generators-property (concat story-folder / notes-folder / key)) (orgn--ls "generate-separators") t " "))
+            (if (file-exists-p key)
+                (if (file-readable-p key)
+                    (when (member orgn--glossary-generator-value (split-string (orgn--get-file-property-value orgn--add-to-generators-property key) (orgn--ls "generate-separators") t " "))
                       ;; Main name.
-                      (setq title-words (split-string (orgn--get-file-property-value "TITLE" (concat story-folder / notes-folder / key)) " " t " "))
+                      (setq title-words (split-string (orgn--get-file-property-value "TITLE" key) " " t " "))
                       (while title-words
                         (setq title-word (pop title-words))
                         (setq curr-entry (concat curr-entry "/" title-word "/"))
@@ -998,7 +997,7 @@ story folders as well."
                           (setq curr-entry (concat curr-entry " "))))
                       (setq curr-entry (concat curr-entry " \\nbsp\\nbsp\\nbsp\\nbsp\\nbsp "))
                       ;; Aliases.
-                      (setq aliases (split-string (orgn--get-file-property-value orgn--aliases-property (concat story-folder / notes-folder / key)) (orgn--ls "aliases-separators") t " "))
+                      (setq aliases (split-string (orgn--get-file-property-value orgn--aliases-property key) (orgn--ls "aliases-separators") t " "))
                       (when aliases
                         (setq curr-entry (concat curr-entry "(" (orgn--ls "alias") ": ")))
                       (setq alias nil)
@@ -1015,7 +1014,7 @@ story folders as well."
                       (when alias
                         (setq curr-entry (concat curr-entry ") --- ")))
                       ;; If description given, add it. Otherwise, use default for type.
-                      (setq curr-desc (orgn--get-file-property-value "DESCRIPTION" (concat story-folder / notes-folder / key)))
+                      (setq curr-desc (orgn--get-file-property-value "DESCRIPTION" key))
                       (if (not (string= "" curr-desc))
                           (setq curr-entry (concat curr-entry curr-desc))
                         (cond ((member key (hash-table-keys file-characters))
@@ -1026,12 +1025,12 @@ story folders as well."
                                (setq curr-entry (concat curr-entry (orgn--ls "glossary-default-prop-desc")))))))
                   (progn
                     (setq orgn-automatic-referencing-p orgn--autoref-p)
-                    (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") (concat story-folder / notes-folder / key) (orgn--ls "filename-is-not-readable")))
-                    (throw 'EXPORT-STORY-FAULT (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") (concat story-folder / notes-folder / key) (orgn--ls "filename-is-not-readable")))))
+                    (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") key (orgn--ls "filename-is-not-readable")))
+                    (throw 'EXPORT-STORY-FAULT (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") key (orgn--ls "filename-is-not-readable")))))
               (progn
                 (setq orgn-automatic-referencing-p orgn--autoref-p)
-                (error (concat (orgn--ls "file-not-found") ": " story-folder / notes-folder / key))
-                (throw 'EXPORT-STORY-FAULT (concat (orgn--ls "file-not-found") ": " story-folder / notes-folder / key))))
+                (error (concat (orgn--ls "file-not-found") ": " key))
+                (throw 'EXPORT-STORY-FAULT (concat (orgn--ls "file-not-found") ": " key))))
             (setq glossary-str (concat glossary-str curr-entry "\n\n"))))
         (eval (concat (string-trim glossary-str) "\n"))))))  ; glossary-str contains the complete glossary for the story
 
@@ -4030,11 +4029,17 @@ export files."
           (insert (orgn--get-file-subtree curr-chap-file (orgn--ls "content-header") t))
           ;; Maybe add glossary?
           (when (member orgn--glossary-generator-value (split-string (orgn--get-file-property-value orgn--generate-property curr-chap-file) (orgn--ls "generate-separators") t " "))
-            (let ((generator-story-dir story-folder))
-              (setq generator-story-dir (orgn--get-file-property-value orgn--generator-story-dir-property (concat story-folder / orgn--config-filename)))
-              (if (or (string= generator-story-dir story-folder) (not (file-readable-p (expand-file-name generator-story-dir story-folder))) (string= "" generator-story-dir))
-                  (setq curr-glossary-str (orgn--make-export-glossary-string story-folder curr-chap-file (orgn--ls "content-header")))
-                (setq curr-glossary-str (orgn--make-export-glossary-string (expand-file-name generator-story-dir story-folder) curr-chap-file (orgn--ls "content-header")))))
+            (let (notes-story-dirs
+                  (curr-story-dir story-folder))
+              (setq notes-story-dirs (split-string (orgn--get-file-property-value orgn--linked-stories-property (concat story-folder / orgn--config-filename)) orgn--linked-stories-separator t " "))
+              (setq curr-story-dir (car notes-story-dirs))
+              (if (or (string= curr-story-dir story-folder) (not curr-story-dir) (not (file-readable-p (expand-file-name curr-story-dir story-folder))) (string= "" curr-story-dir))
+                  (setq curr-glossary-str (orgn--make-export-glossary-string story-folder story-folder curr-chap-file (orgn--ls "content-header")))
+                (setq curr-glossary-str (orgn--make-export-glossary-string story-folder
+                                                                           story-folder
+                                                                           curr-chap-file
+                                                                           (orgn--ls "content-header")
+                                                                           notes-story-dirs))))
             (unless (string= (string-chop-newline curr-glossary-str) "")
               (insert "* " (orgn--ls "glossary-header") " :no_header_preamble:no_toc_entry:plain_pagestyle:\n")
               (insert curr-glossary-str)
@@ -4085,11 +4090,17 @@ export files."
           (insert (orgn--get-file-subtree curr-chap-file (orgn--ls "content-header") t))
           ;; Maybe add glossary?
           (when (member orgn--glossary-generator-value (split-string (orgn--get-file-property-value orgn--generate-property curr-chap-file) (orgn--ls "generate-separators") t " "))
-            (let ((generator-story-dir story-folder))
-              (setq generator-story-dir (orgn--get-file-property-value orgn--generator-story-dir-property (concat story-folder / orgn--config-filename)))
-              (if (or (string= generator-story-dir story-folder) (not (file-readable-p (expand-file-name generator-story-dir story-folder))) (string= "" generator-story-dir))
-                  (setq curr-glossary-str (orgn--make-export-glossary-string story-folder curr-chap-file (orgn--ls "content-header")))
-                (setq curr-glossary-str (orgn--make-export-glossary-string (expand-file-name generator-story-dir story-folder) curr-chap-file (orgn--ls "content-header")))))
+            (let (notes-story-dirs
+                  (curr-story-dir story-folder))
+              (setq notes-story-dirs (split-string (orgn--get-file-property-value orgn--linked-stories-property (concat story-folder / orgn--config-filename)) orgn--linked-stories-separator t " "))
+              (setq curr-story-dir (car notes-story-dirs))
+              (if (or (string= curr-story-dir story-folder) (not curr-story-dir) (not (file-readable-p (expand-file-name curr-story-dir story-folder))) (string= "" curr-story-dir))
+                  (setq curr-glossary-str (orgn--make-export-glossary-string story-folder story-folder curr-chap-file (orgn--ls "content-header")))
+                (setq curr-glossary-str (orgn--make-export-glossary-string story-folder
+                                                                           story-folder
+                                                                           curr-chap-file
+                                                                           (orgn--ls "content-header")
+                                                                           notes-story-dirs))))
             (unless (string= (string-chop-newline curr-glossary-str) "")
               (insert "* " (orgn--ls "glossary-header") " :no_header_preamble:no_toc_entry:plain_pagestyle:\n")
               (insert curr-glossary-str)
@@ -4140,11 +4151,17 @@ export files."
           (insert (orgn--get-file-subtree curr-chap-file (orgn--ls "content-header") t))
           ;; Maybe add glossary?
           (when (member orgn--glossary-generator-value (split-string (orgn--get-file-property-value orgn--generate-property curr-chap-file) (orgn--ls "generate-separators") t " "))
-            (let ((generator-story-dir story-folder))
-              (setq generator-story-dir (orgn--get-file-property-value orgn--generator-story-dir-property (concat story-folder / orgn--config-filename)))
-              (if (or (string= generator-story-dir story-folder) (not (file-readable-p (expand-file-name generator-story-dir story-folder))) (string= "" generator-story-dir))
-                  (setq curr-glossary-str (orgn--make-export-glossary-string story-folder curr-chap-file (orgn--ls "content-header")))
-                (setq curr-glossary-str (orgn--make-export-glossary-string (expand-file-name generator-story-dir story-folder) curr-chap-file (orgn--ls "content-header")))))
+            (let (notes-story-dirs
+                  (curr-story-dir story-folder))
+              (setq notes-story-dirs (split-string (orgn--get-file-property-value orgn--linked-stories-property (concat story-folder / orgn--config-filename)) orgn--linked-stories-separator t " "))
+              (setq curr-story-dir (car notes-story-dirs))
+              (if (or (string= curr-story-dir story-folder) (not curr-story-dir) (not (file-readable-p (expand-file-name curr-story-dir story-folder))) (string= "" curr-story-dir))
+                  (setq curr-glossary-str (orgn--make-export-glossary-string story-folder story-folder curr-chap-file (orgn--ls "content-header")))
+                (setq curr-glossary-str (orgn--make-export-glossary-string story-folder
+                                                                           story-folder
+                                                                           curr-chap-file
+                                                                           (orgn--ls "content-header")
+                                                                           notes-story-dirs))))
             (unless (string= (string-chop-newline curr-glossary-str) "")
               (insert "* " (orgn--ls "glossary-header") " :no_header_preamble:no_toc_entry:plain_pagestyle:\n")
               (insert curr-glossary-str)
@@ -4252,20 +4269,18 @@ export files."
           (when (file-exists-p (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
             (when (file-writable-p (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
               (let ((glossary-string "")
-                    (notes-story-dirs story-folder)
-                    curr-story-dir)
+                    notes-story-dirs
+                    (curr-story-dir story-folder))
                 (find-file (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
-                (setq notes-story-dirs (split-string (orgn--get-file-property-value orgn--generator-story-dir-property (concat story-folder / orgn--config-filename)) orgn--generator-story-dir-separator t " "))
+                (setq notes-story-dirs (split-string (orgn--get-file-property-value orgn--linked-stories-property (concat story-folder / orgn--config-filename)) orgn--linked-stories-separator t " "))
                 (setq curr-story-dir (car notes-story-dirs))
-                (if (or (string= curr-story-dir story-folder) (not (file-readable-p (expand-file-name curr-story-dir story-folder))) (string= "" curr-story-dir))
-                    (setq glossary-string (orgn--make-export-glossary-string story-folder (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending)))
-                  (if (> 0 (length (cdr notes-story-dirs)))
-                      (setq glossary-string (orgn--make-export-glossary-string (expand-file-name curr-story-dir story-folder)
-                                                                               (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending)))
-                    (setq glossary-string (orgn--make-export-glossary-string (expand-file-name curr-story-dir story-folder)
-                                                                             (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending)
-                                                                             nil
-                                                                             (cdr notes-story-dirs)))))
+                (if (or (not curr-story-dir) (not (file-readable-p (expand-file-name curr-story-dir story-folder))) (string= "" curr-story-dir))
+                    (setq glossary-string (orgn--make-export-glossary-string story-folder story-folder (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending)))
+                  (setq glossary-string (orgn--make-export-glossary-string story-folder
+                                                                           story-folder
+                                                                           (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending)
+                                                                           nil
+                                                                           notes-story-dirs)))
                 (unless (string= "" (string-chop-newline glossary-string))
                   (goto-char (point-max))
                   (insert (concat "* " (orgn--ls "glossary-header") "\n"
@@ -4276,48 +4291,86 @@ export files."
                   (orgn--save-current-file))))))  ; This is currently unchecked for when user enters an invalid filename. As such, it could result in an error that will not allow orgn-automatic-referencing-p to be reset. This is saving the file opened by the various calls to `orgn--set-file-property-value'
         ;; Get list of notes names to be included in index, then add to file properties list here.
         (let ((notes-folder (orgn--ls "notes-folder"))
-              (notes-story-dir story-folder)
-              file-characters
-              file-places
-              file-props
+              notes-story-dirs
+              (orig-file-characters (orgn--character-hash-table story-folder))
+              (orig-file-places (orgn--place-hash-table story-folder))
+              (orig-file-props (orgn--prop-hash-table story-folder))
+              (file-characters (make-hash-table :test 'equal))
+              (file-places (make-hash-table :test 'equal))
+              (file-props (make-hash-table :test 'equal))
+              curr-story-folder
+              curr-file-characters
+              curr-file-places
+              curr-file-props
               keys
               key
+              proc-keys
+              proc-key
+              other-keys
+              other-key
               aliases
               alias)
-          (setq notes-story-dir (orgn--get-file-property-value orgn--generator-story-dir-property (concat story-folder / orgn--config-filename)))
-          (if (or (string= notes-story-dir story-folder) (not (file-readable-p (expand-file-name notes-story-dir story-folder))) (string= "" notes-story-dir))
-              (setq notes-story-dir story-folder)
-            (setq notes-story-dir (expand-file-name notes-story-dir story-folder)))
-          (setq file-characters (orgn--character-hash-table notes-story-dir))
-          (setq file-places (orgn--place-hash-table notes-story-dir))
-          (setq file-props (orgn--prop-hash-table notes-story-dir))
-          (setq keys (append (hash-table-keys file-characters)
-                             (hash-table-keys file-places)
-                             (hash-table-keys file-props)))
+          ;; Add additional notes from other story folders if required.
+          (setq notes-story-dirs (split-string (orgn--get-file-property-value orgn--linked-stories-property (concat story-folder / orgn--config-filename)) orgn--linked-stories-separator t " "))
+          (when (car notes-story-dirs)
+            (while notes-story-dirs
+              (setq curr-story-folder (string-trim-right (orgn--story-root-folder (expand-file-name (pop notes-story-dirs) story-folder)) "/"))
+              (setq curr-file-characters (orgn--character-hash-table curr-story-folder))
+              (setq curr-file-places (orgn--place-hash-table curr-story-folder))
+              (setq curr-file-props (orgn--prop-hash-table curr-story-folder))
+              (setq other-keys (append (hash-table-keys curr-file-characters)
+                                       (hash-table-keys curr-file-places)
+                                       (hash-table-keys curr-file-props)))
+              (while other-keys
+                (setq other-key (pop other-keys))
+                (cond ((member other-key (hash-table-keys curr-file-characters))
+                       (puthash (concat curr-story-folder / notes-folder / other-key) (gethash other-key curr-file-characters) file-characters))
+                      ((member other-key (hash-table-keys curr-file-places))
+                       (puthash (concat curr-story-folder / notes-folder / other-key) (gethash other-key curr-file-places) file-places))
+                      (t
+                       (puthash (concat curr-story-folder / notes-folder / other-key) (gethash other-key curr-file-props) file-props))))))
+                                        ;(unless curr-story-folder
+          ;; Prcoess full file names into keys from original notes.
+          (setq proc-keys (append (hash-table-keys orig-file-characters)
+                                  (hash-table-keys orig-file-places)
+                                  (hash-table-keys orig-file-props)))
+          (while proc-keys
+            (setq proc-key (pop proc-keys))
+            (cond ((member proc-key (hash-table-keys orig-file-characters))
+                   (puthash (concat story-folder / notes-folder / proc-key) (gethash proc-key orig-file-characters) file-characters))
+                  ((member proc-key (hash-table-keys orig-file-places))
+                   (puthash (concat story-folder / notes-folder / proc-key) (gethash proc-key orig-file-places) file-places))
+                  (t
+                   (puthash (concat story-folder / notes-folder / proc-key) (gethash proc-key orig-file-props) file-props))))
+          ;;)
+          ;; Get all keys from all included story folders.
+          (setq keys (sort (append (hash-table-keys file-characters)
+                                   (hash-table-keys file-places)
+                                   (hash-table-keys file-props)) (lambda (x y) (string< (file-name-base x) (file-name-base y)))))
           (while keys
             (setq key (pop keys))
-            (if (file-exists-p (concat notes-story-dir / notes-folder / key))
-                (if (file-readable-p (concat notes-story-dir / notes-folder / key))
-                    (when (member orgn--index-generator-value (split-string (orgn--get-file-property-value orgn--add-to-generators-property (concat notes-story-dir / notes-folder / key)) (orgn--ls "generate-separators") t " "))
+            (if (file-exists-p key)
+                (if (file-readable-p key)
+                    (when (member orgn--index-generator-value (split-string (orgn--get-file-property-value orgn--add-to-generators-property key) (orgn--ls "generate-separators") t " "))
                       ;; Add main name.
                       (orgn--set-file-property-value orgn--index-entry-property
-                                                     (orgn--get-file-property-value "TITLE" (concat notes-story-dir / notes-folder / key))
+                                                     (orgn--get-file-property-value "TITLE" key)
                                                      (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending) t)
                       ;; Add aliases.
-                      (setq aliases (split-string (orgn--get-file-property-value orgn--aliases-property (concat notes-story-dir / notes-folder / key)) (orgn--ls "aliases-separators") t " "))
+                      (setq aliases (split-string (orgn--get-file-property-value orgn--aliases-property key) (orgn--ls "aliases-separators") t " "))
                       (while aliases
                         (setq alias (pop aliases))
                         (orgn--set-file-property-value orgn--index-entry-property
-                                                       (concat (orgn--get-file-property-value "TITLE" (concat notes-story-dir / notes-folder / key)) "!" alias)
+                                                       (concat (orgn--get-file-property-value "TITLE" key) "!" alias)
                                                        (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending) t)))
                   (progn
                     (setq orgn-automatic-referencing-p orgn--autoref-p)
-                    (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") (concat notes-story-dir / notes-folder / key) (orgn--ls "filename-is-not-readable")))
-                    (throw 'EXPORT-STORY-FAULT (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") (concat notes-story-dir / notes-folder / key) (orgn--ls "filename-is-not-readable")))))
+                    (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") key (orgn--ls "filename-is-not-readable")))
+                    (throw 'EXPORT-STORY-FAULT (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") key (orgn--ls "filename-is-not-readable")))))
               (progn
                 (setq orgn-automatic-referencing-p orgn--autoref-p)
-                (error (concat (orgn--ls "file-not-found") ": " notes-story-dir / notes-folder / key))
-                (throw 'EXPORT-STORY-FAULT (concat (orgn--ls "file-not-found") ": " notes-story-dir / notes-folder / key))))))
+                (error (concat (orgn--ls "file-not-found") ": " key))
+                (throw 'EXPORT-STORY-FAULT (concat (orgn--ls "file-not-found") ": " key))))))
         ;; If export file contains any printindex commands, or has an index generator included, then made sure to include the LaTeX header for makeindex.
         (when (member orgn--index-generator-value (split-string (orgn--get-file-property-value orgn--generate-property (concat story-folder / orgn--config-filename)) (orgn--ls "generate-separators") t " "))
           (when (file-exists-p (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
