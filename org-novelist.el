@@ -931,7 +931,7 @@ story folders as well."
         (when (car folder-list)
           (setq folder-list (car folder-list))
           (while folder-list
-            (setq curr-story-folder (string-trim-right (orgn--story-root-folder (expand-file-name (pop folder-list) (expand-file-name orig-folder))) "/"))
+            (setq curr-story-folder (string-trim-right (orgn--story-root-folder (expand-file-name (pop folder-list) (expand-file-name orig-folder))) /))
             (setq curr-file-characters (orgn--character-hash-table curr-story-folder))
             (setq curr-file-places (orgn--place-hash-table curr-story-folder))
             (setq curr-file-props (orgn--prop-hash-table curr-story-folder))
