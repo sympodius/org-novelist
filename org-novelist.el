@@ -1178,6 +1178,34 @@ values."
         (puthash (file-name-nondirectory curr-file) (file-name-nondirectory curr-file) names)))
     (eval names)))
 
+(defun orgn--object-hash-table-new (file-prefix file-folders)
+  "Return table of known objects from a list of FILE-FOLDERS.
+FILE-PREFIX is used to filter objects.
+FILE-FOLDER should be the relative location of either the chapters or
+notes folder within an Org Novelist story folder.
+This function is based on files, not indices.
+The returned hash table will use full filenames as keys, and object titles as
+values."
+  (let (current-folder
+        (names (make-hash-table :test 'equal)))
+    (while file-folders
+      (setq current-folder (string-trim-right (pop file-folders) /))
+      (orgn--story-root-folder current-folder)
+      ;; If org-novelist--story-root-folder didn't throw any errors, we should be good to go.
+      (when (and current-folder (file-directory-p current-folder) (file-readable-p current-folder))
+        (let ((files (directory-files-recursively current-folder (format "^%s%s%s\\'" file-prefix (orgn--ls "sys-safe-name") orgn--file-ending)))
+              curr-file
+              curr-name)
+          (while files
+            (setq curr-file (car files))
+            (setq files (cdr files))
+            (if (setq curr-name (orgn--get-file-property-value "TITLE" curr-file))
+                (puthash curr-file curr-name names)
+              (puthash curr-file (file-name-nondirectory curr-file) names))))))
+    (eval names)))
+
+;; (orgn--object-hash-table-new (orgn--ls "place-file-prefix") (list "/home/sympodius/Git/NWS/Novelettes/Soulstice/Notes/" "/home/sympodius/Git/org-nov-tests/StoryBeta/Notes/"))
+
 (defun orgn--chapter-hash-table (&optional story-folder)
   "Return a hash table of known chapters in a story.
 Function will try to use story that current file is a part of, unless called
