@@ -3331,7 +3331,7 @@ chapters to have a name, even if this will not be used on export."
            (chapters-file (orgn--ls "chapters-file" orgn--file-ending))
            (indices-folder (orgn--ls "indices-folder"))
            (story-name (orgn--story-name story-folder))
-           (existing-chapters (orgn--chapter-hash-table story-folder))
+           (existing-chapters (orgn--chapter-hash-table-new (list story-folder)))
            (chapter-file (concat (orgn--ls "chapter-file-prefix") (orgn--system-safe-name chapter-name) orgn--file-ending))
            (chapters-folder (orgn--ls "chapters-folder"))
            (keys (hash-table-keys existing-chapters))
@@ -3351,7 +3351,7 @@ chapters to have a name, even if this will not be used on export."
       ;; If it is, throw an error to the user. We should generalise a function for getting all chapter names, because we will be using this in the `destroy chapter' function as well.
       (while keys
         (setq key (pop keys))
-        (when (string= chapter-file key)
+        (when (string= chapter-file (file-name-nondirectory key))
           (progn
             (completing-read (concat (orgn--ls "name-already-in-use") " ") (list (orgn--ls "okay")))
             (setq chapter-name (read-string (concat (orgn--ls "chapter-name-query") " ")))
@@ -3602,7 +3602,7 @@ CHARACTER-NAME will be the name given to the character."
            (indices-folder (orgn--ls "indices-folder"))
            (notes-folder (orgn--ls "notes-folder"))
            (story-name (orgn--story-name story-folder))
-           (existing-characters (orgn--character-hash-table story-folder))
+           (existing-characters (orgn--character-hash-table-new (orgn--map-story-pool story-folder)))
            (character-file (concat (orgn--ls "character-file-prefix") (orgn--system-safe-name character-name) orgn--file-ending))
            (keys (hash-table-keys existing-characters))
            key
@@ -3615,7 +3615,7 @@ CHARACTER-NAME will be the name given to the character."
         (orgn--populate-characters-template story-name story-folder))
       (while keys
         (setq key (pop keys))
-        (when (string= character-file key)
+        (when (string= character-file (file-name-nondirectory key))
           (progn
             (completing-read (concat (orgn--ls "name-already-in-use") " ") (list (orgn--ls "okay")))
             (setq character-name (read-string (concat (orgn--ls "character-name-query") " ")))
@@ -3773,7 +3773,7 @@ PROP-NAME will be the name given to the prop."
            (indices-folder (orgn--ls "indices-folder"))
            (notes-folder (orgn--ls "notes-folder"))
            (story-name (orgn--story-name story-folder))
-           (existing-props (orgn--prop-hash-table story-folder))
+           (existing-props (orgn--prop-hash-table-new (orgn--map-story-pool story-folder)))
            (prop-file (concat (orgn--ls "prop-file-prefix") (orgn--system-safe-name prop-name) orgn--file-ending))
            (keys (hash-table-keys existing-props))
            key
@@ -3786,7 +3786,7 @@ PROP-NAME will be the name given to the prop."
         (orgn--populate-props-template story-name story-folder))
       (while keys
         (setq key (pop keys))
-        (when (string= prop-file key)
+        (when (string= prop-file (file-name-nondirectory key))
           (progn
             (completing-read (concat (orgn--ls "name-already-in-use") " ") (list (orgn--ls "okay")))
             (setq prop-name (read-string (concat (orgn--ls "prop-name-query") " ")))
@@ -3944,7 +3944,7 @@ PLACE-NAME will be the name given to the place."
            (indices-folder (orgn--ls "indices-folder"))
            (notes-folder (orgn--ls "notes-folder"))
            (story-name (orgn--story-name story-folder))
-           (existing-places (orgn--place-hash-table story-folder))
+           (existing-places (orgn--place-hash-table-new (orgn--map-story-pool story-folder)))
            (place-file (concat (orgn--ls "place-file-prefix") (orgn--system-safe-name place-name) orgn--file-ending))
            (keys (hash-table-keys existing-places))
            key
@@ -3957,7 +3957,7 @@ PLACE-NAME will be the name given to the place."
         (orgn--populate-places-template story-name story-folder))
       (while keys
         (setq key (pop keys))
-        (when (string= place-file key)
+        (when (string= place-file (file-name-nondirectory key))
           (progn
             (completing-read (concat (orgn--ls "name-already-in-use") " ") (list (orgn--ls "okay")))
             (setq place-name (read-string (concat (orgn--ls "place-name-query") " ")))
