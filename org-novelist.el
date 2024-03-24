@@ -1052,6 +1052,100 @@ story folders as well."
             (setq glossary-str (concat glossary-str curr-entry "\n\n"))))
         (eval (concat (string-trim glossary-str) "\n"))))))  ; glossary-str contains the complete glossary for the story
 
+(defun orgn--make-export-glossary-string-new (story-folder &optional file-restriction)
+  "Create an export glossary without header for STORY-FOLDER.
+If a file in passed as FILE-RESTRICTION, restrict glossary string to terms
+that appear in that file."
+  (setq story-folder (orgn--story-root-folder story-folder))
+  (when story-folder
+    (catch 'EXPORT-GLOSSARY-STRING-FAULT
+      (let* ((story-pool (orgn--map-story-pool story-folder))
+             (file-characters (orgn--character-hash-table-new story-pool))
+             (file-places (orgn--place-hash-table-new story-pool))
+             (file-props (orgn--prop-hash-table-new story-pool))
+             (keys (sort (append (hash-table-keys file-characters)
+                                 (hash-table-keys file-places)
+                                 (hash-table-keys file-props)) 'string<))
+             key
+             aliases
+             alias
+             alias-words
+             alias-word
+             title-words
+             title-word
+             curr-entry
+             curr-desc
+             entry-found
+             (glossary-str ""))
+        (while keys
+          (setq key (pop keys))
+          (setq curr-entry "")
+          (setq entry-found nil)
+          (when file-restriction
+            (when (file-readable-p file-restriction)
+              (with-temp-buffer
+                (insert (orgn--get-file-subtree file-restriction (orgn--ls "content-header") t))
+                (org-novelist-mode)
+                (orgn--fold-show-all)
+                (org-export-expand-include-keyword nil (concat story-folder / (orgn--ls "chapters-folder")))  ;; Make sure any include directives are expanded and included in the search
+                (goto-char (point-min))
+                (when (re-search-forward (regexp-quote (orgn--get-file-property-value "TITLE" key)) nil t)
+                  (setq entry-found t))
+                (setq aliases (split-string (orgn--get-file-property-value orgn--aliases-property key) (orgn--ls "aliases-separators") t " "))
+                (while aliases
+                  (setq alias (pop aliases))
+                  (when (re-search-forward (regexp-quote alias) nil t)
+                    (setq entry-found t))))))
+          (when (or (not file-restriction) entry-found)  ; Add check here for if key name/alias was found in file-restriction
+            (if (file-exists-p key)
+                (if (file-readable-p key)
+                    (when (member orgn--glossary-generator-value (split-string (orgn--get-file-property-value orgn--add-to-generators-property key) (orgn--ls "generate-separators") t " "))
+                      ;; Main name.
+                      (setq title-words (split-string (orgn--get-file-property-value "TITLE" key) " " t " "))
+                      (while title-words
+                        (setq title-word (pop title-words))
+                        (setq curr-entry (concat curr-entry "/" title-word "/"))
+                        (when title-words
+                          (setq curr-entry (concat curr-entry " "))))
+                      (setq curr-entry (concat curr-entry " \\nbsp\\nbsp\\nbsp\\nbsp\\nbsp "))
+                      ;; Aliases.
+                      (setq aliases (split-string (orgn--get-file-property-value orgn--aliases-property key) (orgn--ls "aliases-separators") t " "))
+                      (when aliases
+                        (setq curr-entry (concat curr-entry "(" (orgn--ls "alias") ": ")))
+                      (setq alias nil)
+                      (while aliases
+                        (setq alias (pop aliases))
+                        (setq alias-words (split-string alias " " t " "))
+                        (while alias-words
+                          (setq alias-word (pop alias-words))
+                          (setq curr-entry (concat curr-entry "/" alias-word "/"))
+                          (when alias-words
+                            (setq curr-entry (concat curr-entry " "))))
+                        (when aliases
+                          (setq curr-entry (concat curr-entry ", "))))
+                      (when alias
+                        (setq curr-entry (concat curr-entry ") --- ")))
+                      ;; If description given, add it. Otherwise, use default for type.
+                      (setq curr-desc (orgn--get-file-property-value "DESCRIPTION" key))
+                      (if (not (string= "" curr-desc))
+                          (setq curr-entry (concat curr-entry curr-desc))
+                        (cond ((member key (hash-table-keys file-characters))
+                               (setq curr-entry (concat curr-entry (orgn--ls "glossary-default-character-desc"))))
+                              ((member key (hash-table-keys file-places))
+                               (setq curr-entry (concat curr-entry (orgn--ls "glossary-default-place-desc"))))
+                              (t
+                               (setq curr-entry (concat curr-entry (orgn--ls "glossary-default-prop-desc")))))))
+                  (progn
+                    (setq orgn-automatic-referencing-p orgn--autoref-p)
+                    (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") key (orgn--ls "filename-is-not-readable")))
+                    (throw 'EXPORT-STORY-FAULT (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") key (orgn--ls "filename-is-not-readable")))))
+              (progn
+                (setq orgn-automatic-referencing-p orgn--autoref-p)
+                (error (concat (orgn--ls "file-not-found") ": " key))
+                (throw 'EXPORT-STORY-FAULT (concat (orgn--ls "file-not-found") ": " key))))
+            (setq glossary-str (concat glossary-str curr-entry "\n\n"))))
+        (eval (concat (string-trim glossary-str) "\n"))))))  ; glossary-str contains the complete glossary for the story
+
 (defun orgn--make-file-chapter-references-string (file &optional story-folder)
   "Create a new list of references in an Org Novelist story for FILE.
 If no STORY-FOLDER is supplied, try to determine the name for Org Novelist story
@@ -4380,17 +4474,7 @@ export files."
           (insert (orgn--get-file-subtree curr-chap-file (orgn--ls "content-header") t))
           ;; Maybe add glossary?
           (when (member orgn--glossary-generator-value (split-string (orgn--get-file-property-value orgn--generate-property curr-chap-file) (orgn--ls "generate-separators") t " "))
-            (let (notes-story-dirs
-                  (curr-story-dir story-folder))
-              (setq notes-story-dirs (split-string (orgn--get-file-property-value orgn--linked-stories-property (concat story-folder / orgn--config-filename)) orgn--linked-stories-separator t " "))
-              (setq curr-story-dir (car notes-story-dirs))
-              (if (or (string= curr-story-dir story-folder) (not curr-story-dir) (not (file-readable-p (expand-file-name curr-story-dir story-folder))) (string= "" curr-story-dir))
-                  (setq curr-glossary-str (orgn--make-export-glossary-string story-folder story-folder curr-chap-file (orgn--ls "content-header")))
-                (setq curr-glossary-str (orgn--make-export-glossary-string story-folder
-                                                                           story-folder
-                                                                           curr-chap-file
-                                                                           (orgn--ls "content-header")
-                                                                           notes-story-dirs))))
+            (setq curr-glossary-str (orgn--make-export-glossary-string-new story-folder curr-chap-file))
             (unless (string= (string-chop-newline curr-glossary-str) "")
               (insert "* " (orgn--ls "glossary-header") " :no_header_preamble:no_toc_entry:plain_pagestyle:\n")
               (insert curr-glossary-str)
@@ -4441,17 +4525,7 @@ export files."
           (insert (orgn--get-file-subtree curr-chap-file (orgn--ls "content-header") t))
           ;; Maybe add glossary?
           (when (member orgn--glossary-generator-value (split-string (orgn--get-file-property-value orgn--generate-property curr-chap-file) (orgn--ls "generate-separators") t " "))
-            (let (notes-story-dirs
-                  (curr-story-dir story-folder))
-              (setq notes-story-dirs (split-string (orgn--get-file-property-value orgn--linked-stories-property (concat story-folder / orgn--config-filename)) orgn--linked-stories-separator t " "))
-              (setq curr-story-dir (car notes-story-dirs))
-              (if (or (string= curr-story-dir story-folder) (not curr-story-dir) (not (file-readable-p (expand-file-name curr-story-dir story-folder))) (string= "" curr-story-dir))
-                  (setq curr-glossary-str (orgn--make-export-glossary-string story-folder story-folder curr-chap-file (orgn--ls "content-header")))
-                (setq curr-glossary-str (orgn--make-export-glossary-string story-folder
-                                                                           story-folder
-                                                                           curr-chap-file
-                                                                           (orgn--ls "content-header")
-                                                                           notes-story-dirs))))
+            (setq curr-glossary-str (orgn--make-export-glossary-string-new story-folder curr-chap-file))
             (unless (string= (string-chop-newline curr-glossary-str) "")
               (insert "* " (orgn--ls "glossary-header") " :no_header_preamble:no_toc_entry:plain_pagestyle:\n")
               (insert curr-glossary-str)
@@ -4502,17 +4576,7 @@ export files."
           (insert (orgn--get-file-subtree curr-chap-file (orgn--ls "content-header") t))
           ;; Maybe add glossary?
           (when (member orgn--glossary-generator-value (split-string (orgn--get-file-property-value orgn--generate-property curr-chap-file) (orgn--ls "generate-separators") t " "))
-            (let (notes-story-dirs
-                  (curr-story-dir story-folder))
-              (setq notes-story-dirs (split-string (orgn--get-file-property-value orgn--linked-stories-property (concat story-folder / orgn--config-filename)) orgn--linked-stories-separator t " "))
-              (setq curr-story-dir (car notes-story-dirs))
-              (if (or (string= curr-story-dir story-folder) (not curr-story-dir) (not (file-readable-p (expand-file-name curr-story-dir story-folder))) (string= "" curr-story-dir))
-                  (setq curr-glossary-str (orgn--make-export-glossary-string story-folder story-folder curr-chap-file (orgn--ls "content-header")))
-                (setq curr-glossary-str (orgn--make-export-glossary-string story-folder
-                                                                           story-folder
-                                                                           curr-chap-file
-                                                                           (orgn--ls "content-header")
-                                                                           notes-story-dirs))))
+            (setq curr-glossary-str (orgn--make-export-glossary-string-new story-folder curr-chap-file))
             (unless (string= (string-chop-newline curr-glossary-str) "")
               (insert "* " (orgn--ls "glossary-header") " :no_header_preamble:no_toc_entry:plain_pagestyle:\n")
               (insert curr-glossary-str)
@@ -4619,19 +4683,9 @@ export files."
         (when (member orgn--glossary-generator-value (split-string (orgn--get-file-property-value orgn--generate-property (concat story-folder / orgn--config-filename)) (orgn--ls "generate-separators") t " "))
           (when (file-exists-p (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
             (when (file-writable-p (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
-              (let ((glossary-string "")
-                    notes-story-dirs
-                    (curr-story-dir story-folder))
+              (let ((glossary-string ""))
                 (find-file (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
-                (setq notes-story-dirs (split-string (orgn--get-file-property-value orgn--linked-stories-property (concat story-folder / orgn--config-filename)) orgn--linked-stories-separator t " "))
-                (setq curr-story-dir (car notes-story-dirs))
-                (if (or (not curr-story-dir) (not (file-readable-p (expand-file-name curr-story-dir story-folder))) (string= "" curr-story-dir))
-                    (setq glossary-string (orgn--make-export-glossary-string story-folder story-folder (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending)))
-                  (setq glossary-string (orgn--make-export-glossary-string story-folder
-                                                                           story-folder
-                                                                           (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending)
-                                                                           nil
-                                                                           notes-story-dirs)))
+                (setq glossary-string (orgn--make-export-glossary-string-new story-folder))
                 (unless (string= "" (string-chop-newline glossary-string))
                   (goto-char (point-max))
                   (insert (concat "* " (orgn--ls "glossary-header") "\n"
