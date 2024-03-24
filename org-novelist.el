@@ -4695,63 +4695,16 @@ export files."
                   (insert glossary-string)
                   (orgn--save-current-file))))))  ; This is currently unchecked for when user enters an invalid filename. As such, it could result in an error that will not allow orgn-automatic-referencing-p to be reset. This is saving the file opened by the various calls to `orgn--set-file-property-value'
         ;; Get list of notes names to be included in index, then add to file properties list here.
-        (let ((notes-folder (orgn--ls "notes-folder"))
-              notes-story-dirs
-              (orig-file-characters (orgn--character-hash-table story-folder))
-              (orig-file-places (orgn--place-hash-table story-folder))
-              (orig-file-props (orgn--prop-hash-table story-folder))
-              (file-characters (make-hash-table :test 'equal))
-              (file-places (make-hash-table :test 'equal))
-              (file-props (make-hash-table :test 'equal))
-              curr-story-folder
-              curr-file-characters
-              curr-file-places
-              curr-file-props
-              keys
-              key
-              proc-keys
-              proc-key
-              other-keys
-              other-key
-              aliases
-              alias)
-          ;; Add additional notes from other story folders if required.
-          (setq notes-story-dirs (split-string (orgn--get-file-property-value orgn--linked-stories-property (concat story-folder / orgn--config-filename)) orgn--linked-stories-separator t " "))
-          (when (car notes-story-dirs)
-            (while notes-story-dirs
-              (setq curr-story-folder (directory-file-name (orgn--story-root-folder (expand-file-name (pop notes-story-dirs) story-folder))))
-              (setq curr-file-characters (orgn--character-hash-table curr-story-folder))
-              (setq curr-file-places (orgn--place-hash-table curr-story-folder))
-              (setq curr-file-props (orgn--prop-hash-table curr-story-folder))
-              (setq other-keys (append (hash-table-keys curr-file-characters)
-                                       (hash-table-keys curr-file-places)
-                                       (hash-table-keys curr-file-props)))
-              (while other-keys
-                (setq other-key (pop other-keys))
-                (cond ((member other-key (hash-table-keys curr-file-characters))
-                       (puthash (concat curr-story-folder / notes-folder / other-key) (gethash other-key curr-file-characters) file-characters))
-                      ((member other-key (hash-table-keys curr-file-places))
-                       (puthash (concat curr-story-folder / notes-folder / other-key) (gethash other-key curr-file-places) file-places))
-                      (t
-                       (puthash (concat curr-story-folder / notes-folder / other-key) (gethash other-key curr-file-props) file-props))))))
-                                        ;(unless curr-story-folder
-          ;; Prcoess full file names into keys from original notes.
-          (setq proc-keys (append (hash-table-keys orig-file-characters)
-                                  (hash-table-keys orig-file-places)
-                                  (hash-table-keys orig-file-props)))
-          (while proc-keys
-            (setq proc-key (pop proc-keys))
-            (cond ((member proc-key (hash-table-keys orig-file-characters))
-                   (puthash (concat story-folder / notes-folder / proc-key) (gethash proc-key orig-file-characters) file-characters))
-                  ((member proc-key (hash-table-keys orig-file-places))
-                   (puthash (concat story-folder / notes-folder / proc-key) (gethash proc-key orig-file-places) file-places))
-                  (t
-                   (puthash (concat story-folder / notes-folder / proc-key) (gethash proc-key orig-file-props) file-props))))
-          ;;)
-          ;; Get all keys from all included story folders.
-          (setq keys (sort (append (hash-table-keys file-characters)
-                                   (hash-table-keys file-places)
-                                   (hash-table-keys file-props)) (lambda (x y) (string< (file-name-base x) (file-name-base y)))))
+        (let* ((story-pool (orgn--map-story-pool story-folder))
+               (file-characters (orgn--character-hash-table-new story-pool))
+               (file-places (orgn--place-hash-table-new story-pool))
+               (file-props (orgn--prop-hash-table-new story-pool))
+               (keys (append (hash-table-keys file-characters)
+                             (hash-table-keys file-places)
+                             (hash-table-keys file-props)))
+               key
+               aliases
+               alias)
           (while keys
             (setq key (pop keys))
             (if (file-exists-p key)
