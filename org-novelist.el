@@ -459,6 +459,40 @@ Strings matching the values of `org-novelist--folder-separator' or
            (throw 'LOCALISATION-STRING-NOT-FOUND (format "No localised string for '%s' found" str-name))))))
 (defalias 'orgn--ls 'orgn--localise-string)  ; Make an alias to keep code a little cleaner
 
+(defun orgn--force-localise-string (str-name forced-lang-code &rest str-list)
+  "Return the correct language version of STR-NAME for FORCED-LANG-CODE.
+More strings can be included with STR-LIST, and the results will be concatenated
+into one string.
+
+Strings matching the values of `org-novelist--folder-separator' or
+`org-novelist--file-ending' will be returned without change."
+  (catch 'LOCALISATION-STRING-NOT-FOUND
+    (unless (boundp (intern (concat "org-novelist--okay-" forced-lang-code)))
+      ;; Language pack isn't loaded. Try to load it from standard location.
+      (when (file-readable-p (expand-file-name (concat (file-name-directory (symbol-file 'org-novelist--force-localise-string))  orgn--language-packs-folder / orgn--language-pack-file-prefix (downcase forced-lang-code) ".el")))
+        (load-file (expand-file-name (concat (file-name-directory (symbol-file 'org-novelist--force-localise-string))  orgn--language-packs-folder / orgn--language-pack-file-prefix (downcase forced-lang-code) ".el"))))
+      (unless (boundp (intern (concat "org-novelist--okay-" forced-lang-code)))
+        ;; The two lines of code below are the only user-facing ones that can't be translated.
+        (error (format "No localised string for '%s' found" str-name))
+        (throw 'LOCALISATION-STRING-NOT-FOUND (format "No localised string for '%s' found" str-name))))
+    (cond ((string-equal str-name /)  ; Special case for the folder separator string
+           (if (> (length str-list) 0)
+               (concat (eval /) (apply 'orgn--force-localise-string (car str-list) forced-lang-code (cdr str-list)))
+             (eval /)))
+          ((string-equal str-name orgn--file-ending)  ; Special case for the Org Novelist filename ending
+           (if (> (length str-list) 0)
+               (concat (eval orgn--file-ending) (apply 'orgn--force-localise-string (car str-list) forced-lang-code (cdr str-list)))
+             (eval orgn--file-ending)))
+          ((boundp (intern (concat "org-novelist--" str-name "-" forced-lang-code)))  ; Do not shorten this string to orgn-- as it will prevent running outwith Org Novelist mode
+           (if (> (length str-list) 0)
+               (concat (eval (intern (concat "org-novelist--" str-name "-" forced-lang-code))) (apply 'orgn--force-localise-string (car str-list) forced-lang-code (cdr str-list)))  ; Do not shorten this string to orgn-- as it will prevent running outwith Org Novelist mode.
+             (eval (intern (concat "org-novelist--" str-name "-" forced-lang-code)))))  ; Do not shorten this string to orgn-- as it will prevent running outwith Org Novelist mode
+          (t
+           ;; The two lines of code below are the only user-facing ones that can't be translated.
+           (error (format "No localised string for '%s' found" str-name))
+           (throw 'LOCALISATION-STRING-NOT-FOUND (format "No localised string for '%s' found" str-name))))))
+(defalias 'orgn--fls 'orgn--force-localise-string)  ; Make an alias to keep code a little cleaner
+
 (defun orgn--localise-function (func-name)
   "Return the local language version of a function FUNC-NAME.
 To change the language, the variable `org-novelist-language-tag' must be set to
