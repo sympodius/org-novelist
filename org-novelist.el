@@ -83,7 +83,7 @@
 (defconst orgn--add-to-generators-property "ADD_TO_GENERATORS" "Property key for generators notes should be added to (eg, index, glossary).")
 (defconst orgn--generate-property "GENERATE" "Property key for generators a story should apply (eg, index, glossary).")
 (defconst orgn--linked-stories-property "LINKED_STORIES" "Property key to link story notes across stories.")
-(defconst orgn--linked-stories-separator "|\\?|" "Regexp to match the separators in a list of generator story directories.")
+(defconst orgn--linked-stories-separator "|?|" "Regexp to match the separators in a list of generator story directories.")
 (defconst orgn--index-entry-property "ORG_NOVELIST_INDEX_ENTRY" "Property key for an index entry.")
 (defconst orgn--matter-type-property "ORG-NOVELIST-MATTER-TYPE" "Property key for the chapter matter type in the export property drawer.")
 (defconst orgn--front-matter-value "FRONT MATTER" "Name for the Front Matter value in the export property drawer.")
@@ -109,6 +109,7 @@
 (defconst orgn--places-file-instructions-en-GB "This is an index of the places in the story. Do not edit manually. Use only Org mode or Org Novelist functions." "Instructions for the location index file.")
 (defconst orgn--props-file-instructions-en-GB "This is an index of the props in the story. Do not edit manually. Use only Org mode or Org Novelist functions." "Instructions for the prop index file.")
 (defconst orgn--chapters-file-instructions-en-GB "This is an index of the chapters in the story. Do not edit manually. Use only Org mode or Org Novelist functions." "Instructions for the chapter index file.")
+(defconst orgn--linked-stories-file-instructions-en-GB "This is an index of linked stories. Do not edit manually. Use only Org mode or Org Novelist functions." "Instructions for the linked stories index file.")
 ;; Folder Names
 (defconst orgn--notes-folder-en-GB "Notes" "The folder name for storing note files.")
 (defconst orgn--indices-folder-en-GB "Indices" "The folder name for storing index files.")
@@ -122,6 +123,7 @@
 (defconst orgn--places-file-en-GB "places" "Name for the story's location index file.")
 (defconst orgn--props-file-en-GB "props" "Name for the story's prop index file.")
 (defconst orgn--chapters-file-en-GB "chapters" "Name for the story's chapter index file.")
+(defconst orgn--linked-stories-file-en-GB "linked-stories" "Name for the story's linked stories index file.")
 (defconst orgn--chapter-file-prefix-en-GB "chapter-" "Prefix for the story's chapter files.")
 (defconst orgn--notes-suffix-en-GB "-notes" "Suffix for a file's associated notes file.")
 (defconst orgn--character-file-prefix-en-GB "character-" "Prefix for the story's character files.")
@@ -135,6 +137,7 @@
 (defconst orgn--props-title-en-GB "Props" "Name for the story's prop index title.")
 (defconst orgn--chapters-title-en-GB "Chapters" "Name for the story's chapter index title.")
 (defconst orgn--config-name-en-GB "Export Settings" "Display name for a link to the story's configuration file.")
+(defconst orgn--linked-stories-title-en-GB "Linked Stories" "Name for the story's linked stories index title.")
 ;; File Preambles
 (defconst orgn--story-name-en-GB "story name" "Placeholder for the name of the story, used in generating template preambles.")
 (defconst orgn--chapter-name-en-GB "chapter name" "Placeholder for the name of a chapter, used in generating template preambles.")
@@ -147,6 +150,7 @@
 (defconst orgn--place-index-for-story-name-en-GB "Place Index for <<story name>>" "Part of the preamble for the location index file.")
 (defconst orgn--prop-index-for-story-name-en-GB "Prop Index for <<story name>>" "Part of the preamble for the prop index file.")
 (defconst orgn--chapter-index-for-story-name-en-GB "Chapter Index for <<story name>>" "Part of the preamble for the chapter index file.")
+(defconst orgn--linked-stories-index-for-story-name-en-GB "Linked Stories Index for <<story name>>" "Part of the preamble for the linked stories index file.")
 (defconst orgn--front-matter-heading-en-GB "Front Matter" "Name for the Front Matter of the book chapters, used as a heading.")
 (defconst orgn--main-matter-heading-en-GB "Main Matter" "Name for the Main Matter of the book chapters, used as a heading.")
 (defconst orgn--back-matter-heading-en-GB "Back Matter" "Name for the Back Matter of the book chapters, used as a heading.")
@@ -257,6 +261,8 @@
 (defconst orgn--new-story-name-query-en-GB "New Story Name?" "A query to the user for the new name for the story.")
 (defconst orgn--rename-story-folder-query-en-GB "Rename story folder as well?" "A query to the user whether to also rename the story folder.")
 (defconst orgn--match-lang-tag-to-story-query-en-GB "What language was used to create this story (eg, 'en-GB')?" "A query to the user to change the session language tag.")
+(defconst orgn--story-folder-to-link-to-query-en-GB "Story folder to link to current story?" "A query to the user for the story folder where a story to be linked is located.")
+(defconst orgn--unlink-from-which-story-query-en-GB "Unlink from which story?" "A query to the user for which story to unlink from the current story.")
 ;; Error/Throw/Messages
 (defconst orgn--function-name-en-GB "function name" "Placeholder for the name of the function, used in generating error messages.")
 (defconst orgn--filename-en-GB "filename" "Placeholder for the filename, used in generating error messages.")
@@ -288,6 +294,7 @@
 (defconst orgn--language-set-to-language-tag-en-GB "Org Novelist language set to: <<language tag>>" "Inform user that language has been set.")
 (defconst orgn--language-not-found-en-GB "Selected language pack not found." "Inform user that language pack could not be found.")
 (defconst orgn--folder-already-exists-en-GB "That folder already exists" "Inform user the folder already exists.")
+(defconst orgn--no-linked-stories-en-GB "Currently not linked to any stories" "Inform user there are currently no linked stories.")
 ;; Pattern Matches
 (defconst orgn--sys-safe-name-en-GB "[-A-Za-z0-9]*" "Regexp to match strings produced by `org-novelist--system-safe-name-en-GB'.")
 (defconst orgn--aliases-separators-en-GB "[,\f\t\n\r\v]+" "Regexp to match the separators in a list of aliases.")
@@ -1549,6 +1556,21 @@ open buffer."
            "\]\[" place-name "\]\]")
    (concat story-folder / (orgn--ls "indices-folder") / (orgn--ls "places-file" orgn--file-ending))))
 
+(defun orgn--delete-linked-story-from-index (linked-story-folder &optional story-folder)
+  "Remove LINKED-STORY-FOLDER and its subtree from the linked story index file.
+If STORY-FOLDER is not provided, try to determine story files based on currently
+open buffer."
+  (let ((story-language-tag (orgn--get-file-property-value orgn--language-tag-property (concat (expand-file-name story-folder) / orgn--data-filename)))
+        (linked-story-language-tag (orgn--get-file-property-value orgn--language-tag-property (concat (expand-file-name linked-story-folder) / orgn--data-filename))))
+    (when (string= "" story-language-tag)
+      (setq story-language-tag "en-GB"))
+    (when (string= "" linked-story-language-tag)
+      (setq linked-story-language-tag "en-GB"))
+    (orgn--delete-org-subtrees-from-file
+     (concat "\[\[file:" ".." / linked-story-folder (orgn--fls "main-file" linked-story-language-tag)
+             orgn--file-ending "\]\[" (orgn--story-name (expand-file-name linked-story-folder story-folder)) "\]\]")
+     (concat story-folder / (orgn--fls "indices-folder" story-language-tag / "linked-stories-file" orgn--file-ending)))))
+
 (defun orgn--delete-org-subtrees-from-string (subtree-heading org-str)
   "Remove all subtrees with SUBTREE-HEADING from string ORG-STR."
   (with-temp-buffer
@@ -2412,6 +2434,13 @@ with STORY-FOLDER to override that behaviour."
    "<<file-instructions>>\n")
   "The template for the story's location index file.")
 
+(defconst orgn--linked-stories-template
+  (concat
+   "<<mode>>\n"
+   "* <<linked-stories-index-for-story-name>>\n"
+   "<<file-instructions>>\n")
+  "The template for the story's linked stories index file.")
+
 (defconst orgn--props-template
   (concat
    "<<mode>>\n"
@@ -2587,6 +2616,23 @@ Once template is populated, it will be written to file."
              props-file-substitutions)
     (puthash "<<file-instructions>>" (orgn--ls "props-file-instructions") props-file-substitutions)
     (orgn--generate-file-from-template props-file-substitutions orgn--props-template (concat story-folder / (orgn--ls "indices-folder" / "props-file" orgn--file-ending)))))
+
+(defun orgn--populate-linked-stories-template (story-name story-folder)
+  "Populate the linked stories index file template with data.
+STORY-NAME is the name for the story, and STORY-FOLDER is its save location.
+Once template is populated, it will be written to file."
+  (let ((story-language-tag (orgn--get-file-property-value orgn--language-tag-property (concat (expand-file-name story-folder) / orgn--data-filename)))
+        (linked-stories-file-substitutions (make-hash-table :test 'equal)))
+    (when (string= "" story-language-tag)
+      (setq story-language-tag "en-GB"))
+    (puthash "<<mode>>" orgn--mode-identifier linked-stories-file-substitutions)
+    (puthash "<<linked-stories-index-for-story-name>>"
+             (orgn--replace-string-in-string (concat "<<" (orgn--fls "story-name" story-language-tag) ">>")
+                                             (concat "\[\[file\:.." / (orgn--fls "main-file" story-language-tag orgn--file-ending) "\]\[" story-name "\]\]")
+                                             (orgn--fls "linked-stories-index-for-story-name" story-language-tag))
+             linked-stories-file-substitutions)
+    (puthash "<<file-instructions>>" (orgn--fls "linked-stories-file-instructions" story-language-tag) linked-stories-file-substitutions)
+    (orgn--generate-file-from-template linked-stories-file-substitutions orgn--linked-stories-template (concat story-folder / (orgn--fls "indices-folder" story-language-tag / "linked-stories-file") orgn--file-ending))))
 
 (defun orgn--populate-chapters-template (story-name story-folder)
   "Populate the chapter index file template with data.
@@ -4385,6 +4431,344 @@ export files."
       ;; Remove hook to reset automatic referencing since we made it to the end of the function.
       (remove-hook 'post-command-hook 'orgn--reset-automatic-referencing))))
 
+(defun orgn-link-to-story (linked-story-folder)
+  "Add a LINKED-STORY-FOLDER to the linked story index, and associated config.
+The linked story should also link back to the original story in the same way."
+  (interactive (list (expand-file-name (read-directory-name (concat (orgn--ls "story-folder-to-link-to-query") " ") (file-name-directory (directory-file-name (file-name-as-directory (orgn--story-root-folder)))) nil t nil))))
+  (catch 'LINK-TO-STORY-FAULT
+    (let* ((current-file (buffer-file-name))
+           (story-folder (file-name-as-directory (orgn--story-root-folder)))
+           (linked-story-folder (orgn--story-root-folder (expand-file-name linked-story-folder story-folder)))
+           (story-folder-rel (file-name-directory (orgn--get-relative-path (concat story-folder orgn--config-filename) linked-story-folder)))
+           (linked-story-folder-rel (file-name-directory (orgn--get-relative-path (concat linked-story-folder orgn--config-filename) story-folder)))
+           prop-val
+           prop-val-list
+           linked-prop-val
+           linked-prop-val-list
+           linked-story-language-tag
+           original-story-language-tag
+           insert-point
+           menu-entry-found-p)
+      (setq orgn--autoref-p orgn-automatic-referencing-p)
+      (setq orgn-automatic-referencing-p nil)
+      ;; Temporarily add a hook to reset automatic referencing in case user aborts minibuffer.
+      (add-hook 'post-command-hook 'orgn--reset-automatic-referencing)
+      (setq linked-story-language-tag (orgn--get-file-property-value orgn--language-tag-property (concat (expand-file-name linked-story-folder-rel story-folder) / orgn--data-filename)))
+      (when (string= "" linked-story-language-tag)
+        (setq linked-story-language-tag "en-GB"))
+      (setq original-story-language-tag (orgn--get-file-property-value orgn--language-tag-property (concat story-folder orgn--data-filename)))
+      (when (string= "" original-story-language-tag)
+        (setq original-story-language-tag "en-GB"))
+      ;; Add linked story to current story's config file.
+      (setq prop-val (orgn--get-file-property-value orgn--linked-stories-property (concat story-folder orgn--config-filename)))
+      (if (string= "" prop-val)
+          (setq prop-val linked-story-folder-rel)
+        (progn
+          (setq prop-val-list (append
+                               (split-string prop-val (regexp-quote orgn--linked-stories-separator) t " ")
+                               (list linked-story-folder-rel)))
+          (setq prop-val-list (delete-dups prop-val-list))
+          (setq prop-val (string-join prop-val-list orgn--linked-stories-separator))))
+      (orgn--set-file-property-value orgn--linked-stories-property prop-val (concat story-folder orgn--config-filename))
+      (orgn--save-current-file)
+      ;; Add current story to linked story's config file.
+      (setq linked-prop-val (orgn--get-file-property-value orgn--linked-stories-property (concat linked-story-folder orgn--config-filename)))
+      (if (string= "" linked-prop-val)
+          (setq linked-prop-val story-folder-rel)
+        (progn
+          (setq linked-prop-val-list (append
+                                      (split-string linked-prop-val (regexp-quote orgn--linked-stories-separator) t " ")
+                                      (list story-folder-rel)))
+          (setq linked-prop-val-list (delete-dups linked-prop-val-list))
+          (setq linked-prop-val (string-join linked-prop-val-list orgn--linked-stories-separator))))
+      (orgn--set-file-property-value orgn--linked-stories-property linked-prop-val (concat linked-story-folder orgn--config-filename))
+      (orgn--save-current-file)
+
+      ;; Create linked story files if they don't exist.
+      (unless (file-exists-p (concat story-folder (orgn--fls "indices-folder" original-story-language-tag / "linked-stories-file" orgn--file-ending)))
+        (orgn--populate-linked-stories-template (orgn--story-name (directory-file-name story-folder)) (directory-file-name story-folder))  ; Create the linked stories index file for the story
+        ;; Link to linked stories index from main.org
+        (find-file (concat story-folder (orgn--fls "main-file" original-story-language-tag) orgn--file-ending))
+        (goto-char (point-min))
+        (insert "\n")
+        (goto-char (point-min))
+        (org-novelist-mode)
+        (orgn--fold-show-all)  ; Belts and braces
+        (when (not (org-next-visible-heading 1))
+          (if (and (string= (nth 4 (org-heading-components)) (orgn--story-name (directory-file-name story-folder)))
+                   (= 1 (org-current-level)))
+              (if (org-goto-first-child)
+                  ;; Existing entries found.
+                  (progn
+                    ;; Add linked stories entry if not already there.
+                    (goto-char (point-min))
+                    (while (and (not menu-entry-found-p)
+                                (re-search-forward (regexp-quote (format "\[\[file:%s\]\[%s\]\]" (orgn--fls "indices-folder" original-story-language-tag / "linked-stories-file" orgn--file-ending) (orgn--fls "linked-stories-title" original-story-language-tag))) nil t))
+                      (when (and (org-at-heading-p) (= 2 (org-current-level)))
+                        (setq menu-entry-found-p t)))
+                    (unless menu-entry-found-p
+                      (goto-char (point-min))
+                      (org-next-visible-heading 1)
+                      (org-end-of-subtree)  ; Go to end of last subheading in child tree
+                      (org-insert-heading-respect-content)  ; Add the beginning of a new heading at the end of the current tree
+                      (setq insert-point (point))
+                      (goto-char (point-min))
+                      (orgn--delete-line)
+                      (goto-char (- insert-point 1))))
+                ;; First entry.
+                (progn
+                  (org-end-of-subtree)  ; Go to end of last subheading
+                  (org-insert-heading-respect-content)  ; Add the beginning of a new heading at the end of the current tree
+                  (org-demote)  ; Turn heading into a subheading
+                  (setq insert-point (point))
+                  (goto-char (point-min))
+                  (orgn--delete-line)
+                  (goto-char (- insert-point 1))))
+            ;; File Malformed
+            (progn
+              (goto-char (point-min))
+              (orgn--delete-line)
+              (setq orgn-automatic-referencing-p orgn--autoref-p)
+              (throw 'LINK-TO-STORY-FAULT (concat (orgn--fls "file-malformed" original-story-language-tag) ": " (concat story-folder (orgn--fls "main-file" original-story-language-tag) orgn--file-ending))))))
+        ;; By here, point should be at the correct location to create the new place.
+        (unless menu-entry-found-p
+          (save-excursion  ; Allow cursor to be placed at the start of the new place name
+            (insert (format "\[\[file:%s\]\[%s\]\]" (orgn--fls "indices-folder" original-story-language-tag / "linked-stories-file" orgn--file-ending) (orgn--fls "linked-stories-title" original-story-language-tag))))
+          (save-buffer))
+        (setq menu-entry-found-p nil))
+      ;; Create linked story files if they don't exist.
+      (unless (file-exists-p (concat linked-story-folder (orgn--fls "indices-folder" linked-story-language-tag / "linked-stories-file" orgn--file-ending)))
+        (orgn--populate-linked-stories-template (orgn--story-name (directory-file-name linked-story-folder)) (directory-file-name linked-story-folder))  ; Create the linked stories index file for the story
+        ;; Link to linked stories index from main.org
+        (find-file (concat linked-story-folder (orgn--fls "main-file" linked-story-language-tag) orgn--file-ending))
+        (goto-char (point-min))
+        (insert "\n")
+        (goto-char (point-min))
+        (org-novelist-mode)
+        (orgn--fold-show-all)  ; Belts and braces
+        (when (not (org-next-visible-heading 1))
+          (if (and (string= (nth 4 (org-heading-components)) (orgn--story-name (directory-file-name linked-story-folder)))
+                   (= 1 (org-current-level)))
+              (if (org-goto-first-child)
+                  ;; Existing entries found.
+                  (progn
+                    ;; Add linked stories entry if not already there.
+                    (goto-char (point-min))
+                    (while (and (not menu-entry-found-p)
+                                (re-search-forward (regexp-quote (format "\[\[file:%s\]\[%s\]\]" (orgn--fls "indices-folder" linked-story-language-tag / "linked-stories-file" orgn--file-ending) (orgn--fls "linked-stories-title" linked-story-language-tag))) nil t))
+                      (when (and (org-at-heading-p) (= 2 (org-current-level)))
+                        (setq menu-entry-found-p t)))
+                    (unless menu-entry-found-p
+                      (goto-char (point-min))
+                      (org-next-visible-heading 1)
+                      (org-end-of-subtree)  ; Go to end of last subheading in child tree
+                      (org-insert-heading-respect-content)  ; Add the beginning of a new heading at the end of the current tree
+                      (setq insert-point (point))
+                      (goto-char (point-min))
+                      (orgn--delete-line)
+                      (goto-char (- insert-point 1))))
+                ;; First entry.
+                (progn
+                  (org-end-of-subtree)  ; Go to end of last subheading
+                  (org-insert-heading-respect-content)  ; Add the beginning of a new heading at the end of the current tree
+                  (org-demote)  ; Turn heading into a subheading
+                  (setq insert-point (point))
+                  (goto-char (point-min))
+                  (orgn--delete-line)
+                  (goto-char (- insert-point 1))))
+            ;; File Malformed
+            (progn
+              (goto-char (point-min))
+              (orgn--delete-line)
+              (setq orgn-automatic-referencing-p orgn--autoref-p)
+              (throw 'LINK-TO-STORY-FAULT (concat (orgn--fls "file-malformed" original-story-language-tag) ": " (concat linked-story-folder (orgn--fls "main-file" linked-story-language-tag) orgn--file-ending))))))
+        ;; By here, point should be at the correct location to create the new place.
+        (unless menu-entry-found-p
+          (save-excursion  ; Allow cursor to be placed at the start of the new place name
+            (insert (format "\[\[file:%s\]\[%s\]\]" (orgn--fls "indices-folder" linked-story-language-tag / "linked-stories-file" orgn--file-ending) (orgn--fls "linked-stories-title" linked-story-language-tag))))
+          (save-buffer))
+        (setq menu-entry-found-p nil))
+      ;; Insert link to current story in the linked story index for the linked story.
+      (when (file-exists-p (concat story-folder (orgn--fls "indices-folder" original-story-language-tag / "linked-stories-file" orgn--file-ending)))
+        (when (file-writable-p (concat story-folder (orgn--fls "indices-folder" original-story-language-tag / "linked-stories-file" orgn--file-ending)))
+          ;; Link to linked stories index from main.org
+          (find-file (concat story-folder (orgn--fls "indices-folder" original-story-language-tag / "linked-stories-file" orgn--file-ending)))
+          (goto-char (point-min))
+          (insert "\n")
+          (goto-char (point-min))
+          (org-novelist-mode)
+          (orgn--fold-show-all)  ; Belts and braces
+          (when (not (org-next-visible-heading 1))
+            (if (and (string= (orgn--heading-last-link-headline-text) (orgn--story-name (directory-file-name story-folder)))
+                     (= 1 (org-current-level)))
+                (if (org-goto-first-child)
+                    ;; Existing entries found.
+                    (progn
+                      ;; Add linked stories entry if not already there.
+                      (goto-char (point-min))
+                      (while (and (not menu-entry-found-p)
+                                  (re-search-forward (regexp-quote (format "\[\[file:%s\]\[%s\]\]" (concat ".." / linked-story-folder-rel (orgn--fls "main-file" linked-story-language-tag) orgn--file-ending) (orgn--story-name (directory-file-name linked-story-folder)))) nil t))
+                        (when (and (org-at-heading-p) (= 2 (org-current-level)))
+                          (setq menu-entry-found-p t)))
+                      (unless menu-entry-found-p
+                        (goto-char (point-min))
+                        (org-next-visible-heading 1)
+                        (org-end-of-subtree)  ; Go to end of last subheading in child tree
+                        (org-insert-heading-respect-content)  ; Add the beginning of a new heading at the end of the current tree
+                        (setq insert-point (point))
+                        (goto-char (point-min))
+                        (orgn--delete-line)
+                        (goto-char (- insert-point 1))))
+                  ;; First entry.
+                  (progn
+                    (org-end-of-subtree)  ; Go to end of last subheading
+                    (org-insert-heading-respect-content)  ; Add the beginning of a new heading at the end of the current tree
+                    (org-demote)  ; Turn heading into a subheading
+                    (setq insert-point (point))
+                    (goto-char (point-min))
+                    (orgn--delete-line)
+                    (goto-char (- insert-point 1))))
+              ;; File Malformed
+              (progn
+                (goto-char (point-min))
+                (orgn--delete-line)
+                (setq orgn-automatic-referencing-p orgn--autoref-p)
+                (throw 'LINK-TO-STORY-FAULT (concat (orgn--fls "file-malformed" original-story-language-tag) ": " (concat story-folder (orgn--fls "main-file" original-story-language-tag) orgn--file-ending))))))
+          ;; By here, point should be at the correct location to create the new place.
+          (unless menu-entry-found-p
+            (save-excursion  ; Allow cursor to be placed at the start of the new place name
+              (insert (format "\[\[file:%s\]\[%s\]\]" (concat ".." / linked-story-folder-rel (orgn--fls "main-file" linked-story-language-tag) orgn--file-ending) (orgn--story-name (directory-file-name linked-story-folder)))))
+            (save-buffer))
+          (setq menu-entry-found-p nil)))
+      ;; Insert link to current story in the linked story index for the linked story.
+      (when (file-exists-p (concat linked-story-folder (orgn--fls "indices-folder" linked-story-language-tag / "linked-stories-file" orgn--file-ending)))
+        (when (file-writable-p (concat linked-story-folder (orgn--fls "indices-folder" linked-story-language-tag / "linked-stories-file" orgn--file-ending)))
+          ;; Link to linked stories index from main.org
+          (find-file (concat linked-story-folder (orgn--fls "indices-folder" linked-story-language-tag / "linked-stories-file" orgn--file-ending)))
+          (goto-char (point-min))
+          (insert "\n")
+          (goto-char (point-min))
+          (org-novelist-mode)
+          (orgn--fold-show-all)  ; Belts and braces
+          (when (not (org-next-visible-heading 1))
+            (if (and (string= (orgn--heading-last-link-headline-text) (orgn--story-name (directory-file-name linked-story-folder)))
+                     (= 1 (org-current-level)))
+                (if (org-goto-first-child)
+                    ;; Existing entries found.
+                    (progn
+                      ;; Add linked stories entry if not already there.
+                      (goto-char (point-min))
+                      (while (and (not menu-entry-found-p)
+                                  (re-search-forward (regexp-quote (format "\[\[file:%s\]\[%s\]\]" (concat ".." / story-folder-rel (orgn--fls "main-file" original-story-language-tag) orgn--file-ending) (orgn--story-name (directory-file-name story-folder)))) nil t))
+                        (when (and (org-at-heading-p) (= 2 (org-current-level)))
+                          (setq menu-entry-found-p t)))
+                      (unless menu-entry-found-p
+                        (goto-char (point-min))
+                        (org-next-visible-heading 1)
+                        (org-end-of-subtree)  ; Go to end of last subheading in child tree
+                        (org-insert-heading-respect-content)  ; Add the beginning of a new heading at the end of the current tree
+                        (setq insert-point (point))
+                        (goto-char (point-min))
+                        (orgn--delete-line)
+                        (goto-char (- insert-point 1))))
+                  ;; First entry.
+                  (progn
+                    (org-end-of-subtree)  ; Go to end of last subheading
+                    (org-insert-heading-respect-content)  ; Add the beginning of a new heading at the end of the current tree
+                    (org-demote)  ; Turn heading into a subheading
+                    (setq insert-point (point))
+                    (goto-char (point-min))
+                    (orgn--delete-line)
+                    (goto-char (- insert-point 1))))
+              ;; File Malformed
+              (progn
+                (goto-char (point-min))
+                (orgn--delete-line)
+                (setq orgn-automatic-referencing-p orgn--autoref-p)
+                (throw 'LINK-TO-STORY-FAULT (concat (orgn--fls "file-malformed" original-story-language-tag) ": " (concat linked-story-folder (orgn--fls "main-file" linked-story-language-tag) orgn--file-ending))))))
+          ;; By here, point should be at the correct location to create the new place.
+          (unless menu-entry-found-p
+            (save-excursion  ; Allow cursor to be placed at the start of the new place name
+              (insert (format "\[\[file:%s\]\[%s\]\]" (concat ".." / story-folder-rel (orgn--fls "main-file" original-story-language-tag) orgn--file-ending) (orgn--story-name (directory-file-name story-folder)))))
+            (save-buffer))
+          (setq menu-entry-found-p nil)))
+      (setq orgn-automatic-referencing-p orgn--autoref-p)
+      (when orgn-automatic-referencing-p
+        (orgn-update-references story-folder))
+      ;; Remove hook to reset automatic referencing since we made it to the end of the function.
+      (remove-hook 'post-command-hook 'orgn--reset-automatic-referencing)
+      (find-file current-file))))
+
+(defun orgn-unlink-from-story ()
+  "Remove a linked story from the linked story index, and associated config."
+  (interactive)
+  (let* ((current-file (buffer-file-name))
+         (story-folder (file-name-as-directory (orgn--story-root-folder)))
+         (linked-stories-val (orgn--get-file-property-value orgn--linked-stories-property (concat story-folder orgn--config-filename)))
+         linked-stories-folder-list
+         linked-stories-names
+         chosen-story
+         curr-story-folder
+         chosen-story-folder
+         linked-story-language-tag
+         story-language-tag)
+    (setq orgn--autoref-p orgn-automatic-referencing-p)
+    (setq orgn-automatic-referencing-p nil)
+    ;; Temporarily add a hook to reset automatic referencing in case user aborts minibuffer.
+    (add-hook 'post-command-hook 'orgn--reset-automatic-referencing)
+    (if (string= "" linked-stories-val)
+        (message (orgn--ls "no-linked-stories"))
+      (progn
+        ;; Get story to unlink.
+        (setq linked-stories-folder-list (split-string linked-stories-val (regexp-quote orgn--linked-stories-separator) t " "))
+        (setq linked-stories-folder-list (delete-dups linked-stories-folder-list))
+        (while linked-stories-folder-list
+          (setq linked-stories-names (append linked-stories-names (list (orgn--story-name (expand-file-name (pop linked-stories-folder-list) story-folder))))))
+        (while (not chosen-story)
+          (setq chosen-story (completing-read (concat (orgn--ls "unlink-from-which-story-query") " ")
+                                              linked-stories-names)))
+        ;; Remove linked story from current story's config file.
+        (setq linked-stories-folder-list (split-string linked-stories-val (regexp-quote orgn--linked-stories-separator) t " "))
+        (setq linked-stories-folder-list (delete-dups linked-stories-folder-list))
+        (while linked-stories-folder-list
+          (setq curr-story-folder (pop linked-stories-folder-list))
+          (when (string= chosen-story (orgn--story-name (expand-file-name curr-story-folder story-folder)))
+            (setq chosen-story-folder curr-story-folder)))
+        (setq linked-stories-folder-list (split-string linked-stories-val (regexp-quote orgn--linked-stories-separator) t " "))
+        (setq linked-stories-folder-list (delete-dups linked-stories-folder-list))
+        (setq linked-stories-folder-list (remove chosen-story-folder linked-stories-folder-list))
+        (orgn--set-file-property-value orgn--linked-stories-property (string-join linked-stories-folder-list orgn--linked-stories-separator) (concat story-folder orgn--config-filename))
+        (orgn--save-current-file)
+        ;; Remove current story from linked story's config file.
+        (setq linked-stories-val (orgn--get-file-property-value orgn--linked-stories-property (concat (expand-file-name chosen-story-folder story-folder) orgn--config-filename)))
+        (setq linked-stories-folder-list (split-string linked-stories-val (regexp-quote orgn--linked-stories-separator) t " "))
+        (setq linked-stories-folder-list (delete-dups linked-stories-folder-list))
+        (setq linked-stories-folder-list (remove (file-name-directory (orgn--get-relative-path (concat story-folder orgn--config-filename) (expand-file-name chosen-story-folder story-folder))) linked-stories-folder-list))
+        (orgn--set-file-property-value orgn--linked-stories-property (string-join linked-stories-folder-list orgn--linked-stories-separator) (concat (expand-file-name chosen-story-folder story-folder) orgn--config-filename))
+        (orgn--save-current-file)
+        ;; Remvove entries from linked stories indices.
+        (setq linked-story-language-tag (orgn--get-file-property-value orgn--language-tag-property (concat (expand-file-name chosen-story-folder story-folder) / orgn--data-filename)))
+        (when (string= "" linked-story-language-tag)
+          (setq linked-story-language-tag "en-GB"))
+        (setq story-language-tag (orgn--get-file-property-value orgn--language-tag-property (concat (expand-file-name story-folder) / orgn--data-filename)))
+        (when (string= "" story-language-tag)
+          (setq story-language-tag "en-GB"))
+        (when (file-exists-p (concat (expand-file-name chosen-story-folder story-folder) (orgn--fls "indices-folder" linked-story-language-tag / "linked-stories-file" orgn--file-ending)))
+          (when (file-writable-p (concat (expand-file-name chosen-story-folder story-folder) (orgn--fls "indices-folder" linked-story-language-tag / "linked-stories-file" orgn--file-ending)))
+            (orgn--delete-linked-story-from-index
+             (file-name-directory (orgn--get-relative-path (concat story-folder orgn--config-filename) (orgn--story-root-folder (expand-file-name chosen-story-folder story-folder))))
+             (directory-file-name (expand-file-name chosen-story-folder story-folder)))))
+        (when (file-exists-p (concat story-folder (orgn--fls "indices-folder" story-language-tag / "linked-stories-file" orgn--file-ending)))
+          (when (file-writable-p (concat story-folder (orgn--fls "indices-folder" story-language-tag / "linked-stories-file" orgn--file-ending)))
+            (orgn--delete-linked-story-from-index chosen-story-folder (directory-file-name story-folder))
+            (find-file (concat story-folder (orgn--fls "indices-folder" story-language-tag / "linked-stories-file" orgn--file-ending)))))))
+    (setq orgn-automatic-referencing-p orgn--autoref-p)
+    (when orgn-automatic-referencing-p
+      (orgn-update-references story-folder))
+    ;; Remove hook to reset automatic referencing since we made it to the end of the function.
+    (remove-hook 'post-command-hook 'orgn--reset-automatic-referencing)
+    (find-file current-file)))
+
 (defun orgn-toggle-automatic-referencing ()
   "Toggle automatic referencing from its current value.
 Once changed, inform user of new state."
@@ -4419,7 +4803,10 @@ Once changed, inform user of new state."
      ("Places"
       ["New Place..." orgn-new-place t]
       ["Rename Place..." orgn-rename-place t]
-      ["Destroy Place..." orgn-destroy-place t]))
+      ["Destroy Place..." orgn-destroy-place t])
+     ("Linked Stories"
+      ["Link To Story..." orgn-link-to-story t]
+      ["Unlink From Story..." orgn-unlink-from-story t]))
     ("References"
      ["Update References" orgn-update-references t]
      ["Toggle Automatic Referencing" orgn-toggle-automatic-referencing t])))
@@ -4464,6 +4851,8 @@ The following commands are available:
 `org-novelist-update-references'
 `org-novelist-rename-story'
 `org-novelist-export-story'
+`org-novelist-link-to-story'
+`org-novelist-unlink-from-story'
 `org-novelist-toggle-automatic-referencing'"
   (add-hook 'after-save-hook 'orgn--update-references-after-save-hook))
 

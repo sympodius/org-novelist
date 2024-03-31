@@ -70,6 +70,7 @@
 (defconst orgn--places-file-instructions-en-US "This is an index of the places in the story. Do not edit manually. Use only Org mode or Org Novelist functions." "Instructions for the location index file.")
 (defconst orgn--props-file-instructions-en-US "This is an index of the props in the story. Do not edit manually. Use only Org mode or Org Novelist functions." "Instructions for the prop index file.")
 (defconst orgn--chapters-file-instructions-en-US "This is an index of the chapters in the story. Do not edit manually. Use only Org mode or Org Novelist functions." "Instructions for the chapter index file.")
+(defconst orgn--linked-stories-file-instructions-en-US "This is an index of linked stories. Do not edit manually. Use only Org mode or Org Novelist functions." "Instructions for the linked stories index file.")
 ;; Folder Names
 (defconst orgn--notes-folder-en-US "Notes" "The folder name for storing note files.")
 (defconst orgn--indices-folder-en-US "Indices" "The folder name for storing index files.")
@@ -83,6 +84,7 @@
 (defconst orgn--places-file-en-US "places" "Name for the story's location index file.")
 (defconst orgn--props-file-en-US "props" "Name for the story's prop index file.")
 (defconst orgn--chapters-file-en-US "chapters" "Name for the story's chapter index file.")
+(defconst orgn--linked-stories-file-en-US "linked-stories" "Name for the story's linked stories index file.")
 (defconst orgn--chapter-file-prefix-en-US "chapter-" "Prefix for the story's chapter files.")
 (defconst orgn--notes-suffix-en-US "-notes" "Suffix for a file's associated notes file.")
 (defconst orgn--character-file-prefix-en-US "character-" "Prefix for the story's character files.")
@@ -96,6 +98,7 @@
 (defconst orgn--props-title-en-US "Props" "Name for the story's prop index title.")
 (defconst orgn--chapters-title-en-US "Chapters" "Name for the story's chapter index title.")
 (defconst orgn--config-name-en-US "Export Settings" "Display name for a link to the story's configuration file.")
+(defconst orgn--linked-stories-title-en-US "Linked Stories" "Name for the story's linked stories index title.")
 ;; File Preambles
 (defconst orgn--story-name-en-US "story name" "Placeholder for the name of the story, used in generating template preambles.")
 (defconst orgn--chapter-name-en-US "chapter name" "Placeholder for the name of a chapter, used in generating template preambles.")
@@ -108,6 +111,7 @@
 (defconst orgn--place-index-for-story-name-en-US "Place Index for <<story name>>" "Part of the preamble for the location index file.")
 (defconst orgn--prop-index-for-story-name-en-US "Prop Index for <<story name>>" "Part of the preamble for the prop index file.")
 (defconst orgn--chapter-index-for-story-name-en-US "Chapter Index for <<story name>>" "Part of the preamble for the chapter index file.")
+(defconst orgn--linked-stories-index-for-story-name-en-US "Linked Stories Index for <<story name>>" "Part of the preamble for the linked stories index file.")
 (defconst orgn--front-matter-heading-en-US "Front Matter" "Name for the Front Matter of the book chapters, used as a heading.")
 (defconst orgn--main-matter-heading-en-US "Main Matter" "Name for the Main Matter of the book chapters, used as a heading.")
 (defconst orgn--back-matter-heading-en-US "Back Matter" "Name for the Back Matter of the book chapters, used as a heading.")
@@ -218,6 +222,8 @@
 (defconst orgn--new-story-name-query-en-US "New Story Name?" "A query to the user for the new name for the story.")
 (defconst orgn--rename-story-folder-query-en-US "Rename story folder as well?" "A query to the user whether to also rename the story folder.")
 (defconst orgn--match-lang-tag-to-story-query-en-US "What language was used to create this story (eg, 'en-US')?" "A query to the user to change the session language tag.")
+(defconst orgn--story-folder-to-link-to-query-en-US "Story folder to link to current story?" "A query to the user for the story folder where a story to be linked is located.")
+(defconst orgn--unlink-from-which-story-query-en-US "Unlink from which story?" "A query to the user for which story to unlink from the current story.")
 ;; Error/Throw/Messages
 (defconst orgn--function-name-en-US "function name" "Placeholder for the name of the function, used in generating error messages.")
 (defconst orgn--filename-en-US "filename" "Placeholder for the filename, used in generating error messages.")
@@ -249,6 +255,7 @@
 (defconst orgn--language-set-to-language-tag-en-US "Org Novelist language set to: <<language tag>>" "Inform user that language has been set.")
 (defconst orgn--language-not-found-en-US "Selected language pack not found." "Inform user that language pack could not be found.")
 (defconst orgn--folder-already-exists-en-US "That folder already exists" "Inform user the folder already exists.")
+(defconst orgn--no-linked-stories-en-US "Currently not linked to any stories" "Inform user there are currently no linked stories.")
 ;; Pattern Matches
 (defconst orgn--sys-safe-name-en-US "[-A-Za-z0-9]*" "Regexp to match strings produced by `org-novelist--system-safe-name-en-US'.")
 (defconst orgn--aliases-separators-en-US "[,\f\t\n\r\v]+" "Regexp to match the separators in a list of aliases.")
@@ -266,7 +273,7 @@ The resultant string should be suitable for all computer systems using en-US."
   ;; Since American English regularly loans words from French, German, Spanish, etc, I've tried to do my best to resolve a sensible list of equivalencies.
   ;; Make sure that the language pack constant `org-novelist--sys-safe-name-en-US' matches the output of this function.
   (let ((special-chars (make-hash-table :test 'equal))
-	(case-fold-search nil))
+        (case-fold-search nil))
     (puthash "£" "GBP" special-chars)
     (puthash "€" "EUR" special-chars)
     (puthash "$" "USD" special-chars)
