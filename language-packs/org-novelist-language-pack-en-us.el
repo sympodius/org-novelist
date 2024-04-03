@@ -254,6 +254,7 @@
 ;; <<language tag>> (without the << >> brackets) must share the same value as org-novelist--language-tag-en-US.
 (defconst orgn--language-set-to-language-tag-en-US "Org Novelist language set to: <<language tag>>" "Inform user that language has been set.")
 (defconst orgn--language-not-found-en-US "Selected language pack not found." "Inform user that language pack could not be found.")
+(defconst orgn--chosen-story-same-as-current-story-en-US "Chosen story is the same as the current story." "Inform the user that they've selected the current story, instead of a new one.")
 (defconst orgn--folder-already-exists-en-US "That folder already exists" "Inform user the folder already exists.")
 (defconst orgn--no-linked-stories-en-US "Currently not linked to any stories" "Inform user there are currently no linked stories.")
 ;; Pattern Matches

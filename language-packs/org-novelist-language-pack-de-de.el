@@ -70,7 +70,7 @@
 (defconst orgn--places-file-instructions-de-DE "Dies ist ein Index der Orte dieser Geschichte. Bearbeite ihn nicht manuell! Benutze nur Org Mode oder Org Novelist Funktionen." "Instructions for the location index file.")
 (defconst orgn--props-file-instructions-de-DE "Dies ist ein Index aller Bestandteile der Geschichte. Bearbeite ihn nicht manuell! Benutze nur Org Mode oder Org Novelist Funktionen." "Instructions for the prop index file.")
 (defconst orgn--chapters-file-instructions-de-DE "Dies ist das Inhaltsverzeichnis aller Kapitel der Geschichte. Bearbeite es nicht manuell! Benutze nur Org Mode oder Org Novelist Funktionen." "Instructions for the chapter index file.")
-(defconst orgn--linked-stories-file-instructions-de-DE "This is an index of linked stories. Do not edit manually. Use only Org mode or Org Novelist functions." "Instructions for the linked stories index file.")
+(defconst orgn--linked-stories-file-instructions-de-DE "Dies ist ein Index der verknüpften Geschichte. Bearbeite ihn nicht manuell! Benutze nur Org Mode oder Org Novelist Funktionen." "Instructions for the linked stories index file.")
 ;; Folder Names
 (defconst orgn--notes-folder-de-DE "Notizen" "The folder name for storing note files.")
 (defconst orgn--indices-folder-de-DE "Indizes" "The folder name for storing index files.")
@@ -84,7 +84,7 @@
 (defconst orgn--places-file-de-DE "Orte" "Name for the story's location index file.")
 (defconst orgn--props-file-de-DE "Bestandteile" "Name for the story's prop index file.")
 (defconst orgn--chapters-file-de-DE "Kapitel" "Name for the story's chapter index file.")
-(defconst orgn--linked-stories-file-de-DE "linked-stories" "Name for the story's linked stories index file.")
+(defconst orgn--linked-stories-file-de-DE "verknüpfte-Geschichten" "Name for the story's linked stories index file.")
 (defconst orgn--chapter-file-prefix-de-DE "Kapitel-" "Prefix for the story's chapter files.")
 (defconst orgn--notes-suffix-de-DE "-notizen" "Suffix for a file's associated notes file.")
 (defconst orgn--character-file-prefix-de-DE "Charakter-" "Prefix for the story's character files.")
@@ -98,7 +98,7 @@
 (defconst orgn--props-title-de-DE "Bestandteile" "Name for the story's prop index title.")
 (defconst orgn--chapters-title-de-DE "Kapitel" "Name for the story's chapter index title.")
 (defconst orgn--config-name-de-DE "Export-Einstellungen" "Display name for a link to the story's configuration file.")
-(defconst orgn--linked-stories-title-de-DE "Linked Stories" "Name for the story's linked stories index title.")
+(defconst orgn--linked-stories-title-de-DE "Verknüpfte Geschichten" "Name for the story's linked stories index title.")
 ;; File Preambles
 (defconst orgn--story-name-de-DE "Name der Geschichte" "Placeholder for the name of the story, used in generating template preambles.")
 (defconst orgn--chapter-name-de-DE "Kapitelname" "Placeholder for the name of a chapter, used in generating template preambles.")
@@ -111,7 +111,7 @@
 (defconst orgn--place-index-for-story-name-de-DE "Ortsindex für <<Name der Geschichte>>" "Part of the preamble for the location index file.")
 (defconst orgn--prop-index-for-story-name-de-DE "Index der Bestandteile für <<Name der Geschichte>>" "Part of the preamble for the prop index file.")
 (defconst orgn--chapter-index-for-story-name-de-DE "Kapitelindex für <<Name der Geschichte>>" "Part of the preamble for the chapter index file.")
-(defconst orgn--linked-stories-index-for-story-name-de-DE "Linked Stories Index for <<Name der Geschichte>>" "Part of the preamble for the linked stories index file.")
+(defconst orgn--linked-stories-index-for-story-name-de-DE "Index verknüpfter Geschichten für <<Name der Geschichte>>" "Part of the preamble for the linked stories index file.")
 (defconst orgn--front-matter-heading-de-DE "Eröffnung" "Name for the Front Matter of the book chapters, used as a heading.")
 (defconst orgn--main-matter-heading-de-DE "Haupttext" "Name for the Main Matter of the book chapters, used as a heading.")
 (defconst orgn--back-matter-heading-de-DE "Nachtrag" "Name for the Back Matter of the book chapters, used as a heading.")
@@ -222,8 +222,8 @@
 (defconst orgn--new-story-name-query-de-DE "Neuer Name der Geschichte?" "A query to the user for the new name for the story.")
 (defconst orgn--rename-story-folder-query-de-DE "Soll der Ordner der Geschichte ebenfalls umbenannt werden?" "A query to the user whether to also rename the story folder.")
 (defconst orgn--match-lang-tag-to-story-query-de-DE "Mit welcher Sprache wurde diese Geschichte geschrieben (z.B. 'de-DE')?" "A query to the user to change the session language tag.")
-(defconst orgn--story-folder-to-link-to-query-de-DE "Story folder to link to current story?" "A query to the user for the story folder where a story to be linked is located.")
-(defconst orgn--unlink-from-which-story-query-de-DE "Unlink from which story?" "A query to the user for which story to unlink from the current story.")
+(defconst orgn--story-folder-to-link-to-query-de-DE "Soll der Geschichts-Ordner mit der aktuellen Geschichte verknüpft werden?" "A query to the user for the story folder where a story to be linked is located.")
+(defconst orgn--unlink-from-which-story-query-de-DE "Von welcher Geschichte soll die Verknüpfung aufgelöst werden?" "A query to the user for which story to unlink from the current story.")
 ;; Error/Throw/Messages
 (defconst orgn--function-name-de-DE "Name der Funktion" "Placeholder for the name of the function, used in generating error messages.")
 (defconst orgn--filename-de-DE "Dateiname" "Placeholder for the filename, used in generating error messages.")
@@ -254,8 +254,9 @@
 ;; <<Sprachkürzel>> (without the << >> brackets) must share the same value as org-novelist--language-tag-de-DE.
 (defconst orgn--language-set-to-language-tag-de-DE "Org Novelist Sprache wurde geändert zu: <<Sprachkürzel>>" "Inform user that language has been set.")
 (defconst orgn--language-not-found-de-DE "Ausgewähltes Sprachpaket konnte nicht gefunden werden." "Inform user that language pack could not be found.")
+(defconst orgn--chosen-story-same-as-current-story-de-DE "Chosen story is the same as the current story." "Inform the user that they've selected the current story, instead of a new one.")
 (defconst orgn--folder-already-exists-de-DE "Dieser Ordner existiert bereits" "Inform user the folder already exists.")
-(defconst orgn--no-linked-stories-de-DE "Currently not linked to any stories" "Inform user there are currently no linked stories.")
+(defconst orgn--no-linked-stories-de-DE "Derzeit mit keiner Geschichte verknüpft" "Inform user there are currently no linked stories.")
 ;; Pattern Matches
 (defconst orgn--sys-safe-name-de-DE "[-A-Za-z0-9]*" "Regexp to match strings produced by `org-novelist--system-safe-name-de-DE'.")
 (defconst orgn--aliases-separators-de-DE "[,\f\t\n\r\v]+" "Regexp to match the separators in a list of aliases.")
