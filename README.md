@@ -28,7 +28,8 @@
     - [Include Items in Glossaries](#include-items-in-glossaries)
 	- [Place Glossaries](#place-glossaries)
   - [Index Generator](#index-generator)
-- [Language Packs](#language-packs)
+  - [Language Packs](#language-packs)
+  - [Linked Stories](#linked-stories)
 - [Summary of Functions](#summary-of-functions)
 
 
@@ -389,7 +390,7 @@ To place a glossary for the entire story at the end of the exported file, you ca
 
 Now, when you export the story with `org-novelist-export-story`, there will be a glossary at the end of the file, including names, aliases, and descriptions of all the characters, places, and props which you have tagged for inclusion.
 
-It is also possible to include chapter level glossaries in your exported file. These will appear at the end of the chapters you select, and will only include your selected glossary items when they also appear in that chapter. The procedure to generate an exported chapter level glossary is similar to the one for the entire story. This time, however, just open the chapter file where you would like to add an export glossary. At the top of the file, underneath teh `#+TITLE:` line, add the following:
+It is also possible to include chapter level glossaries in your exported file. These will appear at the end of the chapters you select, and will only include your selected glossary items when they also appear in that chapter. The procedure to generate an exported chapter level glossary is similar to the one for the entire story. This time, however, just open the chapter file where you would like to add an export glossary. At the top of the file, underneath the `#+TITLE:` line, add the following:
 
 ```
 #+GENERATE: glossary
@@ -420,8 +421,7 @@ After exporting, your final Org file will now include a number of `#+ORG_NOVELIS
 
 Unlike with glossaries, however, a complete index will be placed every time it is used, and will not be limited to items which only appear in the given chapter.
 
-
-# Language Packs
+## Language Packs
 The Org Novelist interface has the ability to work in other languages. By default, the language is set to `en-GB`, but this can be changed by downloading and applying language packs.
 
 If you wish to change the language from `en-GB`, you will also have to download the `language-packs` folder and store it in the same directory as `org-novelist.el`. The currently supported languages are:
@@ -441,6 +441,138 @@ After putting the `language-packs` folder in the correct location, you can chang
 
 Whatever language you set will determine the language for your new Org Novelist stories. You can easily change this variable before creating new stories, but existing stories will always open in their original language.
 
+You might also wish to change the Org Novelist mode menu to your own language, or replace the Org Novelist function names with ones from your own language. An example for `de-DE` would be to add the following lines in your Emacs configuration file, beneath the instruction to load `org-novelist.el`:
+
+``` elisp
+;; Create de-DE aliases for the Org Novelist functions.
+(defalias 'org-novelist-neue-geschichte 'org-novelist-new-story)
+(defalias 'org-novelist-neues-kapitel 'org-novelist-new-chapter)
+(defalias 'org-novelist-kapitel-ioeschen 'org-novelist-destroy-chapter)
+(defalias 'org-novelist-kapitel-umbenennen 'org-novelist-rename-chapter)
+(defalias 'org-novelist-neuer-charakter 'org-novelist-new-character)
+(defalias 'org-novelist-charakter-ioeschen 'org-novelist-destroy-character)
+(defalias 'org-novelist-charakter-umbenennen 'org-novelist-rename-character)
+(defalias 'org-novelist-neuer-bestandteil 'org-novelist-new-prop)
+(defalias 'org-novelist-bestandteil-ioeschen 'org-novelist-destroy-prop)
+(defalias 'org-novelist-bestandteil-umbenennen 'org-novelist-rename-prop)
+(defalias 'org-novelist-neuer-ort 'org-novelist-new-place)
+(defalias 'org-novelist-ort-ioeschen 'org-novelist-destroy-place)
+(defalias 'org-novelist-ort-umbenennen 'org-novelist-rename-place)
+(defalias 'org-novelist-verweise-aktualisieren 'org-novelist-update-references)
+(defalias 'org-novelist-geschichte-umbenennen 'org-novelist-rename-story)
+(defalias 'org-novelist-geschichte-exportieren 'org-novelist-export-story)
+(defalias 'org-novelist-verknuepfung-zu-geschichte 'org-novelist-link-to-story)
+(defalias 'org-novelist-verknuepfung-zu-geschichte-aufloesen 'org-novelist-unlink-from-story)
+(defalias 'org-novelist-automatische-verweise-umschalten 'org-novelist-toggle-automatic-referencing)
+
+;; Replace the Org Novelist menu with a de-DE equivalent.
+(easy-menu-define orgn-menu orgn-mode-map "Org Novelist menu."
+  `("Org Novelist"
+    ("Geschichte"
+     ["Neue Geschichte..." orgn-new-story t]
+     ["Geschichte umbenennen..." orgn-rename-story t]
+     ["Geschichte exportieren" orgn-export-story t])
+    ("Kapitel"
+     ["Neues Kapitel..." orgn-new-chapter t]
+     ["Kapitel umbenennen..." orgn-rename-chapter t]
+     ["Kapitel löschen..." orgn-destroy-chapter t])
+    ("Notizen"
+     ("Charaktere"
+      ["Neuer Charakter..." orgn-new-character t]
+      ["Charakter umbenennen..." orgn-rename-character t]
+      ["Charakter löschen..." orgn-destroy-character t])
+     ("Bestandteile"
+      ["Neuer Bestandteil..." orgn-new-prop t]
+      ["Bestandteil umbenennen..." orgn-rename-prop t]
+      ["Bestandteil löschen..." orgn-destroy-prop t])
+     ("Orte"
+      ["Neuer Ort..." orgn-new-place t]
+      ["Ort umbenennen..." orgn-rename-place t]
+      ["Ort löschen..." orgn-destroy-place t])
+     ("Verknüpfte Geschichten"
+      ["Verknüpfung zu Geschichte..." orgn-link-to-story t]
+      ["Verknüpfung zu Geschichte auflösen..."" orgn-unlink-from-story t]))
+    ("Verweise"
+     ["Verweise aktualisieren" orgn-update-references t]
+     ["Automatische Verweise umschalten" orgn-toggle-automatic-referencing t])))
+```
+
+A complete `use-package` version of the above might look something like this:
+
+``` elisp
+(use-package org-novelist
+  :ensure nil
+  :load-path "~/Downloads/"  ; The directory containing 'org-novelist.el'
+  :custom
+    (org-novelist-language-tag "de-DE")  ; The interface language for Org Novelist to use. It defaults to 'en-GB' when not set
+    (org-novelist-author "John Urquhart Ferguson")  ; The default author name to use when exporting a story. Each story can also override this setting
+    (org-novelist-author-email "mail@johnurquhartferguson.info")  ; The default author contact email to use when exporting a story. Each story can also override this setting
+    (org-novelist-automatic-referencing-p nil)  ; Set this variable to 't' if you want Org Novelist to always keep note links up to date. This may slow down some systems when operating on complex stories. It defaults to 'nil' when not set
+  :init
+    ;; Create de-DE aliases for the Org Novelist functions.
+    (defalias 'org-novelist-neue-geschichte 'org-novelist-new-story)
+    (defalias 'org-novelist-neues-kapitel 'org-novelist-new-chapter)
+    (defalias 'org-novelist-kapitel-ioeschen 'org-novelist-destroy-chapter)
+    (defalias 'org-novelist-kapitel-umbenennen 'org-novelist-rename-chapter)
+    (defalias 'org-novelist-neuer-charakter 'org-novelist-new-character)
+    (defalias 'org-novelist-charakter-ioeschen 'org-novelist-destroy-character)
+    (defalias 'org-novelist-charakter-umbenennen 'org-novelist-rename-character)
+    (defalias 'org-novelist-neuer-bestandteil 'org-novelist-new-prop)
+    (defalias 'org-novelist-bestandteil-ioeschen 'org-novelist-destroy-prop)
+    (defalias 'org-novelist-bestandteil-umbenennen 'org-novelist-rename-prop)
+    (defalias 'org-novelist-neuer-ort 'org-novelist-new-place)
+    (defalias 'org-novelist-ort-ioeschen 'org-novelist-destroy-place)
+    (defalias 'org-novelist-ort-umbenennen 'org-novelist-rename-place)
+    (defalias 'org-novelist-verweise-aktualisieren 'org-novelist-update-references)
+    (defalias 'org-novelist-geschichte-umbenennen 'org-novelist-rename-story)
+    (defalias 'org-novelist-geschichte-exportieren 'org-novelist-export-story)
+    (defalias 'org-novelist-verknuepfung-zu-geschichte 'org-novelist-link-to-story)
+    (defalias 'org-novelist-verknuepfung-zu-geschichte-aufloesen 'org-novelist-unlink-from-story)
+    (defalias 'org-novelist-automatische-verweise-umschalten 'org-novelist-toggle-automatic-referencing)
+    
+    ;; Replace the Org Novelist menu with a de-DE equivalent.
+    (easy-menu-define orgn-menu orgn-mode-map "Org Novelist menu."
+      `("Org Novelist"
+        ("Geschichte"
+          ["Neue Geschichte..." orgn-new-story t]
+          ["Geschichte umbenennen..." orgn-rename-story t]
+          ["Geschichte exportieren" orgn-export-story t])
+        ("Kapitel"
+          ["Neues Kapitel..." orgn-new-chapter t]
+          ["Kapitel umbenennen..." orgn-rename-chapter t]
+          ["Kapitel löschen..." orgn-destroy-chapter t])
+        ("Notizen"
+          ("Charaktere"
+            ["Neuer Charakter..." orgn-new-character t]
+            ["Charakter umbenennen..." orgn-rename-character t]
+            ["Charakter löschen..." orgn-destroy-character t])
+          ("Bestandteile"
+            ["Neuer Bestandteil..." orgn-new-prop t]
+            ["Bestandteil umbenennen..." orgn-rename-prop t]
+            ["Bestandteil löschen..." orgn-destroy-prop t])
+          ("Orte"
+            ["Neuer Ort..." orgn-new-place t]
+            ["Ort umbenennen..." orgn-rename-place t]
+            ["Ort löschen..." orgn-destroy-place t])
+        ("Verknüpfte Geschichten"
+          ["Verknüpfung zu Geschichte..." orgn-link-to-story t]
+          ["Verknüpfung zu Geschichte auflösen..."" orgn-unlink-from-story t]))
+        ("Verweise"
+          ["Verweise aktualisieren" orgn-update-references t]
+          ["Automatische Verweise umschalten" orgn-toggle-automatic-referencing t]))))
+```
+
+## Linked Stories
+There may be occasions when you write multiple novels set in the same fictional universe. While Org Novelist is only designed to work on single novels, it does allow you to include the notes of another story when referencing. All notes will stay in place, attached to the story that created them, but when the name appears in your main text then the linking will still work as if they were local to your current story. Additionally, the notes file will show references for the new story in which it appears, as well as its original story. Lastly, this will allow you to include notes from other stories in the glossary and index generators for your current story. The notes from linked stories *will not* appear in the notes indices for your current story though.
+
+In order to link your current story to a previous one, you can run the command `org-novelist-link-to-story`. This will prompt you to select the folder in which your earlier story is located. Once selected, Org Novelist will take you to the newly created linked stories index, showing the story you just added. Following the link will take you to the older story's main file. You may notice that this file will now contain an entry for its own linked stories. In its linked stories index, you will find your original story. In this way, Org Novelist always links stories together in both directions. This means that if you make edits in your older story and decided to include a character from your new story, the new notes will also be accessible from your old story as well.
+
+You may also notice that your `org-novelist-config.org` file now contains a new property called `#+LINKED_STORIES:` showing the relative folder where the linked story is located. The `org-novelist-config.org` file for the linked story will contain a similar entry showing the relative folder for your current story. It is actually these properties that Org Novelist uses to process the shared notes. The linked stories index is merely there for your convenience. If you prefer, you can ignore the `org-novelist-link-to-story` command entirely and merely edit your `org-novelist-config.org` files to link stories together. This also makes it possible to have a one way link, but this is not recommended as the notes files will not show their appearances in all stories in which they are used.
+
+You are free to link your story to as many previous stories as you like. However, the more that you add, the slower the processing of references will become. You should also keep in mind that if you link to one story, you will have access to not only that story's notes, but the notes of every story that it also links to. This allows you to create story pools that all share their notes with each other, while still keeping the notes files stored with the story for which they were created.
+
+If you wish to unlink a story and no longer share its notes, you can either edit the `org-novelist-config.org` files, or use the command: `org-novelist-unlink-from-story`.
+
 
 # Summary of Functions
 + `org-novelist-new-story` - Setup the skeleton files for a new story.
@@ -459,4 +591,6 @@ Whatever language you set will determine the language for your new Org Novelist 
 + `org-novelist-update-references` - Force a system update of notes references.
 + `org-novelist-rename-story` - Rename a story and, optionally, its directory.
 + `org-novelist-export-story` - Export the story to a single Org file, and any other formats specified in export settings.
++ `org-novelist-link-to-story` - Link to a different story to include its notes in the current story's referencing.
++ `org-novelist-unlink-from-story` - Remove a linked story from the current story.
 + `org-novelist-toggle-automatic-referencing` - Toggle automatic referencing on/off.
