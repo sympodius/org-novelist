@@ -102,7 +102,7 @@ This will save you having to go through every file that references the story nam
 
 It is also worth noting that when an Org Novelist file does not have a `#+TITLE:` value, it indicates that this file should largely be left untouched by the user.
 
-For now, follow some of the links to explore the skeleton story. All files link back to one another, so you should never reach a dead-end. The Org Novelist commands can be run while any story file is in the current buffer (you do not need to return to `main.org` to run more Org Novelist commands as long as the current buffer is part of your story).
+For now, follow some of the links to explore the skeleton story. All files link back to one another (apart from Export Settings), so it's hard to reach a dead-end. The Org Novelist commands can be run while any story file is in the current buffer (you do not need to return to `main.org` to run more Org Novelist commands as long as the current buffer is part of your story).
 
 The `Notes` and `Research` files will not be cross referenced with the main story text, so you can write whatever you like in them. They are especially useful for the early planning stages and for notes that don't quite fit anywhere else. As with all files, do not remove the top line indicating this is an Org Novelist story, and don't remove the `#+TITLE:` or first heading lines.
 
@@ -466,35 +466,35 @@ You might also wish to change the Org Novelist mode menu to your own language, o
 (defalias 'org-novelist-automatische-verweise-umschalten 'org-novelist-toggle-automatic-referencing)
 
 ;; Replace the Org Novelist menu with a de-DE equivalent.
-(easy-menu-define orgn-menu orgn-mode-map "Org Novelist menu."
+(easy-menu-define org-novelist-menu org-novelist-mode-map "Org Novelist menu."
   `("Org Novelist"
     ("Geschichte"
-     ["Neue Geschichte..." orgn-new-story t]
-     ["Geschichte umbenennen..." orgn-rename-story t]
-     ["Geschichte exportieren" orgn-export-story t])
+     ["Neue Geschichte..." org-novelist-new-story t]
+     ["Geschichte umbenennen..." org-novelist-rename-story t]
+     ["Geschichte exportieren" org-novelist-export-story t])
     ("Kapitel"
-     ["Neues Kapitel..." orgn-new-chapter t]
-     ["Kapitel umbenennen..." orgn-rename-chapter t]
-     ["Kapitel löschen..." orgn-destroy-chapter t])
+     ["Neues Kapitel..." org-novelist-new-chapter t]
+     ["Kapitel umbenennen..." org-novelist-rename-chapter t]
+     ["Kapitel löschen..." org-novelist-destroy-chapter t])
     ("Notizen"
      ("Charaktere"
-      ["Neuer Charakter..." orgn-new-character t]
-      ["Charakter umbenennen..." orgn-rename-character t]
-      ["Charakter löschen..." orgn-destroy-character t])
+      ["Neuer Charakter..." org-novelist-new-character t]
+      ["Charakter umbenennen..." org-novelist-rename-character t]
+      ["Charakter löschen..." org-novelist-destroy-character t])
      ("Bestandteile"
-      ["Neuer Bestandteil..." orgn-new-prop t]
-      ["Bestandteil umbenennen..." orgn-rename-prop t]
-      ["Bestandteil löschen..." orgn-destroy-prop t])
+      ["Neuer Bestandteil..." org-novelist-new-prop t]
+      ["Bestandteil umbenennen..." org-novelist-rename-prop t]
+      ["Bestandteil löschen..." org-novelist-destroy-prop t])
      ("Orte"
-      ["Neuer Ort..." orgn-new-place t]
-      ["Ort umbenennen..." orgn-rename-place t]
-      ["Ort löschen..." orgn-destroy-place t])
+      ["Neuer Ort..." org-novelist-new-place t]
+      ["Ort umbenennen..." org-novelist-rename-place t]
+      ["Ort löschen..." org-novelist-destroy-place t])
      ("Verknüpfte Geschichten"
-      ["Verknüpfung zu Geschichte..." orgn-link-to-story t]
-      ["Verknüpfung zu Geschichte auflösen..."" orgn-unlink-from-story t]))
+      ["Verknüpfung zu Geschichte..." org-novelist-link-to-story t]
+      ["Verknüpfung zu Geschichte auflösen..." org-novelist-unlink-from-story t]))
     ("Verweise"
-     ["Verweise aktualisieren" orgn-update-references t]
-     ["Automatische Verweise umschalten" orgn-toggle-automatic-referencing t])))
+     ["Verweise aktualisieren" org-novelist-update-references t]
+     ["Automatische Verweise umschalten" org-novelist-toggle-automatic-referencing t])))
 ```
 
 A complete `use-package` version of the above might look something like this:
@@ -529,37 +529,37 @@ A complete `use-package` version of the above might look something like this:
     (defalias 'org-novelist-verknuepfung-zu-geschichte 'org-novelist-link-to-story)
     (defalias 'org-novelist-verknuepfung-zu-geschichte-aufloesen 'org-novelist-unlink-from-story)
     (defalias 'org-novelist-automatische-verweise-umschalten 'org-novelist-toggle-automatic-referencing)
-    
+  :config
     ;; Replace the Org Novelist menu with a de-DE equivalent.
-    (easy-menu-define orgn-menu orgn-mode-map "Org Novelist menu."
+    (easy-menu-define org-novelist-menu org-novelist-mode-map "Org Novelist menu."
       `("Org Novelist"
         ("Geschichte"
-          ["Neue Geschichte..." orgn-new-story t]
-          ["Geschichte umbenennen..." orgn-rename-story t]
-          ["Geschichte exportieren" orgn-export-story t])
+          ["Neue Geschichte..." org-novelist-new-story t]
+          ["Geschichte umbenennen..." org-novelist-rename-story t]
+          ["Geschichte exportieren" org-novelist-export-story t])
         ("Kapitel"
-          ["Neues Kapitel..." orgn-new-chapter t]
-          ["Kapitel umbenennen..." orgn-rename-chapter t]
-          ["Kapitel löschen..." orgn-destroy-chapter t])
+          ["Neues Kapitel..." org-novelist-new-chapter t]
+          ["Kapitel umbenennen..." org-novelist-rename-chapter t]
+          ["Kapitel löschen..." org-novelist-destroy-chapter t])
         ("Notizen"
           ("Charaktere"
-            ["Neuer Charakter..." orgn-new-character t]
-            ["Charakter umbenennen..." orgn-rename-character t]
-            ["Charakter löschen..." orgn-destroy-character t])
+            ["Neuer Charakter..." org-novelist-new-character t]
+            ["Charakter umbenennen..." org-novelist-rename-character t]
+            ["Charakter löschen..." org-novelist-destroy-character t])
           ("Bestandteile"
-            ["Neuer Bestandteil..." orgn-new-prop t]
-            ["Bestandteil umbenennen..." orgn-rename-prop t]
-            ["Bestandteil löschen..." orgn-destroy-prop t])
+            ["Neuer Bestandteil..." org-novelist-new-prop t]
+            ["Bestandteil umbenennen..." org-novelist-rename-prop t]
+            ["Bestandteil löschen..." org-novelist-destroy-prop t])
           ("Orte"
-            ["Neuer Ort..." orgn-new-place t]
-            ["Ort umbenennen..." orgn-rename-place t]
-            ["Ort löschen..." orgn-destroy-place t])
+            ["Neuer Ort..." org-novelist-new-place t]
+            ["Ort umbenennen..." org-novelist-rename-place t]
+            ["Ort löschen..." org-novelist-destroy-place t])
         ("Verknüpfte Geschichten"
-          ["Verknüpfung zu Geschichte..." orgn-link-to-story t]
-          ["Verknüpfung zu Geschichte auflösen..."" orgn-unlink-from-story t]))
+          ["Verknüpfung zu Geschichte..." org-novelist-link-to-story t]
+          ["Verknüpfung zu Geschichte auflösen..." org-novelist-unlink-from-story t]))
         ("Verweise"
-          ["Verweise aktualisieren" orgn-update-references t]
-          ["Automatische Verweise umschalten" orgn-toggle-automatic-referencing t]))))
+          ["Verweise aktualisieren" org-novelist-update-references t]
+          ["Automatische Verweise umschalten" org-novelist-toggle-automatic-referencing t]))))
 ```
 
 ## Linked Stories
