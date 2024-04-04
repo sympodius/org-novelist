@@ -419,56 +419,62 @@ The default is \"en-GB\".
 Strings matching the values of `org-novelist--folder-separator' or
 `org-novelist--file-ending' will be returned without change."
   (catch 'LOCALISATION-STRING-NOT-FOUND
-    ;; Check for language tag stored in data file.
-    (catch 'NO-STORY-ROOT-FOUND
-      (let (current-folder
-            story-language-tag)
-        (unless (string= " *temp*" (buffer-file-name))
-          (when (or load-file-name buffer-file-name)
-            (setq current-folder (directory-file-name (file-name-directory (or load-file-name buffer-file-name))))))
-        (when current-folder
-          (while (not (file-exists-p (concat current-folder / orgn--config-filename)))
-            (when (string= current-folder (setq current-folder (expand-file-name (concat current-folder / ".." ))))
-              (throw 'NO-STORY-ROOT-FOUND current-folder)))
-          ;; If we get to this point, a story root folder was found and that is what current-folder is set to.
-          (setq story-language-tag (orgn--get-file-property-value orgn--language-tag-property (concat (expand-file-name current-folder) / orgn--data-filename)))
-          (if (not (string= "" story-language-tag))
-              ;; A value was found for the language tag of this story. So set it up.
-              (progn
-                ;; Store original user set language in case we move back to another story with no set language tag.
-                (unless orgn--lang-tag
-                  (if (boundp 'orgn-language-tag)
-                      (setq orgn--lang-tag orgn-language-tag)
-                    (setq orgn--lang-tag "en-GB")))
-                (setq orgn-language-tag story-language-tag))
-            ;; This story has no language tag, so revert back to user set language tag.
-            (when orgn--lang-tag
-              (setq orgn-language-tag orgn--lang-tag))))))
-    (unless (boundp 'orgn-language-tag)
-      (defvar orgn-language-tag "en-GB" "The language to use for Org Novelist. Based on https://www.w3.org/International/articles/language-tags/index.en"))
-    (unless (boundp (intern (concat "org-novelist--okay-" orgn-language-tag)))
-      ;; Language tag is set, but the language pack isn't loaded. Try to load it from standard location.
-      (when (file-readable-p (expand-file-name (concat (file-name-directory (symbol-file 'org-novelist--localise-string))  orgn--language-packs-folder / orgn--language-pack-file-prefix (downcase orgn-language-tag) ".el")))
-        (load-file (expand-file-name (concat (file-name-directory (symbol-file 'org-novelist--localise-string))  orgn--language-packs-folder / orgn--language-pack-file-prefix (downcase orgn-language-tag) ".el"))))
+    (let ((not-in-story-folder-p nil))
+      ;; Check for language tag stored in data file.
+      (catch 'NO-STORY-ROOT-FOUND
+        (let (current-folder
+              story-language-tag)
+          (unless (string= " *temp*" (buffer-file-name))
+            (when (or load-file-name buffer-file-name)
+              (setq current-folder (directory-file-name (file-name-directory (or load-file-name buffer-file-name))))))
+          (when current-folder
+            (while (not (file-exists-p (concat current-folder / orgn--config-filename)))
+              (when (string= current-folder (setq current-folder (expand-file-name (concat current-folder / ".." ))))
+                (setq not-in-story-folder-p t)
+                (throw 'NO-STORY-ROOT-FOUND current-folder)))
+            ;; If we get to this point, a story root folder was found and that is what current-folder is set to.
+            (setq story-language-tag (orgn--get-file-property-value orgn--language-tag-property (concat (expand-file-name current-folder) / orgn--data-filename)))
+            (if (not (string= "" story-language-tag))
+                ;; A value was found for the language tag of this story. So set it up.
+                (progn
+                  ;; Store original user set language in case we move back to another story with no set language tag.
+                  (unless orgn--lang-tag
+                    (if (boundp 'orgn-language-tag)
+                        (setq orgn--lang-tag orgn-language-tag)
+                      (setq orgn--lang-tag "en-GB")))
+                  (setq orgn-language-tag story-language-tag))
+              ;; This story has no language tag, so revert back to user set language tag.
+              (when orgn--lang-tag
+                (setq orgn-language-tag orgn--lang-tag))))))
+      ;; If we're not in a story folder, and lang-tag is bound, use lang-tag.
+      (when (and not-in-story-folder-p (boundp 'orgn--lang-tag))
+        (setq orgn-language-tag orgn--lang-tag))
+      ;; Fallback in case the above code didn't figure out the language.
+      (unless (boundp 'orgn-language-tag)
+        (defvar orgn-language-tag "en-GB" "The language to use for Org Novelist. Based on https://www.w3.org/International/articles/language-tags/index.en"))
       (unless (boundp (intern (concat "org-novelist--okay-" orgn-language-tag)))
-        (setq orgn-language-tag "en-GB")
-        (message (concat (orgn--ls "language-not-found") " " (orgn--replace-string-in-string (concat "<<" (orgn--ls "language-tag") ">>") orgn-language-tag (orgn--ls "language-set-to-language-tag"))))))
-    (cond ((string-equal str-name /)  ; Special case for the folder separator string
-           (if (> (length str-list) 0)
-               (concat (eval /) (apply 'orgn--localise-string str-list))
-             (eval /)))
-          ((string-equal str-name orgn--file-ending)  ; Special case for the Org Novelist filename ending
-           (if (> (length str-list) 0)
-               (concat (eval orgn--file-ending) (apply 'orgn--localise-string str-list))
-             (eval orgn--file-ending)))
-          ((boundp (intern (concat "org-novelist--" str-name "-" orgn-language-tag)))  ; Do not shorten this string to orgn-- as it will prevent running outwith Org Novelist mode
-           (if (> (length str-list) 0)
-               (concat (eval (intern (concat "org-novelist--" str-name "-" orgn-language-tag))) (apply 'orgn--localise-string str-list))  ; Do not shorten this string to orgn-- as it will prevent running outwith Org Novelist mode.
-             (eval (intern (concat "org-novelist--" str-name "-" orgn-language-tag)))))  ; Do not shorten this string to orgn-- as it will prevent running outwith Org Novelist mode
-          (t
-           ;; The two lines of code below are the only user-facing ones that can't be translated.
-           (error (format "No localised string for '%s' found" str-name))
-           (throw 'LOCALISATION-STRING-NOT-FOUND (format "No localised string for '%s' found" str-name))))))
+        ;; Language tag is set, but the language pack isn't loaded. Try to load it from standard location.
+        (when (file-readable-p (expand-file-name (concat (file-name-directory (symbol-file 'org-novelist--localise-string))  orgn--language-packs-folder / orgn--language-pack-file-prefix (downcase orgn-language-tag) ".el")))
+          (load-file (expand-file-name (concat (file-name-directory (symbol-file 'org-novelist--localise-string))  orgn--language-packs-folder / orgn--language-pack-file-prefix (downcase orgn-language-tag) ".el"))))
+        (unless (boundp (intern (concat "org-novelist--okay-" orgn-language-tag)))
+          (setq orgn-language-tag "en-GB")
+          (message (concat (orgn--ls "language-not-found") " " (orgn--replace-string-in-string (concat "<<" (orgn--ls "language-tag") ">>") orgn-language-tag (orgn--ls "language-set-to-language-tag"))))))
+      (cond ((string-equal str-name /)  ; Special case for the folder separator string
+             (if (> (length str-list) 0)
+                 (concat (eval /) (apply 'orgn--localise-string str-list))
+               (eval /)))
+            ((string-equal str-name orgn--file-ending)  ; Special case for the Org Novelist filename ending
+             (if (> (length str-list) 0)
+                 (concat (eval orgn--file-ending) (apply 'orgn--localise-string str-list))
+               (eval orgn--file-ending)))
+            ((boundp (intern (concat "org-novelist--" str-name "-" orgn-language-tag)))  ; Do not shorten this string to orgn-- as it will prevent running outwith Org Novelist mode
+             (if (> (length str-list) 0)
+                 (concat (eval (intern (concat "org-novelist--" str-name "-" orgn-language-tag))) (apply 'orgn--localise-string str-list))  ; Do not shorten this string to orgn-- as it will prevent running outwith Org Novelist mode.
+               (eval (intern (concat "org-novelist--" str-name "-" orgn-language-tag)))))  ; Do not shorten this string to orgn-- as it will prevent running outwith Org Novelist mode
+            (t
+             ;; The two lines of code below are the only user-facing ones that can't be translated.
+             (error (format "No localised string for '%s' found" str-name))
+             (throw 'LOCALISATION-STRING-NOT-FOUND (format "No localised string for '%s' found" str-name)))))))
 (defalias 'orgn--ls 'orgn--localise-string)  ; Make an alias to keep code a little cleaner
 
 (defun orgn--force-localise-string (str-name forced-lang-code &rest str-list)
