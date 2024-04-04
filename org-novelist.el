@@ -3443,7 +3443,7 @@ CHARACTER-NAME will be the name given to the character."
         (progn
           (message (concat characters-file ": " (orgn--ls "no-characters-found")))
           (setq orgn-automatic-referencing-p orgn--autoref-p)
-          (throw 'RENAME-CHARACTER-FAULT-AT-INDEX (concat characters-file ": " (orgn--ls "no-chapters-found")))))
+          (throw 'RENAME-CHARACTER-FAULT-AT-INDEX (concat characters-file ": " (orgn--ls "no-characters-found")))))
       (if (file-exists-p characters-file)
           (if (file-readable-p characters-file)
               (find-file characters-file)
