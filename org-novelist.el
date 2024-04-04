@@ -725,7 +725,9 @@ TIME-ZONE is the given time. If omitted or nil, use local time."
         (with-current-buffer (get-file-buffer filename)
           (erase-buffer)
           (insert str)
-          (save-buffer))  ; Calling `save-buffer' with an argument of 0 would stop back-up files being created, but it's probably best to respect the user's Emacs setup in this regard
+          (save-buffer)  ; Calling `save-buffer' with an argument of 0 would stop back-up files being created, but it's probably best to respect the user's Emacs setup in this regard
+          (when (or (equal 'org-novelist-mode major-mode) (equal 'org-mode major-mode))
+            (org-update-radio-target-regexp)))
       ;; Filename not open in a buffer. Just deal with file.
       (with-temp-buffer
         (insert str)
@@ -1985,10 +1987,7 @@ open buffer."
                     (insert-file-contents key)
                     (goto-char (buffer-size))
                     (insert "\n" glossary-str)
-                    (orgn--string-to-file (buffer-string) key)
-                    (org-novelist-mode)
-                    (orgn--fold-show-all)  ; Belts and braces
-                    (org-update-radio-target-regexp)))
+                    (orgn--string-to-file (buffer-string) key)))
               (progn
                 (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") key (orgn--ls "filename-is-not-readable")))
                 (throw 'UPDATE-GLOSSARIES-FAULT (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") key (orgn--ls "filename-is-not-readable")))))
