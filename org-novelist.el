@@ -64,6 +64,10 @@
 
 (defvar orgn--autoref-p nil "Temporary store for last known value of org-novelist-automatic-referencing-p.")
 (defvar orgn--lang-tag nil "Temporary store for the original language tag set for this session.")
+(defvar orgn--org-version-checked-p nil "Flag to show if the Org mode version has been checked.")
+(defvar orgn--org-9.6-or-above-p nil "Flag to show if Org mode version is 9.6 or above.")
+(defvar orgn--emacs-version-checked-p nil "Flag to show if the Emacs version has been checked.")
+(defvar orgn--emacs-29-or-above-p nil "Flag to show if Emacs version is 29 or above.")
 (defvar-keymap orgn-mode-map)
 (defvar orgn-menu)
 
@@ -665,9 +669,14 @@ The resultant string should be suitable for the current operating system."
 (defun orgn--fold-show-all ()
   "Run the deprecated org-show-all when Org version is less than 9.6.
 Otherwise, run org-fold-show-all."
-  (if (or (> (string-to-number (nth 0 (split-string (org-version) "\\."))) 9)
-          (and (= (string-to-number (nth 0 (split-string (org-version) "\\."))) 9)
-               (>= (string-to-number (nth 1 (split-string (org-version) "\\."))) 6)))
+  (unless orgn--org-version-checked-p
+    (if (or (> (string-to-number (nth 0 (split-string (org-version) "\\."))) 9)
+            (and (= (string-to-number (nth 0 (split-string (org-version) "\\."))) 9)
+                 (>= (string-to-number (nth 1 (split-string (org-version) "\\."))) 6)))
+        (setq orgn--org-9.6-or-above-p t)
+      (setq orgn--org-9.6-or-above-p nil))
+    (setq orgn--org-version-checked-p t))
+  (if orgn--org-9.6-or-above-p
       (org-fold-show-all)
     (org-show-all)))
 
@@ -676,16 +685,26 @@ Otherwise, run org-fold-show-all."
 Otherwise, run `format-time-string'.
 FORMAT-STRING is the output format.
 TIME-ZONE is the given time. If omitted or nil, use local time."
-  (if (or (> (string-to-number (nth 0 (split-string (org-version) "\\."))) 9)
-          (and (= (string-to-number (nth 0 (split-string (org-version) "\\."))) 9)
-               (>= (string-to-number (nth 1 (split-string (org-version) "\\."))) 6)))
+  (unless orgn--org-version-checked-p
+    (if (or (> (string-to-number (nth 0 (split-string (org-version) "\\."))) 9)
+            (and (= (string-to-number (nth 0 (split-string (org-version) "\\."))) 9)
+                 (>= (string-to-number (nth 1 (split-string (org-version) "\\."))) 6)))
+        (setq orgn--org-9.6-or-above-p t)
+      (setq orgn--org-9.6-or-above-p nil))
+    (setq orgn--org-version-checked-p t))
+  (if orgn--org-9.6-or-above-p
       (format-time-string format-string time-zone)
     (org-format-time-string format-string time-zone)))
 
 (defun orgn--delete-line ()
   "If Emacs version is less than 29, delete line the old fashioned way."
   (let ((inhibit-field-text-motion t))
-    (if (>= (string-to-number (nth 0 (split-string (string-trim-left (emacs-version) "GNU Emacs ") "\\."))) 29)
+    (unless orgn--emacs-version-checked-p
+      (if (>= (string-to-number (nth 0 (split-string (string-trim-left (emacs-version) "GNU Emacs ") "\\."))) 29)
+          (setq orgn--emacs-29-or-above-p t)
+        (setq orgn--emacs-29-or-above-p nil))
+      (setq orgn--emacs-version-checked-p t))
+    (if orgn--emacs-29-or-above-p
         (delete-line)
       (delete-region (line-beginning-position) (line-beginning-position 2)))))
 
