@@ -1496,7 +1496,7 @@ open buffer."
   (catch 'OBJECT-HEADLINES-FAULT
     (let* ((index-file (orgn--ls index-filename orgn--file-ending))
            (indices-folder (orgn--ls "indices-folder"))
-           (file-objects (funcall (intern hash-table-func) story-folder))
+           (file-objects (funcall (intern hash-table-func) (list story-folder)))
            (keys (hash-table-keys file-objects))
            key
            (objects-headlines '()))
@@ -1677,14 +1677,14 @@ open buffer."
       (setq story-folder (orgn--story-root-folder))
     (setq story-folder (orgn--story-root-folder story-folder)))
   (catch 'OBJECT-FILE-DELETION-FAULT
-    (let* ((file-objects (funcall (intern hash-table-func) story-folder))
+    (let* ((file-objects (funcall (intern hash-table-func) (list story-folder)))
            (keys (hash-table-keys file-objects))
            key
            object-file)
       (while keys
         (setq key (pop keys))
         (when (string= object-name (gethash key file-objects))
-          (setq object-file (concat story-folder / (orgn--ls "notes-folder") / key))
+          (setq object-file key)
           (if (file-exists-p object-file)
               (progn
                 (find-file object-file)
@@ -1883,7 +1883,7 @@ open buffer."
     (setq story-folder (orgn--story-root-folder story-folder)))
   (setq new-object-name (orgn--sanitize-string new-object-name))
   (catch 'OBJECT-FILE-RENAME-FAULT
-    (let* ((file-objects (funcall (intern hash-table-func) story-folder))
+    (let* ((file-objects (funcall (intern hash-table-func) (list story-folder)))
            (keys (hash-table-keys file-objects))
            key
            object-file
@@ -1897,7 +1897,7 @@ open buffer."
       (while keys
         (setq key (pop keys))
         (when (string= chosen-object (gethash key file-objects))
-          (setq object-file (concat story-folder / (orgn--ls "notes-folder") / key))
+          (setq object-file key)
           (setq new-object-file (concat story-folder / (orgn--ls "notes-folder") / (orgn--ls object-file-prefix) (orgn--system-safe-name new-object-name) orgn--file-ending))
           (if (file-exists-p object-file)
               (progn
