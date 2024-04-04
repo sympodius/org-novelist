@@ -261,35 +261,35 @@ Let's make a second export template for an odt file. Create a file called `org-o
 ;;;; Required Entry Point Function for Org Novelist Export
 
 (defun org-novelist--export-template (org-input-file output-file)
-"Given an ORG-INPUT-FILE from Org Novelist, export to OUTPUT-FILE."
-(let ((org-export-with-toc-orig nil)
-(org-export-with-title-orig nil)
-(org-export-with-author-orig nil)
-(org-export-with-email-orig nil)
-(org-export-with-date-orig nil)
-(org-odt-styles-file-orig nil))
-(when (boundp 'org-export-with-toc)
-(setq org-export-with-toc-orig org-export-with-toc))
-(when (boundp 'org-export-with-title)
-(setq org-export-with-title-orig org-export-with-title))
-(when (boundp 'org-export-with-author)
-(setq org-export-with-author-orig org-export-with-author))
-(when (boundp 'org-export-with-email)
-(setq org-export-with-email-orig org-export-with-email))
-(when (boundp 'org-export-with-date)
-(setq org-export-with-date-orig org-export-with-date))
-(when (boundp 'org-odt-styles-file)
-(setq org-odt-styles-file-orig org-odt-styles-file))
-(setq org-export-with-toc t)
-(setq org-export-with-title t)
-(setq org-export-with-author t)
-(setq org-export-with-email t)
-(setq org-export-with-date t)
-(setq org-odt-styles-file nil)
-(find-file org-input-file)
-(org-odt-export-to-odt)
-(setq org-odt-styles-file org-odt-styles-file-orig)
-(setq org-export-with-toc org-export-with-toc-orig)
+  "Given an ORG-INPUT-FILE from Org Novelist, export to OUTPUT-FILE."
+  (let ((org-export-with-toc-orig nil)
+    (org-export-with-title-orig nil)
+    (org-export-with-author-orig nil)
+    (org-export-with-email-orig nil)
+    (org-export-with-date-orig nil)
+    (org-odt-styles-file-orig nil))
+    (when (boundp 'org-export-with-toc)
+      (setq org-export-with-toc-orig org-export-with-toc))
+    (when (boundp 'org-export-with-title)
+      (setq org-export-with-title-orig org-export-with-title))
+    (when (boundp 'org-export-with-author)
+      (setq org-export-with-author-orig org-export-with-author))
+    (when (boundp 'org-export-with-email)
+      (setq org-export-with-email-orig org-export-with-email))
+    (when (boundp 'org-export-with-date)
+      (setq org-export-with-date-orig org-export-with-date))
+    (when (boundp 'org-odt-styles-file)
+      (setq org-odt-styles-file-orig org-odt-styles-file))
+    (setq org-export-with-toc t)
+    (setq org-export-with-title t)
+    (setq org-export-with-author t)
+    (setq org-export-with-email t)
+    (setq org-export-with-date t)
+    (setq org-odt-styles-file nil)
+    (find-file org-input-file)
+    (org-odt-export-to-odt)
+    (setq org-odt-styles-file org-odt-styles-file-orig)
+    (setq org-export-with-toc org-export-with-toc-orig)
     (setq org-export-with-title org-export-with-title-orig)
     (setq org-export-with-author org-export-with-author-orig)
     (setq org-export-with-email org-export-with-email-orig)
@@ -346,7 +346,7 @@ This ends the tutorial for the main features of Org Novelist. I designed this sy
 Although the above tutorial covers all the basic components of operating Org Novelist. There are a few additional features that the more dedicated user may wish to explore.
 
 ## Custom Note Templates
-It's possible to override the default note templates that are presented when you create a new chapter, character, place, or prop. Doing so will override the defaults for all newly created notes of these types in all stories, but will have no effect on existing notes. The four relevant variables to set are `org-novelist-user-chapter-notes-content`, `org-novelist-user-character-notes-content`, `org-novelist-user-place-notes-content`, and `org-novelist-user-prop-notes-content`. You can override as many or as few of these as you like. If you want to permanently set these variables for future Emacs sessions, you can edit your [Emacs configuration file](https://www.gnu.org/software/emacs/manual/html_node/emacs/Init-File.html) to include entries like the following, just above the location that you might have set the `org-novelist-author` variable:
+It's possible to override the default note templates that are presented when you create a new chapter, character, place, or prop. Doing so will override the defaults for all newly created notes of these types in all stories, but will have no effect on existing notes. The four relevant variables to set are `org-novelist-user-chapter-notes-content`, `org-novelist-user-character-notes-content`, `org-novelist-user-place-notes-content`, and `org-novelist-user-prop-notes-content`. You can override as many or as few of these as you like. If you want to permanently set these variables for future Emacs sessions, you can edit your [Emacs configuration file](https://www.gnu.org/software/emacs/manual/html_node/emacs/Init-File.html) to include entries like the following (just above the location that you might have set the `org-novelist-author` variable):
 
 ``` elisp
 (setq org-novelist-user-chapter-notes-content
