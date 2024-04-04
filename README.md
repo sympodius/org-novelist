@@ -167,7 +167,7 @@ If you have automatic referencing turned on, you should see a `Glossary` at the 
 
 Additionally, you can also toggle automatic referencing on or off by running the command: `org-novelist-toggle-automatic-referencing`
 
-With the glossary in place, whenever you use the name or alias for anything that has a notes file, the text will turn into a link to that entry in the glossary. Once at the correct location in the glossary, you can link to the associated notes file.
+With the glossary in place, whenever you use the name or alias for anything that has a notes file, the text will turn into a link to that entry in the glossary. Once at the correct location in the glossary, you can link to the associated notes file. If you would prefer to go back to the point in the text you just linked from, simply hit `C-u C-SPC`.
 
 If you have automatic referencing turned on, then every time you save your main text, the note files will be updated to reference all lines of text in which they appear, allowing you to quickly link to that point in your story.
 
@@ -361,10 +361,10 @@ It's possible to override the default note templates that are presented when you
 (setq org-novelist-automatic-referencing-p nil)  ; Set this variable to 't' if you want Org Novelist to always keep note links up to date. This may slow down some systems when operating on complex stories. It defaults to 'nil' when not set
 ```
 
-You can return to generating the default templates by removing this line from your Emacs configuration file and restarting Emacs, or set the value to 'nil' before creating more notes.
+You can return to generating the default templates by removing this line from your Emacs configuration file and restarting Emacs, or set the value to `nil` before creating more notes.
 
 ## Glossary Generator
-When exporting, Org Novelist has the capability to generate glossaries of the characters, places, and props in your story. This is a two step procedure.
+When exporting, Org Novelist has the capability to generate glossaries of the characters, places, and props in your story. This is a two step procedure, requiring you to tell Org Novelist which items you want to include in the glossaries, and where you want the glossaries to be placed in your exported file.
 
 ### Include Items in Glossaries
 In the notes file for a character, place, or prop, underneath the `#+TITLE:` line, add the following line:
@@ -398,7 +398,7 @@ It is also possible to include chapter level glossaries in your exported file. T
 
 Now, after exporting, there will be a glossary at the end of this chapter as well, including only the items that appeared in that chapter. Again, it will only try to add items you have already marked for inclusion.
 
-You can make export glossaries for as many or as few of your chapters as you like. You do not need to generate a story glossary in order to generate chapter glossaries. You are free to use both, one or the other, or none.
+You can make export glossaries for as many or as few of your chapters as you like. Also, note that story and chapter glossaries are independent of each other, and you can use them in any combination that suits you.
 
 ## Index Generator
 When exporting, Org Novelist can also mark the exported Org file with information for creating an index. Org Novelist itself will not generate the final index, as this will be dependent on export templates and the final published form of the story. If you wish to see an example of how this will end up, you can check out the *Cubes* PDF and ePub export templates at [https://github.com/sympodius/org-novelist-export-templates/](https://github.com/sympodius/org-novelist-export-templates/), both of which generate Indices for stories when required using the information Org Novelist generates on export.
@@ -563,13 +563,15 @@ A complete `use-package` version of the above might look something like this:
 ```
 
 ## Linked Stories
-There may be occasions when you write multiple novels set in the same fictional universe. While Org Novelist is only designed to work on single novels, it does allow you to include the notes of another story when referencing. All notes will stay in place, attached to the story that created them, but when the name appears in your main text then the linking will still work as if they were local to your current story. Additionally, the notes file will show references for the new story in which it appears, as well as its original story. Lastly, this will allow you to include notes from other stories in the glossary and index generators for your current story. The notes from linked stories *will not* appear in the notes indices for your current story though.
+There may be occasions when you write multiple novels set in the same story universe. While Org Novelist is only designed to work on single novels, it does allow you to include the notes of another story when referencing. All notes will stay in place, attached to the story that created them, but when the name appears in your main text then the linking will still work as if they were local to your current story. Additionally, the notes file will show references for the new story in which it appears, as well as its original story. Lastly, this will allow you to include notes from other stories in the glossary and index generators for your current story. However, the notes from linked stories *will not* appear in the notes indices for your current story.
 
-In order to link your current story to a previous one, you can run the command `org-novelist-link-to-story`. This will prompt you to select the folder in which your earlier story is located. Once selected, Org Novelist will take you to the newly created linked stories index, showing the story you just added. Following the link will take you to the older story's main file. You may notice that this file will now contain an entry for its own linked stories. In its linked stories index, you will find your original story. In this way, Org Novelist always links stories together in both directions. This means that if you make edits in your older story and decided to include a character from your new story, the new notes will also be accessible from your old story as well.
+In order to link your current story to a previous one, you can run the command `org-novelist-link-to-story`. This will prompt you to select the folder in which your earlier story is located. 
+
+Once selected, Org Novelist will take you to the newly created linked stories index, showing the story you just added. Following the link will take you to the older story's main file. You may notice that this file will now contain an entry for its own linked stories. In its linked stories index, you will find your original story. In this way, Org Novelist always links stories together in both directions. This means that if you make edits in your older story and decide to include a character from your new story, the new notes will also be accessible from your old story as well.
 
 You may also notice that your `org-novelist-config.org` file now contains a new property called `#+LINKED_STORIES:` showing the relative folder where the linked story is located. The `org-novelist-config.org` file for the linked story will contain a similar entry showing the relative folder for your current story. It is actually these properties that Org Novelist uses to process the shared notes. The linked stories index is merely there for your convenience. If you prefer, you can ignore the `org-novelist-link-to-story` command entirely and merely edit your `org-novelist-config.org` files to link stories together. This also makes it possible to have a one way link, but this is not recommended as the notes files will not show their appearances in all stories in which they are used.
 
-You are free to link your story to as many previous stories as you like. However, the more that you add, the slower the processing of references will become. You should also keep in mind that if you link to one story, you will have access to not only that story's notes, but the notes of every story that it also links to. This allows you to create story pools that all share their notes with each other, while still keeping the notes files stored with the story for which they were created.
+You are free to link your story to as many previous stories as you like. However, the more that you add, the slower the processing of references will become. You should also keep in mind that if you link to one story, you will have access to not only that story's notes, but the notes of every story that it is also linked to. This allows you to create story pools that all share their notes with each other, while still keeping the notes files stored within the story from which they were created.
 
 If you wish to unlink a story and no longer share its notes, you can either edit the `org-novelist-config.org` files, or use the command: `org-novelist-unlink-from-story`.
 
@@ -594,3 +596,4 @@ If you wish to unlink a story and no longer share its notes, you can either edit
 + `org-novelist-link-to-story` - Link to a different story to include its notes in the current story's referencing.
 + `org-novelist-unlink-from-story` - Remove a linked story from the current story.
 + `org-novelist-toggle-automatic-referencing` - Toggle automatic referencing on/off.
+  
