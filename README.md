@@ -596,4 +596,3 @@ If you wish to unlink a story and no longer share its notes, you can either edit
 + `org-novelist-link-to-story` - Link to a different story to include its notes in the current story's referencing.
 + `org-novelist-unlink-from-story` - Remove a linked story from the current story.
 + `org-novelist-toggle-automatic-referencing` - Toggle automatic referencing on/off.
-  
