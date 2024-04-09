@@ -3806,31 +3806,29 @@ PLACE-NAME will be the name given to the place."
 (defun orgn-update-references (&optional story-folder)
   "Given a STORY-FOLDER, update all crossreferences in story."
   (interactive)
-  (let ((start-time (string-to-number (format-time-string "%s%N" (current-time)))))
-    (if (not story-folder)
-        (setq story-folder (orgn--story-root-folder))
-      (setq story-folder (orgn--story-root-folder story-folder)))
-    (let ((curr-buff (current-buffer))
-          (curr-pos (point)))
-      (if orgn-automatic-referencing-p
-          (progn
-            (setq orgn--autoref-p orgn-automatic-referencing-p)
-            (setq orgn-automatic-referencing-p nil)
-            ;; Temporarily add a hook to reset automatic referencing in case user aborts minibuffer.
-            (add-hook 'post-command-hook 'orgn--reset-automatic-referencing)
-            ;; (orgn--rebuild-indices story-folder)  ; This should really only be called when one of the functions manipulating an index are used
-            (orgn--update-object-references story-folder)
-            (orgn--update-glossaries story-folder)  ; Always call this after object-references, because object-references will delete all glossaries
-            (setq orgn-automatic-referencing-p t)
-            ;; Remove hook to reset automatic referencing since we made it to the end of the function.
-            (remove-hook 'post-command-hook 'orgn--reset-automatic-referencing))
+  (if (not story-folder)
+      (setq story-folder (orgn--story-root-folder))
+    (setq story-folder (orgn--story-root-folder story-folder)))
+  (let ((curr-buff (current-buffer))
+        (curr-pos (point)))
+    (if orgn-automatic-referencing-p
         (progn
+          (setq orgn--autoref-p orgn-automatic-referencing-p)
+          (setq orgn-automatic-referencing-p nil)
+          ;; Temporarily add a hook to reset automatic referencing in case user aborts minibuffer.
+          (add-hook 'post-command-hook 'orgn--reset-automatic-referencing)
           ;; (orgn--rebuild-indices story-folder)  ; This should really only be called when one of the functions manipulating an index are used
           (orgn--update-object-references story-folder)
-          (orgn--update-glossaries story-folder)))  ; Always call this after object-references, because object-references will delete all glossaries
-      (set-buffer curr-buff)
-      (goto-char curr-pos))
-    (message "Updating references took: %s nanoseconds" (number-to-string (- (string-to-number (format-time-string "%s%N" (current-time))) start-time)))))
+          (orgn--update-glossaries story-folder)  ; Always call this after object-references, because object-references will delete all glossaries
+          (setq orgn-automatic-referencing-p t)
+          ;; Remove hook to reset automatic referencing since we made it to the end of the function.
+          (remove-hook 'post-command-hook 'orgn--reset-automatic-referencing))
+      (progn
+        ;; (orgn--rebuild-indices story-folder)  ; This should really only be called when one of the functions manipulating an index are used
+        (orgn--update-object-references story-folder)
+        (orgn--update-glossaries story-folder)))  ; Always call this after object-references, because object-references will delete all glossaries
+    (set-buffer curr-buff)
+    (goto-char curr-pos)))
 
 (defun orgn-rename-story ()
   "Rename the story and update all necessary files."
