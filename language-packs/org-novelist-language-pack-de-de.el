@@ -254,7 +254,7 @@
 ;; <<Sprachkürzel>> (without the << >> brackets) must share the same value as org-novelist--language-tag-de-DE.
 (defconst orgn--language-set-to-language-tag-de-DE "Org Novelist Sprache wurde geändert zu: <<Sprachkürzel>>" "Inform user that language has been set.")
 (defconst orgn--language-not-found-de-DE "Ausgewähltes Sprachpaket konnte nicht gefunden werden." "Inform user that language pack could not be found.")
-(defconst orgn--chosen-story-same-as-current-story-de-DE "Chosen story is the same as the current story." "Inform the user that they've selected the current story, instead of a new one.")
+(defconst orgn--chosen-story-same-as-current-story-de-DE "Die ausgewählte Geschichte ist die aktuelle Geschichte." "Inform the user that they've selected the current story, instead of a new one.")
 (defconst orgn--folder-already-exists-de-DE "Dieser Ordner existiert bereits" "Inform user the folder already exists.")
 (defconst orgn--no-linked-stories-de-DE "Derzeit mit keiner Geschichte verknüpft" "Inform user there are currently no linked stories.")
 ;; Pattern Matches
