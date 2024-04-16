@@ -73,7 +73,7 @@
 (defconst orgn--linked-stories-file-instructions-en-US "This is an index of linked stories. Do not edit manually. Use only Org mode or Org Novelist functions." "Instructions for the linked stories index file.")
 ;; Folder Names
 (defconst orgn--notes-folder-en-US "Notes" "The folder name for storing note files.")
-(defconst orgn--indices-folder-en-US "Indices" "The folder name for storing index files.")
+(defconst orgn--indices-folder-en-US "Indexes" "The folder name for storing index files.")
 (defconst orgn--chapters-folder-en-US "Chapters" "The folder name for storing the chapter files.")
 (defconst orgn--exports-folder-en-US "Exports" "The folder name for storing export files.")
 ;; File Names
