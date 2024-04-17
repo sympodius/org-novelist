@@ -449,9 +449,11 @@ Strings matching the values of `org-novelist--folder-separator' or
       ;; If we're not in a story folder, and lang-tag is bound, use lang-tag.
       (when (and not-in-story-folder-p (boundp 'orgn--lang-tag))
         (setq orgn-language-tag orgn--lang-tag))
-      ;; Fallback in case the above code didn't figure out the language.
+      ;; Fallbacks in case the above code didn't figure out the language.
       (unless (boundp 'orgn-language-tag)
         (defvar orgn-language-tag "en-GB" "The language to use for Org Novelist. Based on https://www.w3.org/International/articles/language-tags/index.en"))
+      (unless orgn-language-tag
+	(setq orgn-language-tag "en-GB"))
       (unless (boundp (intern (concat "org-novelist--okay-" orgn-language-tag)))
         ;; Language tag is set, but the language pack isn't loaded. Try to load it from standard location.
         (when (file-readable-p (expand-file-name (concat (file-name-directory (symbol-file 'org-novelist--localise-string))  orgn--language-packs-folder / orgn--language-pack-file-prefix (downcase orgn-language-tag) ".el")))
@@ -543,6 +545,8 @@ a supported language. The default is \"en-GB\"."
               (setq orgn-language-tag orgn--lang-tag))))))
     (unless (boundp 'orgn-language-tag)
       (defconst orgn-language-tag "en-GB" "The language to use for Org Novelist (based on https://www.w3.org/International/articles/language-tags/index.en)."))
+    (unless orgn-language-tag
+      (setq orgn-language-tag "en-GB"))
     (unless (boundp (intern (concat "org-novelist--okay-" orgn-language-tag)))
       ;; Language tag is set, but the language pack isn't loaded. Try to load it from standard location.
       (when (file-readable-p (expand-file-name (concat (file-name-directory (symbol-file 'org-novelist--localise-function))  orgn--language-packs-folder / orgn--language-pack-file-prefix (downcase orgn-language-tag) ".el")))
