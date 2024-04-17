@@ -68,7 +68,7 @@
 (defvar orgn--org-9.6-or-above-p nil "Flag to show if Org mode version is 9.6 or above.")
 (defvar orgn--emacs-version-checked-p nil "Flag to show if the Emacs version has been checked.")
 (defvar orgn--emacs-29-or-above-p nil "Flag to show if Emacs version is 29 or above.")
-(defvar-keymap orgn-mode-map)
+(defvar orgn-mode-map (make-sparse-keymap) "Setup a keymap to pass to `easy-menu-define'.")
 (defvar orgn-menu)
 
 
