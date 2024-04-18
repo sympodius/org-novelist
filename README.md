@@ -25,8 +25,6 @@
 - [Advanced Features](#advanced-features)
   - [Custom Note Templates](#custom-note-templates)
   - [Glossary Generator](#glossary-generator)
-    - [Include Items in Glossaries](#include-items-in-glossaries)
-	- [Place Glossaries](#place-glossaries)
   - [Index Generator](#index-generator)
   - [Language Packs](#language-packs)
   - [Linked Stories](#linked-stories)
