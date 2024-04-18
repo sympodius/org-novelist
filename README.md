@@ -167,7 +167,7 @@ If you have automatic referencing turned on, you should see a `Glossary` at the 
 
 Additionally, you can also toggle automatic referencing on or off by running the command: `org-novelist-toggle-automatic-referencing`
 
-With the glossary in place, whenever you use the name or alias for anything that has a notes file, the text will turn into a link to that entry in the glossary. Once at the correct location in the glossary, you can link to the associated notes file. If you would prefer to go back to the point in the text you just linked from, simply hit `C-u C-SPC`.
+With the glossary in place, whenever you use the name or alias for anything that has a notes file, the text will turn into a link to that entry in the glossary. Once at the correct location in the glossary, you can link to the associated notes file. If you prefer to go back to the point in the text you just linked from, simply hit <kbd>C-u C-SPC</kbd>  (or <kbd>SPC u C-SPC</kbd> for [Evil](https://github.com/emacs-evil/evil) users).
 
 If you have automatic referencing turned on, then every time you save your main text, the note files will be updated to reference all lines of text in which they appear, allowing you to quickly link to that point in your story.
 
