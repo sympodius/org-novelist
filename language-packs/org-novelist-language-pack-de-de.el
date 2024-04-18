@@ -264,7 +264,7 @@
 (defconst orgn--notes-name-search-de-DE "[[:space:][:punct:]]+?%s[[:space:][:punct:]]+?" "Regexp to match names of things in chapter files.")
 (defconst orgn--notes-name-org-link-search-de-DE "\\[\\[:space:\\]\\[:punct:\\]\\]+?%s\\[\\[:space:\\]\\[:punct:\\]\\]+?" "Regexp to match, from an Org mode link, names of things in chapter files.")
 
-;;;; Internationalized Functions
+;;;; Internationalised Functions
 
 (defun orgn--system-safe-name-de-DE (str)
   "Convert STR to a directory safe name.

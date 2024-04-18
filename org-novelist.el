@@ -290,7 +290,7 @@
 (defconst orgn--no-props-found-en-GB "No props found" "No props found in story.")
 (defconst orgn--no-places-found-en-GB "No places found" "No places found in story.")
 ;; <<filename>> (without the << >> brackets) must share the same value as org-novelist--filename-en-GB.
-(defconst orgn--filename-is-not-a-recognised-index-en-GB "<<filename>> is not a recognized index" "Index is not of a known type.")
+(defconst orgn--filename-is-not-a-recognised-index-en-GB "<<filename>> is not a recognised index" "Index is not of a known type.")
 (defconst orgn--auto-ref-now-on-en-GB "Org Novelist automatic referencing has been turned ON" "Inform user that automatic referencing has been turned on.")
 (defconst orgn--auto-ref-now-off-en-GB "Org Novelist automatic referencing has been turned OFF" "Inform user that automatic referencing has been turned off.")
 (defconst orgn--language-tag-en-GB "language tag" "Placeholder for the language code, used in generating error messages.")  ; Based on https://www.w3.org/International/articles/language-tags/index.en
@@ -307,7 +307,7 @@
 (defconst orgn--notes-name-search-en-GB "[[:space:][:punct:]]+?%s[[:space:][:punct:]]+?" "Regexp to match names of things in chapter files.")
 (defconst orgn--notes-name-org-link-search-en-GB "\\[\\[:space:\\]\\[:punct:\\]\\]+?%s\\[\\[:space:\\]\\[:punct:\\]\\]+?" "Regexp to match, from an Org mode link, names of things in chapter files.")
 
-;;;; Internationalized Functions
+;;;; Internationalised Functions
 
 (defun orgn--system-safe-name-en-GB (str)
   "Convert STR to a directory safe name.
@@ -449,11 +449,12 @@ Strings matching the values of `org-novelist--folder-separator' or
       ;; If we're not in a story folder, and lang-tag is bound, use lang-tag.
       (when (and not-in-story-folder-p (boundp 'orgn--lang-tag))
         (setq orgn-language-tag orgn--lang-tag))
-      ;; Fallbacks in case the above code didn't figure out the language.
+      ;; Fallback in case the above code didn't figure out the language.
       (unless (boundp 'orgn-language-tag)
         (defvar orgn-language-tag "en-GB" "The language to use for Org Novelist. Based on https://www.w3.org/International/articles/language-tags/index.en"))
       (unless orgn-language-tag
-	(setq orgn-language-tag "en-GB"))
+        (setq orgn-language-tag "en-GB"))
+      ;; End of fallback.
       (unless (boundp (intern (concat "org-novelist--okay-" orgn-language-tag)))
         ;; Language tag is set, but the language pack isn't loaded. Try to load it from standard location.
         (when (file-readable-p (expand-file-name (concat (file-name-directory (symbol-file 'org-novelist--localise-string))  orgn--language-packs-folder / orgn--language-pack-file-prefix (downcase orgn-language-tag) ".el")))
@@ -562,7 +563,7 @@ a supported language. The default is \"en-GB\"."
 (defalias 'orgn--lf 'orgn--localise-function)  ; Make an alias to keep code a little cleaner
 
 
-;;;; Customization variables
+;;;; Customisation variables
 
 (defgroup org-novelist nil
   "Helper functions for novel writing with Org mode."
@@ -672,7 +673,7 @@ The resultant string should be suitable for the current operating system."
           (forward-char -2)
           (delete-region (point) pos))))
     (setq str (buffer-string)))
-  (setq str (orgn--replace-string-in-string "\\" "\\\\" str))  ; Escape any backslashs
+  (setq str (orgn--replace-string-in-string "\\" "\\\\" str))  ; Escape any backslashes
   (setq str (orgn--replace-string-in-string "\"" "\\\"" str))  ; Escape any quotes (this must be run after escaping backslashes)
   str)
 
@@ -1180,7 +1181,7 @@ related to the current buffer."
                               (while (re-search-forward (format regexp name) nil t)
                                 (backward-word)
                                 (when (thing-at-point 'sentence t)
-                                  ;; Sanitize sentences to not include links before adding.
+                                  ;; Sanitise sentences to not include links before adding.
                                   (puthash (line-number-at-pos) (orgn--sanitize-string (thing-at-point 'sentence t)) found-aliases))
                                 (forward-word)))))
                         ;; We should now have a hash table of found references
@@ -1318,7 +1319,7 @@ values."
 (defun orgn--set-file-property-value (property value &optional file no-overwrite)
   "Given a FILE and VALUE, change PROPERTY value of that file.
 If property not found, add it.
-If no file given, attmept to use current buffer.
+If no file given, attempt to use current buffer.
 If NO-OVERWRITE is t, don't replace existing property, just add new one."
   (when file
     (when (file-exists-p file)
@@ -2976,7 +2977,7 @@ Once template is populated, it will be written to file."
 
 
 
-;;;; User Acessible Functions
+;;;; User Accessible Functions
 
 ;;;###autoload
 (defun orgn-new-story (story-name story-folder)
@@ -3808,7 +3809,7 @@ PLACE-NAME will be the name given to the place."
       (remove-hook 'post-command-hook 'orgn--reset-automatic-referencing))))
 
 (defun orgn-update-references (&optional story-folder)
-  "Given a STORY-FOLDER, update all crossreferences in story."
+  "Given a STORY-FOLDER, update all cross-references in story."
   (interactive)
   (if (not story-folder)
       (setq story-folder (orgn--story-root-folder))
@@ -4857,7 +4858,7 @@ Creating, linking, and laying out files in the Org Novelist
 methodology can be done without the use of Emacs or the Org Novelist
 package, but using the package within Emacs will provide helper
 functions that make the methodology much easier to use; allowing the
-following of links, programmatic updating of crossreferences, and
+following of links, programmatic updating of cross-references, and
 the ability to programatically export to other formats.
 
 The following commands are available:
