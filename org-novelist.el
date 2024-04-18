@@ -1075,7 +1075,8 @@ that appear in that file."
                 (setq orgn-automatic-referencing-p orgn--autoref-p)
                 (error (concat (orgn--ls "file-not-found") ": " key))
                 (throw 'EXPORT-STORY-FAULT (concat (orgn--ls "file-not-found") ": " key))))
-            (setq glossary-str (concat glossary-str curr-entry "\n\n"))))
+            (unless (string= curr-entry "")
+              (setq glossary-str (concat glossary-str curr-entry "\n\n")))))
         (eval (concat (string-trim glossary-str) "\n"))))))
 
 (defun orgn--make-file-chapter-references-string (file &optional story-folder)
