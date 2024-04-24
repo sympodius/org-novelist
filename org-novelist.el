@@ -4382,6 +4382,11 @@ export files."
           (orgn--set-file-property-value curr-property
                                          (orgn--get-file-property-value curr-property (concat story-folder / orgn--config-filename))
                                          (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending)))
+        ;; Make sure new properties have been saved to output file.
+        (when (file-exists-p (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
+          (when (file-writable-p (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
+            (find-file (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
+            (orgn--save-current-file)))
         ;; Check if any generators are set and act accordingly.
         ;; Get list of notes names to be included in glossary, then add to end of file.
         ;; This must be run before adding index properties to export file.
