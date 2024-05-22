@@ -1921,7 +1921,7 @@ open buffer."
                   (setq new-aliases-str (substring new-aliases-str 2)))
                 ;; Regenerate file contents and rename it.
                 (erase-buffer)
-                (insert (orgn--replace-string-in-string chosen-object new-object-name (org-file-contents object-file)))
+                (insert (orgn--replace-string-in-string chosen-object new-object-name (org-file-contents object-file) t))
                 (goto-char (point-max))
                 (insert appearances-subtree)
                 (orgn--set-file-property-value "TITLE" new-object-name object-file)
