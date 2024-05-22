@@ -681,11 +681,9 @@ The resultant string should be suitable for the current operating system."
   "Run the deprecated org-show-all when Org version is less than 9.6.
 Otherwise, run org-fold-show-all."
   (unless orgn--org-version-checked-p
-    (if (or (> (string-to-number (nth 0 (split-string (org-version) "\\."))) 9)
-            (and (= (string-to-number (nth 0 (split-string (org-version) "\\."))) 9)
-                 (>= (string-to-number (nth 1 (split-string (org-version) "\\."))) 6)))
-        (setq orgn--org-9.6-or-above-p t)
-      (setq orgn--org-9.6-or-above-p nil))
+    (if (string-version-lessp (org-version) "9.6")
+        (setq orgn--org-9.6-or-above-p nil)
+      (setq orgn--org-9.6-or-above-p t))
     (setq orgn--org-version-checked-p t))
   (if orgn--org-9.6-or-above-p
       (org-fold-show-all)
@@ -697,11 +695,9 @@ Otherwise, run `format-time-string'.
 FORMAT-STRING is the output format.
 TIME-ZONE is the given time. If omitted or nil, use local time."
   (unless orgn--org-version-checked-p
-    (if (or (> (string-to-number (nth 0 (split-string (org-version) "\\."))) 9)
-            (and (= (string-to-number (nth 0 (split-string (org-version) "\\."))) 9)
-                 (>= (string-to-number (nth 1 (split-string (org-version) "\\."))) 6)))
-        (setq orgn--org-9.6-or-above-p t)
-      (setq orgn--org-9.6-or-above-p nil))
+    (if (string-version-lessp (org-version) "9.6")
+        (setq orgn--org-9.6-or-above-p nil)
+      (setq orgn--org-9.6-or-above-p t))
     (setq orgn--org-version-checked-p t))
   (if orgn--org-9.6-or-above-p
       (format-time-string format-string time-zone)
