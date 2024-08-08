@@ -1318,7 +1318,6 @@ values."
 If property not found, add it.
 If no file given, attempt to use current buffer.
 If NO-OVERWRITE is t, don't replace existing property, just add new one."
-  (message "No ovewrite? %s" no-overwrite)
   (when file
     (when (file-exists-p file)
       (when (file-readable-p file)
@@ -4368,9 +4367,7 @@ export files."
       ;; Save the results.
       (when (file-exists-p (concat story-folder / orgn--config-filename))
         (setq curr-properties-list (orgn--get-file-properties (concat story-folder / orgn--config-filename)))
-	;; NEW
 	(dolist (kv curr-properties-list)
-	  (message "FROM CONFIG %s" kv)
 	  (orgn--set-file-property-value (car kv)
 					 (cdr kv)
 					 (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending)
