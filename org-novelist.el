@@ -1376,26 +1376,21 @@ If FILE not provided, work on current buffer."
       (orgn--delete-line))))
 
 (defun orgn--get-file-properties (file)
-  "Given a FILE, return the properties."
-  (let ((property-list '())
-        (regexp-start "^[ \t]*#\\+")
-        (regexp-end ": ")
-        (case-fold-search t)
-        beg
-        beg-line-num)
-    (with-temp-buffer
-      (when (file-exists-p file)
-        (when (file-readable-p file)
-          (insert-file-contents file)
-          (goto-char (point-min))
-          (while (re-search-forward regexp-start nil t)
-            (setq beg (point))
-            (setq beg-line-num (line-number-at-pos))
-            (when (re-search-forward regexp-end nil t)
-              (when (= beg-line-num (line-number-at-pos))
-                (forward-char -2)
-                (setq property-list (cons (org-trim (buffer-substring beg (point))) property-list))))))))
-    property-list))
+  "Given a FILE, return the properties as an alist."
+
+  (let (properties)
+    (with-temp-buffer (org-novelist-mode)
+		      (insert-file-contents file)
+		      (goto-char (point-min))
+		      (org-element-map (org-element-parse-buffer 'element) 'keyword
+			(lambda (x)
+			  (let ((k (org-element-property :key x))
+				(v (org-element-property :value x)))
+			    (push (cons k v) properties)))))
+    (reverse properties)))
+
+
+
 
 (defun orgn--get-file-subtree (file header &optional no-header)
   "Given a FILE, and HEADER, return the contents of the header's subtree.
@@ -4151,7 +4146,7 @@ export files."
       ;; Process chapters.
       (while fm-file-list
         (setq curr-chap-file (expand-file-name (pop fm-file-list)))
-        (setq curr-properties-list (delete "INDEX" (delete "TITLE" (orgn--get-file-properties curr-chap-file))))
+        (setq curr-properties-list (assoc-delete-all "INDEX" (assoc-delete-all "TITLE" (orgn--get-file-properties curr-chap-file))))
         ;; Generate header for current chapter. TITLE property in file will override the one in the Chapter Index, but otherwise the Chapter Index line will be used, set to level 1.
         (when (file-readable-p (concat story-folder / indices-folder / chapter-index))
           (with-temp-buffer
@@ -4196,13 +4191,13 @@ export files."
             (when (not (string= (cdr curr-index-property) "???"))
               (org-set-property (car curr-index-property) (cdr curr-index-property))))
           (org-set-property (upcase orgn--matter-type-property) (upcase orgn--front-matter-value))
-          (while curr-properties-list
-            (setq curr-property (pop curr-properties-list))
-            (org-set-property curr-property (orgn--get-file-property-value curr-property curr-chap-file)))
+
+	  (dolist (kv curr-properties-list)
+	    (org-set-property (car kv) (cdr kv)))
           (setq content (concat content (buffer-substring (point-min) (buffer-size)) "\n"))))
       (while mm-file-list
         (setq curr-chap-file (pop mm-file-list))
-        (setq curr-properties-list (delete "INDEX" (delete "TITLE" (orgn--get-file-properties curr-chap-file))))
+        (setq curr-properties-list (assoc-delete-all "INDEX" (assoc-delete-all "TITLE" (orgn--get-file-properties curr-chap-file))))
         ;; Generate header for current chapter. TITLE property in file will override the one in the Chapter Index, but otherwise the Chapter Index line will be used, set to level 1.
         (when (file-readable-p (concat story-folder / indices-folder / chapter-index))
           (with-temp-buffer
@@ -4247,13 +4242,12 @@ export files."
             (when (not (string= (cdr curr-index-property) "???"))
               (org-set-property (car curr-index-property) (cdr curr-index-property))))
           (org-set-property (upcase orgn--matter-type-property) (upcase orgn--main-matter-value))
-          (while curr-properties-list
-            (setq curr-property (pop curr-properties-list))
-            (org-set-property curr-property (orgn--get-file-property-value curr-property curr-chap-file)))
+	  (dolist (kv curr-properties-list)
+	    (org-set-property (car kv) (cdr kv)))
           (setq content (concat content (buffer-substring (point-min) (buffer-size)) "\n"))))
       (while bm-file-list
         (setq curr-chap-file (expand-file-name (pop bm-file-list)))
-        (setq curr-properties-list (delete "INDEX" (delete "TITLE" (orgn--get-file-properties curr-chap-file))))
+        (setq curr-properties-list (assoc-delete-all "INDEX" (assoc-delete-all "TITLE" (orgn--get-file-properties curr-chap-file))))
         ;; Generate header for current chapter. TITLE property in file will override the one in the Chapter Index, but otherwise the Chapter Index line will be used, set to level 1.
         (when (file-readable-p (concat story-folder / indices-folder / chapter-index))
           (with-temp-buffer
@@ -4298,9 +4292,9 @@ export files."
             (when (not (string= (cdr curr-index-property) "???"))
               (org-set-property (car curr-index-property) (cdr curr-index-property))))
           (org-set-property (upcase orgn--matter-type-property) (upcase orgn--back-matter-value))
-          (while curr-properties-list
-            (setq curr-property (pop curr-properties-list))
-            (org-set-property curr-property (orgn--get-file-property-value curr-property curr-chap-file)))
+
+	  (dolist (kv curr-properties-list)
+	    (org-set-property (car kv) (cdr kv)))
           (setq content (concat content (buffer-substring (point-min) (buffer-size)) "\n"))))
       ;; Make sure export backends are reset to user-set values.
       (progn
@@ -4373,11 +4367,15 @@ export files."
       ;; Save the results.
       (when (file-exists-p (concat story-folder / orgn--config-filename))
         (setq curr-properties-list (orgn--get-file-properties (concat story-folder / orgn--config-filename)))
-        (while curr-properties-list
-          (setq curr-property (pop curr-properties-list))
-          (orgn--set-file-property-value curr-property
-                                         (orgn--get-file-property-value curr-property (concat story-folder / orgn--config-filename))
-                                         (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending)))
+	(dolist (kv curr-properties-list)
+	  (let ((mutable-properties (list "TITLE" "AUTHOR" "EMAIL" "DATE"))  ; Properties that should be overridden by config file
+		(no-overwrite nil))
+	    (unless (member (upcase (car kv)) mutable-properties)
+	      (setq no-overwrite t))
+	    (orgn--set-file-property-value (car kv)
+					   (cdr kv)
+					   (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending)
+					   no-overwrite)))
         ;; Make sure new properties have been saved to output file.
         (when (file-exists-p (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
           (when (file-writable-p (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
