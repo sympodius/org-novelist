@@ -1377,20 +1377,16 @@ If FILE not provided, work on current buffer."
 
 (defun orgn--get-file-properties (file)
   "Given a FILE, return the properties as an alist."
-
   (let (properties)
     (with-temp-buffer (org-novelist-mode)
-		      (insert-file-contents file)
-		      (goto-char (point-min))
-		      (org-element-map (org-element-parse-buffer 'element) 'keyword
-			(lambda (x)
-			  (let ((k (org-element-property :key x))
-				(v (org-element-property :value x)))
-			    (push (cons k v) properties)))))
+                      (insert-file-contents file)
+                      (goto-char (point-min))
+                      (org-element-map (org-element-parse-buffer 'element) 'keyword
+                        (lambda (x)
+                          (let ((k (org-element-property :key x))
+                                (v (org-element-property :value x)))
+                            (push (cons k v) properties)))))
     (reverse properties)))
-
-
-
 
 (defun orgn--get-file-subtree (file header &optional no-header)
   "Given a FILE, and HEADER, return the contents of the header's subtree.
@@ -3921,7 +3917,7 @@ export files."
            (curr-header "")
            curr-properties-list
            curr-index-properties-list
-           curr-property
+           (mutable-properties (list "TITLE" "AUTHOR" "EMAIL" "DATE"))  ; Properties that should be overridden by config file
            curr-index-property
            (content "")
            (curr-content "")
@@ -4191,9 +4187,8 @@ export files."
             (when (not (string= (cdr curr-index-property) "???"))
               (org-set-property (car curr-index-property) (cdr curr-index-property))))
           (org-set-property (upcase orgn--matter-type-property) (upcase orgn--front-matter-value))
-
-	  (dolist (kv curr-properties-list)
-	    (org-set-property (car kv) (cdr kv)))
+          (dolist (kv curr-properties-list)
+            (org-set-property (car kv) (cdr kv)))
           (setq content (concat content (buffer-substring (point-min) (buffer-size)) "\n"))))
       (while mm-file-list
         (setq curr-chap-file (pop mm-file-list))
@@ -4242,8 +4237,8 @@ export files."
             (when (not (string= (cdr curr-index-property) "???"))
               (org-set-property (car curr-index-property) (cdr curr-index-property))))
           (org-set-property (upcase orgn--matter-type-property) (upcase orgn--main-matter-value))
-	  (dolist (kv curr-properties-list)
-	    (org-set-property (car kv) (cdr kv)))
+          (dolist (kv curr-properties-list)
+            (org-set-property (car kv) (cdr kv)))
           (setq content (concat content (buffer-substring (point-min) (buffer-size)) "\n"))))
       (while bm-file-list
         (setq curr-chap-file (expand-file-name (pop bm-file-list)))
@@ -4292,9 +4287,8 @@ export files."
             (when (not (string= (cdr curr-index-property) "???"))
               (org-set-property (car curr-index-property) (cdr curr-index-property))))
           (org-set-property (upcase orgn--matter-type-property) (upcase orgn--back-matter-value))
-
-	  (dolist (kv curr-properties-list)
-	    (org-set-property (car kv) (cdr kv)))
+          (dolist (kv curr-properties-list)
+            (org-set-property (car kv) (cdr kv)))
           (setq content (concat content (buffer-substring (point-min) (buffer-size)) "\n"))))
       ;; Make sure export backends are reset to user-set values.
       (progn
@@ -4367,15 +4361,14 @@ export files."
       ;; Save the results.
       (when (file-exists-p (concat story-folder / orgn--config-filename))
         (setq curr-properties-list (orgn--get-file-properties (concat story-folder / orgn--config-filename)))
-	(dolist (kv curr-properties-list)
-	  (let ((mutable-properties (list "TITLE" "AUTHOR" "EMAIL" "DATE"))  ; Properties that should be overridden by config file
-		(no-overwrite nil))
-	    (unless (member (upcase (car kv)) mutable-properties)
-	      (setq no-overwrite t))
-	    (orgn--set-file-property-value (car kv)
-					   (cdr kv)
-					   (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending)
-					   no-overwrite)))
+        (dolist (kv curr-properties-list)
+          (let ((no-overwrite nil))
+            (unless (member (upcase (car kv)) mutable-properties)
+              (setq no-overwrite t))
+            (orgn--set-file-property-value (car kv)
+                                           (cdr kv)
+                                           (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending)
+                                           no-overwrite)))
         ;; Make sure new properties have been saved to output file.
         (when (file-exists-p (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
           (when (file-writable-p (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
