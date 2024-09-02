@@ -4368,10 +4368,14 @@ export files."
       (when (file-exists-p (concat story-folder / orgn--config-filename))
         (setq curr-properties-list (orgn--get-file-properties (concat story-folder / orgn--config-filename)))
 	(dolist (kv curr-properties-list)
-	  (orgn--set-file-property-value (car kv)
-					 (cdr kv)
-					 (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending)
-					 t))
+	  (let ((mutable-properties (list "TITLE" "AUTHOR" "EMAIL" "DATE"))  ; Properties that should be overridden by config file
+		(no-overwrite nil))
+	    (unless (member (upcase (car kv)) mutable-properties)
+	      (setq no-overwrite t))
+	    (orgn--set-file-property-value (car kv)
+					   (cdr kv)
+					   (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending)
+					   no-overwrite)))
         ;; Make sure new properties have been saved to output file.
         (when (file-exists-p (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
           (when (file-writable-p (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
