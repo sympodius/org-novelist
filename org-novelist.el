@@ -82,7 +82,7 @@
 (defconst orgn--config-filename "org-novelist-config.org" "Filename of where Org Novelist will store configuration data.")
 (defconst orgn--data-filename "org-novelist-data.org" "Filename of where Org Novelist will story less mutable data.")
 (defconst orgn--file-ending ".org" "The ending of the filenames used in Org Novelist.")
-(defconst orgn--mode-identifier "; -*-Org-Novelist-*-" "The Emacs mode identifier for Org Novelist.")
+(defconst orgn--mode-identifier "# -*-Org-Novelist-*-" "The Emacs mode identifier for Org Novelist.")
 (defconst orgn--language-tag-property "LANGUAGE_TAG" "Property key for the language tag associated with an Org Novelist story.")  ; Based on https://www.w3.org/International/articles/language-tags/index.en
 (defconst orgn--aliases-property "ALIASES" "Property key for the notes name aliases in a notes file.")
 (defconst orgn--add-to-generators-property "ADD_TO_GENERATORS" "Property key for generators notes should be added to (eg, index, glossary).")

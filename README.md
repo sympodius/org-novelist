@@ -304,7 +304,7 @@ Again, this is just a wrapper for Org mode's built-in `org-odt-export-to-odt` fu
 Now that you have your templates set up, you need to tell Org Novelist to use them. From you story's `main.org` file, follow the link to `Export Settings`. The new file will be blank (apart from the Org Novelist mode declaration), but you can fill it with these contents:
 
 ```
-; -*-Org-Novelist-*-
+# -*-Org-Novelist-*-
 * Exports
 ** [[file:Exports/Basic-ODT/ExportedStoryName.odt][Basic ODT]]
 Exports/org-odt-export-to-odt.el
@@ -323,7 +323,7 @@ Additionally, you should now have two exported files in two new folders within y
 On the subject of keeping output files reproducible, you can also lock the title, author, author email, and date of any story. This is also useful if you want to publish something using a different name and email than what you set as the Org Novelist default for your stories. Change the export settings file to something like this:
 
 ```
-; -*-Org-Novelist-*-
+# -*-Org-Novelist-*-
 #+TITLE: A Totally Different Story Name
 #+AUTHOR: A. D. Ifferent-Author
 #+EMAIL: pseudo@nym-email.com
