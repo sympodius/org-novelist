@@ -57,7 +57,6 @@
 ;;;; Require other packages
 
 (require 'org)  ; Org Novelist is built upon the incredible work of Org mode
-(require 'org-inlinetask)  ; So that we have access to org-inlinetask-min-level
 (require 'ox)  ; Necessary to call Org's built-in export functions.
 
 
