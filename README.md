@@ -69,6 +69,50 @@ You may also choose to change the following variables in your Emacs configuratio
 (setq org-novelist-automatic-referencing-p nil)  ; Set this variable to 't' if you want Org Novelist to always keep note links up to date. This may slow down some systems when operating on complex stories. It defaults to 'nil' when not set
 ```
 
+If you'd like to use keybindings with Org Novelist, you could also try adding something like the following below that:
+
+``` elisp
+(keymap-global-set "C-c n n s" 'org-novelist-new-story)
+(add-hook 'org-novelist-mode-hook
+            (lambda ()
+              (keymap-set org-novelist-mode-map "C-c n n c"
+                            'org-novelist-new-chapter)
+              (keymap-set org-novelist-mode-map "C-c n d c"
+                            'org-novelist-destroy-chapter)
+              (keymap-set org-novelist-mode-map "C-c n r c"
+                            'org-novelist-rename-chapter)
+              (keymap-set org-novelist-mode-map "C-c n n a"
+                            'org-novelist-new-character)
+              (keymap-set org-novelist-mode-map "C-c n d a"
+                            'org-novelist-destroy-character)
+              (keymap-set org-novelist-mode-map "C-c n r a"
+                            'org-novelist-rename-character)
+              (keymap-set org-novelist-mode-map "C-c n n p"
+                            'org-novelist-new-prop)
+              (keymap-set org-novelist-mode-map "C-c n d p"
+                            'org-novelist-destroy-prop)
+              (keymap-set org-novelist-mode-map "C-c n r p"
+                            'org-novelist-rename-prop)
+              (keymap-set org-novelist-mode-map "C-c n n l"
+                            'org-novelist-new-place)
+              (keymap-set org-novelist-mode-map "C-c n d l"
+                            'org-novelist-destroy-place)
+              (keymap-set org-novelist-mode-map "C-c n r l"
+                            'org-novelist-rename-place)
+              (keymap-set org-novelist-mode-map "C-c n u"
+                            'org-novelist-update-references)
+              (keymap-set org-novelist-mode-map "C-c n r s"
+                            'org-novelist-rename-story)
+              (keymap-set org-novelist-mode-map "C-c n e"
+                            'org-novelist-export-story)
+              (keymap-set org-novelist-mode-map "C-c n l l"
+                            'org-novelist-link-to-story)
+              (keymap-set org-novelist-mode-map "C-c n l u"
+                            'org-novelist-unlink-from-story)
+              (keymap-set org-novelist-mode-map "C-c n t"
+                            'org-novelist-toggle-automatic-referencing)))
+```
+
 ## Use-package
 For users of `use-package`, an entry like the following will setup Org Novelist on your system, after downloading the `org-novelist.el` file:
 
@@ -79,8 +123,29 @@ For users of `use-package`, an entry like the following will setup Org Novelist 
   :custom
     (org-novelist-author "John Urquhart Ferguson")  ; The default author name to use when exporting a story. Each story can also override this setting
     (org-novelist-author-email "mail@johnurquhartferguson.info")  ; The default author contact email to use when exporting a story. Each story can also override this setting
-    (org-novelist-automatic-referencing-p nil))  ; Set this variable to 't' if you want Org Novelist to always keep note links up to date. This may slow down some systems when operating on complex stories. It defaults to 'nil' when not set
+    (org-novelist-automatic-referencing-p nil)  ; Set this variable to 't' if you want Org Novelist to always keep note links up to date. This may slow down some systems when operating on complex stories. It defaults to 'nil' when not set
+  :bind (("C-c n n s" . org-novelist-new-story)
+          :map org-novelist-mode-map
+          ("C-c n n c" . org-novelist-new-chapter)
+          ("C-c n d c" . org-novelist-destroy-chapter)
+          ("C-c n r c" . org-novelist-rename-chapter)
+          ("C-c n n a" . org-novelist-new-character)
+          ("C-c n d a" . org-novelist-destroy-character)
+          ("C-c n r a" . org-novelist-rename-character)
+          ("C-c n n p" . org-novelist-new-prop)
+          ("C-c n d p" . org-novelist-destroy-prop)
+          ("C-c n r p" . org-novelist-rename-prop)
+          ("C-c n n l" . org-novelist-new-place)
+          ("C-c n d l" . org-novelist-destroy-place)
+          ("C-c n r l" . org-novelist-rename-place)
+          ("C-c n u"   . org-novelist-update-references)
+          ("C-c n r s" . org-novelist-rename-story)
+          ("C-c n e"   . org-novelist-export-story)
+          ("C-c n l l" . org-novelist-link-to-story)
+          ("C-c n l u" . org-novelist-unlink-from-story)
+          ("C-c n t"   . org-novelist-toggle-automatic-referencing)))
 ```
+
 
 # Tutorial
 In order to learn the system, let us create an Org Novelist story. As usual, all these Org Novelist functions can be used by bringing up a command buffer with <kbd>M-x</kbd> .
