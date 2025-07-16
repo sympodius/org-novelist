@@ -719,8 +719,9 @@ TIME-ZONE is the given time. If omitted or nil, use local time."
 ;;;; File Manipulation Worker Functions
 
 (defun orgn--next-org-header ()
-  (or (zerop (org-next-visible-heading 1))
-      (null (org-next-visible-heading 1))))
+  (let ((visible-heading (org-next-visible-heading 1)))
+    (or (zerop visible-heading)
+        (null visible-heading))))
 
 (defun orgn--string-to-file (str filename)
   "Create/Overwrite FILENAME with the contents of STR."
