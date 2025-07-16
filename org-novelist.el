@@ -718,6 +718,10 @@ TIME-ZONE is the given time. If omitted or nil, use local time."
 
 ;;;; File Manipulation Worker Functions
 
+(defun orgn--next-org-header ()
+  (or (zerop (org-next-visible-heading 1))
+      (null (org-next-visible-heading 1))))
+
 (defun orgn--string-to-file (str filename)
   "Create/Overwrite FILENAME with the contents of STR."
   (catch 'FILE-NOT-WRITABLE
@@ -1610,7 +1614,7 @@ open buffer."
     (goto-char (point-min))
     (org-novelist-mode)
     (orgn--fold-show-all)  ; Belts and braces
-    (while (zerop (org-next-visible-heading 1))
+    (while (orgn--next-org-header)
       (when (string= subtree-heading (nth 4 (org-heading-components)))
         (org-back-to-heading t)
         (org-mark-subtree)
@@ -1737,7 +1741,7 @@ open buffer."
                 (goto-char (point-min))
                 (org-novelist-mode)
                 (orgn--fold-show-all)  ; Belts and braces
-                (while (zerop (org-next-visible-heading 1))
+                (while (orgn--next-org-header)
                   (when (string= chosen-object (orgn--heading-last-link-headline-text))
                     (setq beg (point))
                     (goto-char (point-min))
@@ -2224,8 +2228,7 @@ open buffer."
                       (goto-char (point-min))
                       (org-novelist-mode)
                       (orgn--fold-show-all)  ; Belts and braces
-                      (when (zerop (org-next-visible-heading 1))
-
+                      (when (orgn--next-org-header)
                         (unless (and (string= (orgn--heading-last-link-headline-text) (orgn--story-name story-folder))
                                      (= 1 (org-current-level)))
                           (setq file-malformed-p t))))
@@ -2252,13 +2255,11 @@ open buffer."
                   (goto-char (point-min))
                   (org-novelist-mode)
                   (orgn--fold-show-all)  ; Belts and braces
-                  (when (zerop (org-next-visible-heading 1))
-
+                  (when (orgn--next-org-header)
                     (unless (and (string= (orgn--heading-last-link-headline-text) (orgn--story-name story-folder))
                                  (= 1 (org-current-level)))
                       (setq file-malformed-p t)))
-                  (when (zerop (org-next-visible-heading 1))
-
+                  (when (orgn--next-org-header)
                     (unless (and (or (string= (orgn--ls "front-matter-heading") (nth 4 (org-heading-components)))
                                      (string= (orgn--ls "main-matter-heading") (nth 4 (org-heading-components)))
                                      (string= (orgn--ls "back-matter-heading") (nth 4 (org-heading-components))))
@@ -3074,13 +3075,11 @@ chapters to have a name, even if this will not be used on export."
                   (goto-char (point-min))
                   (org-novelist-mode)
                   (orgn--fold-show-all)  ; Belts and braces
-                  (when (zerop (org-next-visible-heading 1))
-
+                  (when (orgn--next-org-header)
                     (unless (and (string= (orgn--heading-last-link-headline-text) (orgn--story-name story-folder))
                                  (= 1 (org-current-level)))
                       (setq file-malformed t)))
-                  (when (zerop (org-next-visible-heading 1))
-
+                  (when (orgn--next-org-header)
                     (unless (and (or (string= (orgn--ls "front-matter-heading") (nth 4 (org-heading-components)))
                                      (string= (orgn--ls "main-matter-heading") (nth 4 (org-heading-components)))
                                      (string= (orgn--ls "back-matter-heading") (nth 4 (org-heading-components))))
@@ -3334,8 +3333,7 @@ CHARACTER-NAME will be the name given to the character."
       (goto-char (point-min))
       (org-novelist-mode)
       (orgn--fold-show-all)  ; Belts and braces
-      (when (zerop (org-next-visible-heading 1))
-
+      (when (orgn--next-org-header)
         (if (and (string= (orgn--heading-last-link-headline-text) (orgn--story-name story-folder))
                  (= 1 (org-current-level)))
             (if (org-goto-first-child)
@@ -3506,8 +3504,7 @@ PROP-NAME will be the name given to the prop."
       (goto-char (point-min))
       (org-novelist-mode)
       (orgn--fold-show-all)  ; Belts and braces
-      (when (zerop (org-next-visible-heading 1))
-
+      (when (orgn--next-org-header)
         (if (and (string= (orgn--heading-last-link-headline-text) (orgn--story-name story-folder))
                  (= 1 (org-current-level)))
             (if (org-goto-first-child)
@@ -3678,8 +3675,7 @@ PLACE-NAME will be the name given to the place."
       (goto-char (point-min))
       (org-novelist-mode)
       (orgn--fold-show-all)  ; Belts and braces
-      (when (zerop (org-next-visible-heading 1))
-
+      (when (orgn--next-org-header)
         (if (and (string= (orgn--heading-last-link-headline-text) (orgn--story-name story-folder))
                  (= 1 (org-current-level)))
             (if (org-goto-first-child)
@@ -4535,8 +4531,7 @@ The linked story should also link back to the original story in the same way."
             (goto-char (point-min))
             (org-novelist-mode)
             (orgn--fold-show-all)  ; Belts and braces
-            (when (zerop (org-next-visible-heading 1))
-
+            (when (orgn--next-org-header)
               (if (and (string= (nth 4 (org-heading-components)) (orgn--story-name (directory-file-name story-folder)))
                        (= 1 (org-current-level)))
                   (if (org-goto-first-child)
@@ -4588,8 +4583,7 @@ The linked story should also link back to the original story in the same way."
             (goto-char (point-min))
             (org-novelist-mode)
             (orgn--fold-show-all)  ; Belts and braces
-            (when (zerop (org-next-visible-heading 1))
-
+            (when (orgn--next-org-header)
               (if (and (string= (nth 4 (org-heading-components)) (orgn--story-name (directory-file-name linked-story-folder)))
                        (= 1 (org-current-level)))
                   (if (org-goto-first-child)
@@ -4641,8 +4635,7 @@ The linked story should also link back to the original story in the same way."
               (goto-char (point-min))
               (org-novelist-mode)
               (orgn--fold-show-all)  ; Belts and braces
-              (when (zerop (org-next-visible-heading 1))
-
+              (when (orgn--next-org-header)
                 (if (and (string= (orgn--heading-last-link-headline-text) (orgn--story-name (directory-file-name linked-story-folder)))
                          (= 1 (org-current-level)))
                     (if (org-goto-first-child)
@@ -4694,8 +4687,7 @@ The linked story should also link back to the original story in the same way."
               (goto-char (point-min))
               (org-novelist-mode)
               (orgn--fold-show-all)  ; Belts and braces
-              (when (zerop (org-next-visible-heading 1))
-
+              (when (orgn--next-org-header)
                 (if (and (string= (orgn--heading-last-link-headline-text) (orgn--story-name (directory-file-name story-folder)))
                          (= 1 (org-current-level)))
                     (if (org-goto-first-child)
