@@ -3951,6 +3951,7 @@ export files."
            keys
            key
            (org-export-backends-orig nil)
+	   (org-export-registered-backends-orig nil)
            (org-export-with-toc-orig nil)
            (org-export-with-date-orig nil)
            (org-export-with-tags-orig nil)
@@ -3988,6 +3989,8 @@ export files."
       ;;  Store original user-set Org export settings.
       (when (boundp 'org-export-backends)
         (setq org-export-backends-orig org-export-backends))
+      (when (boundp 'org-export-registered-backends)
+	(setq org-export-registered-backends-orig org-export-registered-backends))
       (when (boundp 'org-export-with-toc)
         (setq org-export-with-toc-orig org-export-with-toc))
       (when (boundp 'org-export-with-date)
@@ -4133,7 +4136,7 @@ export files."
               (message "Problems while trying to load export back-end `%s'"
                        backend))
              ((not (memq backend new-list)) (push backend new-list))))
-          (set-default 'org-export-backends new-list)))
+          (set-default 'org-export-backends (reverse new-list))))
       (setq org-export-with-toc nil)
       (setq org-export-with-date nil)
       (setq org-export-with-tags t)
@@ -4317,16 +4320,7 @@ export files."
           (setq content (concat content (buffer-substring (point-min) (buffer-size)) "\n"))))
       ;; Make sure export backends are reset to user-set values.
       (progn
-        (setq org-export-registered-backends
-              (cl-remove-if-not
-               (lambda (backend)
-                 (let ((name (org-export-backend-name backend)))
-                   (or (memq name org-export-backends-orig)
-                       (catch 'parentp
-                         (dolist (b org-export-backends-orig)
-                           (and (org-export-derived-backend-p b name)
-                                (throw 'parentp t)))))))
-               org-export-registered-backends))
+        (setq org-export-registered-backends org-export-registered-backends-orig)
         (let ((new-list (mapcar #'org-export-backend-name
                                 org-export-registered-backends)))
           (dolist (backend org-export-backends-orig)
@@ -4335,7 +4329,7 @@ export files."
               (message "Problems while trying to load export back-end `%s'"
                        backend))
              ((not (memq backend new-list)) (push backend new-list))))
-          (set-default 'org-export-backends new-list)))
+          (set-default 'org-export-backends (reverse new-list))))
       (setq org-export-with-toc org-export-with-toc-orig)
       (setq org-export-with-date org-export-with-date-orig)
       (setq org-export-with-tags org-export-with-tags-orig)
