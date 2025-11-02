@@ -69,7 +69,6 @@
 (defvar orgn--emacs-version-checked-p nil "Flag to show if the Emacs version has been checked.")
 (defvar orgn--emacs-29-or-above-p nil "Flag to show if Emacs version is 29 or above.")
 (defvar orgn-mode-map (make-sparse-keymap) "Setup a keymap to pass to `easy-menu-define'.")
-(defvar orgn-menu)
 
 
 ;;;; Global Constants
@@ -723,7 +722,6 @@ TIME-ZONE is the given time. If omitted or nil, use local time."
 With ARG, repeats or can move backward if negative.
 
 Return nil if heading found, and final buffer position otherwise."
-  (interactive "p")
   (let ((regexp (concat "^" (org-get-limited-outline-regexp))))
     (if (< arg 0)
 	(beginning-of-line)
@@ -4821,7 +4819,7 @@ Once changed, inform user of new state."
 
 ;; Define the Org Novelist mode menus.
 ;; I've yet to find a way to internationalise these strings, so they're hard coded for now.
-(easy-menu-define orgn-menu orgn-mode-map "Org Novelist menu."
+(easy-menu-define nil orgn-mode-map "Org Novelist menu."
   `("Org Novelist"
     ("Story"
      ["New Story..." orgn-new-story t]
