@@ -5,6 +5,7 @@
 ![Release Version](https://img.shields.io/github/tag/sympodius/org-novelist.svg?style=flat-square&label=release&color=58839b)![Latest Release](https://img.shields.io/github/release-date/sympodius/org-novelist?style=flat-square&label=)
 ![Supports Emacs 28.1 and Higher](https://img.shields.io/badge/Supports-Emacs_28.1_and_Higher-blueviolet.svg?style=flat-square&logo=GNU%20Emacs&logoColor=white)
 ![Latest Commit](https://img.shields.io/github/last-commit/sympodius/org-novelist/development?style=flat-square)
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/J3J81NSHKV)
 
 </div>
 
