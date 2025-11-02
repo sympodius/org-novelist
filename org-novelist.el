@@ -62,7 +62,7 @@
 
 ;;;; Global Variables
 
-(defvar orgn--autoref-p nil "Temporary store for last known value of org-novelist-automatic-referencing-p.")
+(defvar orgn--autoref-p nil "Temporary store for last known value of variable `org-novelist-automatic-referencing-p'.")
 (defvar orgn--lang-tag nil "Temporary store for the original language tag set for this session.")
 (defvar orgn--org-version-checked-p nil "Flag to show if the Org mode version has been checked.")
 (defvar orgn--org-9.6-or-above-p nil "Flag to show if Org mode version is 9.6 or above.")
@@ -81,7 +81,7 @@
 (defconst orgn--data-filename "org-novelist-data.org" "Filename of where Org Novelist will story less mutable data.")
 (defconst orgn--file-ending ".org" "The ending of the filenames used in Org Novelist.")
 (defconst orgn--mode-identifier "# -*-Org-Novelist-*-" "The Emacs mode identifier for Org Novelist.")
-(defconst orgn--language-tag-property "LANGUAGE_TAG" "Property key for the language tag associated with an Org Novelist story.")  ; Based on https://www.w3.org/International/articles/language-tags/index.en
+(defconst orgn--language-tag-property "LANGUAGE_TAG" "Property key for the language tag associated with an Org Novelist story.")  ; Based on URL `https://www.w3.org/International/articles/language-tags/index.en'
 (defconst orgn--aliases-property "ALIASES" "Property key for the notes name aliases in a notes file.")
 (defconst orgn--add-to-generators-property "ADD_TO_GENERATORS" "Property key for generators notes should be added to (eg, index, glossary).")
 (defconst orgn--generate-property "GENERATE" "Property key for generators a story should apply (eg, index, glossary).")
@@ -292,7 +292,7 @@
 (defconst orgn--filename-is-not-a-recognised-index-en-GB "<<filename>> is not a recognised index" "Index is not of a known type.")
 (defconst orgn--auto-ref-now-on-en-GB "Org Novelist automatic referencing has been turned ON" "Inform user that automatic referencing has been turned on.")
 (defconst orgn--auto-ref-now-off-en-GB "Org Novelist automatic referencing has been turned OFF" "Inform user that automatic referencing has been turned off.")
-(defconst orgn--language-tag-en-GB "language tag" "Placeholder for the language code, used in generating error messages.")  ; Based on https://www.w3.org/International/articles/language-tags/index.en
+(defconst orgn--language-tag-en-GB "language tag" "Placeholder for the language code, used in generating error messages.")  ; Based on URL `https://www.w3.org/International/articles/language-tags/index.en'
 ;; <<language tag>> (without the << >> brackets) must share the same value as org-novelist--language-tag-en-GB.
 (defconst orgn--language-set-to-language-tag-en-GB "Org Novelist language set to: <<language tag>>" "Inform user that language has been set.")
 (defconst orgn--language-not-found-en-GB "Selected language pack not found." "Inform user that language pack could not be found.")
@@ -415,8 +415,8 @@ into one string. To change the language, the variable
 `org-novelist-language-tag' must be set to a supported language for STR-NAME.
 The default is \"en-GB\".
 
-Strings matching the values of `org-novelist--folder-separator' or
-`org-novelist--file-ending' will be returned without change."
+Strings matching the values of variable `org-novelist--folder-separator' or
+variable `org-novelist--file-ending' will be returned without change."
   (catch 'LOCALISATION-STRING-NOT-FOUND
     (let ((not-in-story-folder-p nil))
       ;; Check for language tag stored in data file.
@@ -450,7 +450,7 @@ Strings matching the values of `org-novelist--folder-separator' or
         (setq orgn-language-tag orgn--lang-tag))
       ;; Fallback in case the above code didn't figure out the language.
       (unless (boundp 'orgn-language-tag)
-        (defvar orgn-language-tag "en-GB" "The language to use for Org Novelist. Based on https://www.w3.org/International/articles/language-tags/index.en"))
+        (defvar orgn-language-tag "en-GB" "The language to use for Org Novelist. Based on URL `https://www.w3.org/International/articles/language-tags/index.en'"))
       (unless orgn-language-tag
         (setq orgn-language-tag "en-GB"))
       ;; End of fallback.
@@ -484,8 +484,8 @@ Strings matching the values of `org-novelist--folder-separator' or
 More strings can be included with STR-LIST, and the results will be concatenated
 into one string.
 
-Strings matching the values of `org-novelist--folder-separator' or
-`org-novelist--file-ending' will be returned without change."
+Strings matching the values of variable `org-novelist--folder-separator' or
+variable `org-novelist--file-ending' will be returned without change."
   (catch 'LOCALISATION-STRING-NOT-FOUND
     (unless (boundp (intern (concat "org-novelist--okay-" forced-lang-code)))
       ;; Language pack isn't loaded. Try to load it from standard location.
@@ -544,7 +544,7 @@ a supported language. The default is \"en-GB\"."
             (when orgn--lang-tag
               (setq orgn-language-tag orgn--lang-tag))))))
     (unless (boundp 'orgn-language-tag)
-      (defconst orgn-language-tag "en-GB" "The language to use for Org Novelist (based on https://www.w3.org/International/articles/language-tags/index.en)."))
+      (defconst orgn-language-tag "en-GB" "The language to use for Org Novelist (based on URL `https://www.w3.org/International/articles/language-tags/index.en)'."))
     (unless orgn-language-tag
       (setq orgn-language-tag "en-GB"))
     (unless (boundp (intern (concat "org-novelist--okay-" orgn-language-tag)))
@@ -573,7 +573,7 @@ a supported language. The default is \"en-GB\"."
 
 (defcustom orgn-language-tag "en-GB"
   "The language to use for Org Novelist.
-Based on https://www.w3.org/International/articles/language-tags/index.en
+Based on URL `https://www.w3.org/International/articles/language-tags/index.en'
 A corresponding language pack must be included with Org Novelist."
   :group 'org-novelist
   :type 'string)
@@ -677,8 +677,8 @@ The resultant string should be suitable for the current operating system."
   str)
 
 (defun orgn--fold-show-all ()
-  "Run the deprecated org-show-all when Org version is less than 9.6.
-Otherwise, run org-fold-show-all."
+  "Run the deprecated `org-show-all' when Org version is less than 9.6.
+Otherwise, run `org-fold-show-all'."
   (unless orgn--org-version-checked-p
     (if (string-version-lessp (org-version) "9.6")
         (setq orgn--org-9.6-or-above-p nil)
