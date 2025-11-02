@@ -10,7 +10,7 @@
 ;; Prefix: org-novelist
 ;; Package-Requires: ((emacs "28.1") (org "9.5.5"))
 
-;; Version 0.0.3
+;; Version 0.0.4
 
 ;; This file is not part of GNU Emacs.
 ;;
