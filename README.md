@@ -147,6 +147,55 @@ For users of `use-package`, an entry like the following will setup Org Novelist 
           ("C-c n t"   . org-novelist-toggle-automatic-referencing)))
 ```
 
+Or, if you are using Emacs version Emacs 30.1 or greater, you can use something like the following to have `use-package` get the latest version of Org Novelist automatically from the GitHub:
+
+``` elisp
+(use-package org-novelist
+  :vc (:url "https://github.com/sympodius/org-novelist.git"
+       :rev :newest)  ; Use the latest commit, rather than the latest release. For latest release, remove ":rev :newest"
+  :custom
+    (org-novelist-author "John Urquhart Ferguson")  ; The default author name to use when exporting a story. Each story can also override this setting
+    (org-novelist-author-email "mail@johnurquhartferguson.info")  ; The default author contact email to use when exporting a story. Each story can also override this setting
+    (org-novelist-automatic-referencing-p nil)  ; Set this variable to 't' if you want Org Novelist to always keep note links up to date. This may slow down some systems when operating on complex stories. It defaults to 'nil' when not set
+  :bind (("C-c n n s" . org-novelist-new-story)
+          :map org-novelist-mode-map
+          ("C-c n n c" . org-novelist-new-chapter)
+          ("C-c n d c" . org-novelist-destroy-chapter)
+          ("C-c n r c" . org-novelist-rename-chapter)
+          ("C-c n n a" . org-novelist-new-character)
+          ("C-c n d a" . org-novelist-destroy-character)
+          ("C-c n r a" . org-novelist-rename-character)
+          ("C-c n n p" . org-novelist-new-prop)
+          ("C-c n d p" . org-novelist-destroy-prop)
+          ("C-c n r p" . org-novelist-rename-prop)
+          ("C-c n n l" . org-novelist-new-place)
+          ("C-c n d l" . org-novelist-destroy-place)
+          ("C-c n r l" . org-novelist-rename-place)
+          ("C-c n u"   . org-novelist-update-references)
+          ("C-c n r s" . org-novelist-rename-story)
+          ("C-c n e"   . org-novelist-export-story)
+          ("C-c n l l" . org-novelist-link-to-story)
+          ("C-c n l u" . org-novelist-unlink-from-story)
+          ("C-c n t"   . org-novelist-toggle-automatic-referencing)))
+```
+
+I use vanilla Emacs, but [Mariusz Klochowicz ](https://github.com/klochowicz) has contributed this recipe for users of [Doom](https://github.com/doomemacs/doomemacs) (and it should be added to your `packages.el` file):
+
+``` elisp
+(package! org-novelist
+  :recipe (:host github :repo "sympodius/org-novelist" :branch "development" :files ("*.el")))
+```
+
+For users of [Spacemacs](https://github.com/syl20bnr/spacemacs): this recipe has been contributed by [Marco Milanesi](https://github.com/kpanic) (and should be added to the `dotspacemacs-additional-packages` variable):
+
+``` elisp
+(org-novelist
+  :location (recipe
+             :fetcher github
+             :repo "sympodius/org-novelist"
+             :branch "development"))
+```
+
 
 # Tutorial
 In order to learn the system, let us create an Org Novelist story. As usual, all these Org Novelist functions can be used by bringing up a command buffer with <kbd>M-x</kbd> .
