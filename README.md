@@ -16,6 +16,7 @@
   - [Try Without Installing](#try-without-installing)
   - [Simple Install](#simple-install)
   - [Use-package](#use-package)
+  - [Doom and Spacemacs](#doom-and-spacemacs)
 - [Tutorial](#tutorial)
   - [New Story](#new-story)
   - [Characters](#characters)
@@ -178,6 +179,7 @@ Or, if you are using Emacs version Emacs 30.1 or greater, you can use something 
           ("C-c n t"   . org-novelist-toggle-automatic-referencing)))
 ```
 
+## Doom and Spacemacs
 I use vanilla Emacs, but [Mariusz Klochowicz ](https://github.com/klochowicz) has contributed this recipe for users of [Doom](https://github.com/doomemacs/doomemacs) (and it should be added to your `packages.el` file):
 
 ``` elisp
@@ -432,7 +434,7 @@ Save the file, and then run the following command: `org-novelist-export-story`
 
 You will be presented with a new buffer containing your whole story in one Org file.
 
-Additionally, you should now have two exported files in two new folders within your story's `Exports` folder. You can add as many output formats as you like using this system. Other example templates can be found at [https://github.com/sympodius/org-novelist-export-templates/](https://github.com/sympodius/org-novelist-export-templates/)
+Additionally, you should now have two exported files in two new folders within your story's `Exports` folder. You can add as many output formats as you like using this system. Other examples (and some much more powerful export templates) can be found at [https://github.com/sympodius/org-novelist-export-templates/](https://github.com/sympodius/org-novelist-export-templates/)
 
 On the subject of keeping output files reproducible, you can also lock the title, author, author email, and date of any story. This is also useful if you want to publish something using a different name and email than what you set as the Org Novelist default for your stories. Change the export settings file to something like this:
 
@@ -493,7 +495,7 @@ You can also add a description of the item on the next line. This will replace t
 
 Org Novelist now knows that you want this item included when generating glossaries for your story during export. Next, you must tell Org Novelist where in your exported file you want your glossaries to appear.
 
-### Place Glossaries
+### Placing Glossaries
 To place a glossary for the entire story at the end of the exported file, you can add an instruction in your story's `org-novelist-config.org` file. From you story's `main.org` file, follow the link to `Export Settings`. Underneath the top line specifying this is an Org Novelist file, and above a possible `Exports` heading, add the following line:
 
 ```

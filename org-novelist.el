@@ -724,20 +724,20 @@ With ARG, repeats or can move backward if negative.
 Return nil if heading found, and final buffer position otherwise."
   (let ((regexp (concat "^" (org-get-limited-outline-regexp))))
     (if (< arg 0)
-	(beginning-of-line)
+        (beginning-of-line)
       (end-of-line))
     (while (and (< arg 0) (re-search-backward regexp nil :move))
       (unless (bobp)
-	(when (org-fold-folded-p)
-	  (goto-char (org-fold-previous-visibility-change))
+        (when (org-fold-folded-p)
+          (goto-char (org-fold-previous-visibility-change))
           (unless (looking-at-p regexp)
             (re-search-backward regexp nil :mode))))
       (cl-incf arg))
     (while (and (> arg 0) (re-search-forward regexp nil :move))
       (when (org-fold-folded-p)
-	(goto-char (org-fold-next-visibility-change))
+        (goto-char (org-fold-next-visibility-change))
         (skip-chars-forward " \t\n")
-	(end-of-line))
+        (end-of-line))
       (cl-decf arg))
     (if (> arg 0) (goto-char (point-max)) (beginning-of-line))))
 
@@ -1449,12 +1449,13 @@ Assumes you are in Org mode, or a mode derived from it.
 Whitespace is trimmed from results."
   (car (last (split-string (nth 4 (org-heading-components)) "[\]\[]+" t "[ ]+"))))
 
-(defun orgn--heading-last-link-absolute-link-text ()
+(defun orgn--heading-last-link-absolute-link-text (&optional dir)
   "Return the link text of the heading link at point.
 If no link, return the full headline text.
 Assumes you are in Org mode, or a mode derived from it.
+If DIR is set, use this to form local directory for expansion.
 Whitespace is trimmed from results."
-  (expand-file-name (concat ".." (car (split-string (nth 4 (org-heading-components)) "[\]\[]+" t "file\:..")))))
+  (expand-file-name (concat ".." (car (split-string (nth 4 (org-heading-components)) "[\]\[]+" t "file\:.."))) dir))
 
 (defun orgn--get-all-story-chapters-headlines (&optional story-folder)
   "Return a list of all chapters' headlines in the story.
