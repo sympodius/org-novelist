@@ -31,6 +31,7 @@
   - [Index Generator](#index-generator)
   - [Language Packs](#language-packs)
   - [Linked Stories](#linked-stories)
+  - [Sprint Timer](#sprint-timer)
 - [Summary of Functions](#summary-of-functions)
 
 
@@ -116,6 +117,8 @@ If you'd like to use keybindings with Org Novelist, you could also try adding so
                             'org-novelist-count-words-in-story)
               (keymap-set org-novelist-mode-map "C-c n w c"
                             'org-novelist-count-words-in-current-chapter)
+              (keymap-set org-novelist-mode-map "C-c n s"
+                            'org-novelist-sprint-timer)
               (keymap-set org-novelist-mode-map "C-c n t"
                             'org-novelist-toggle-automatic-referencing)))
 ```
@@ -152,6 +155,7 @@ For users of `use-package`, an entry like the following will setup Org Novelist 
           ("C-c n l u" . org-novelist-unlink-from-story)
           ("C-c n w s" . org-novelist-count-words-in-story)
           ("C-c n w c" . org-novelist-count-words-in-current-chapter)
+          ("C-c n s"   . org-novelist-sprint-timer)
           ("C-c n t"   . org-novelist-toggle-automatic-referencing)))
 ```
 
@@ -186,6 +190,7 @@ Or, if you are using Emacs version Emacs 30.1 or greater, you can use something 
           ("C-c n l u" . org-novelist-unlink-from-story)
           ("C-c n w s" . org-novelist-count-words-in-story)
           ("C-c n w c" . org-novelist-count-words-in-current-chapter)
+          ("C-c n s"   . org-novelist-sprint-timer)
           ("C-c n t"   . org-novelist-toggle-automatic-referencing)))
 ```
 
@@ -599,6 +604,7 @@ You might also wish to change the Org Novelist mode menu to your own language, o
 (defalias 'org-novelist-verknuepfung-zu-geschichte-aufloesen 'org-novelist-unlink-from-story)
 (defalias 'org-novelist-woerter-zaehlen-geschichte 'org-novelist-count-words-in-story)
 (defalias 'org-novelist-woerter-zaehlen-kapitel 'org-novelist-count-words-in-current-chapter)
+(defalias 'org-novelist-sprint-timer 'org-novelist-sprint-timer)
 (defalias 'org-novelist-automatische-verweise-umschalten 'org-novelist-toggle-automatic-referencing)
 
 ;; Replace the Org Novelist menu with a de-DE equivalent.
@@ -607,11 +613,14 @@ You might also wish to change the Org Novelist mode menu to your own language, o
     ("Geschichte"
      ["Neue Geschichte..." org-novelist-new-story t]
      ["Geschichte umbenennen..." org-novelist-rename-story t]
-     ["Geschichte exportieren" org-novelist-export-story t])
+     ["Geschichte exportieren" org-novelist-export-story t]
+     ["Wörter zählen für die Geschichte" orgn-count-words-in-story t]
+     ["Schreib-Sprint starten..." orgn-sprint-timer t])
     ("Kapitel"
      ["Neues Kapitel..." org-novelist-new-chapter t]
      ["Kapitel umbenennen..." org-novelist-rename-chapter t]
-     ["Kapitel löschen..." org-novelist-destroy-chapter t])
+     ["Kapitel löschen..." org-novelist-destroy-chapter t]
+     ["Wörter zählen für aktuelles Kapitel" orgn-count-words-in-current-chapter t])
     ("Notizen"
      ("Charaktere"
       ["Neuer Charakter..." org-novelist-new-character t]
@@ -666,19 +675,23 @@ A complete `use-package` version of the above might look something like this:
     (defalias 'org-novelist-verknuepfung-zu-geschichte-aufloesen 'org-novelist-unlink-from-story)
     (defalias 'org-novelist-woerter-zaehlen-geschichte 'org-novelist-count-words-in-story)
     (defalias 'org-novelist-woerter-zaehlen-kapitel 'org-novelist-count-words-in-current-chapter)
+    (defalias 'org-novelist-sprint-timer 'org-novelist-sprint-timer)
     (defalias 'org-novelist-automatische-verweise-umschalten 'org-novelist-toggle-automatic-referencing)
   :config
     ;; Replace the Org Novelist menu with a de-DE equivalent.
     (easy-menu-define org-novelist-menu org-novelist-mode-map "Org Novelist menu."
       `("Org Novelist"
-        ("Geschichte"
+	("Geschichte"
           ["Neue Geschichte..." org-novelist-new-story t]
           ["Geschichte umbenennen..." org-novelist-rename-story t]
-          ["Geschichte exportieren" org-novelist-export-story t])
+          ["Geschichte exportieren" org-novelist-export-story t]
+          ["Wörter zählen für die Geschichte" orgn-count-words-in-story t]
+          ["Schreib-Sprint starten..." orgn-sprint-timer t])
         ("Kapitel"
           ["Neues Kapitel..." org-novelist-new-chapter t]
           ["Kapitel umbenennen..." org-novelist-rename-chapter t]
-          ["Kapitel löschen..." org-novelist-destroy-chapter t])
+          ["Kapitel löschen..." org-novelist-destroy-chapter t]
+          ["Wörter zählen für aktuelles Kapitel" orgn-count-words-in-current-chapter t])
         ("Notizen"
           ("Charaktere"
             ["Neuer Charakter..." org-novelist-new-character t]
@@ -713,6 +726,15 @@ You are free to link your story to as many previous stories as you like. However
 
 If you wish to unlink a story and no longer share its notes, you can either edit the `org-novelist-config.org` files, or use the command: `org-novelist-unlink-from-story`.
 
+## Sprint Timer
+A common technique employed by writers to encourage focus is the *word sprint* (or *writing sprint*). The idea is to set a timer and then, until the timer runs out, do nothing but write. Your goal is to write as much as possible during the sprint, and then get a report of how many words you've added to your story. People often turn this into a game by competing directly with others, or by trying to beat their own records.
+
+Org Novelist supplies a helper function to make it easier to take part in *word sprints* (or run your own) with the command: `org-novelist-sprint-timer`.
+
+When this command is called, you will be asked how long the word sprint should last. You can then input a number that represents the amount of time in seconds.
+
+There may be a slight delay while the sprint is setup, but there will be a message telling you when to start writing. When the sprint has ended, there may be another small delay before you are told the number of words that you have contributed to the story during the sprint.
+
 
 # Summary of Functions
 + `org-novelist-new-story` - Setup the skeleton files for a new story.
@@ -735,4 +757,5 @@ If you wish to unlink a story and no longer share its notes, you can either edit
 + `org-novelist-unlink-from-story` - Remove a linked story from the current story.
 + `org-novelist-count-words-in-story` - Perform an accurate word count for the story.
 + `org-novelist-count-words-in-current-chapter` - Perform an accurate word count for the current chapter.
++ `org-novelist-sprint-timer` - Start a word sprint timer, and report the results when the timer runs out.
 + `org-novelist-toggle-automatic-referencing` - Toggle automatic referencing on/off.

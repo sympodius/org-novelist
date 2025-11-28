@@ -266,6 +266,7 @@
 (defconst orgn--match-lang-tag-to-story-query-en-GB "What language was used to create this story (eg, 'en-GB')?" "A query to the user to change the session language tag.")
 (defconst orgn--story-folder-to-link-to-query-en-GB "Story folder to link to current story?" "A query to the user for the story folder where a story to be linked is located.")
 (defconst orgn--unlink-from-which-story-query-en-GB "Unlink from which story?" "A query to the user for which story to unlink from the current story.")
+(defconst orgn--sprint-length-query-en-GB "Sprint length (eg, '5 minutes')?" "A query to the user for how long the sprint length should be.")
 ;; Error/Throw/Messages
 (defconst orgn--function-name-en-GB "function name" "Placeholder for the name of the function, used in generating error messages.")
 (defconst orgn--filename-en-GB "filename" "Placeholder for the filename, used in generating error messages.")
@@ -318,6 +319,22 @@
 ;; <<character count>> (without the << >> brackets must share the same value as org-novelist--word-count-character-count-en-GB.
 ;; <<characters>> (without the << >> brackets) must share the same value as org-novelist--word-count-characters-en-GB.
 (defconst orgn--word-count-message-en-GB "<<Region>> has <<word count>> <<words>>, <<sentence count>> <<sentences>>, <<paragraph count>> <<paragraphs>>, and <<character count>> <<characters>>" "A message showing the word count (and other counts) of the story, current chapter, or a selection of chapters.")
+(defconst orgn--sprint-second-en-GB "second" "Part of a message for the sprint timer, indicating a single second.")
+(defconst orgn--sprint-seconds-en-GB "seconds" "Part of a message for the sprint timer, indicating more than one second.")
+(defconst orgn--sprint-word-en-GB "word" "Part of the message for the sprint timer, indicating a single word.")
+(defconst orgn--sprint-words-en-GB "words" "Part of the message for the sprint timer, indicating more than one word.")
+(defconst orgn--sprint-preparing-en-GB "Preparing sprint..." "A message to the user that a sprint will soon be starting.")
+;; <<seconds>> (without the << >> brackets must share the same value as org-novelist--sprint-seconds-en-GB.
+(defconst orgn--sprint-started-en-GB "Sprint started! You have %s <<seconds>>! Go go go!" "A message telling the user that a sprint has started.")
+(defconst orgn--sprint-finished-notify-title-en-GB "Sprint finished!" "A title for a window to notify the user that a sprint has finished.")
+;; <<words>> (without the << >> brackets must share the same value as org-novelist--sprint-words-en-GB.
+;; <<seconds>> (without the << >> brackets must share the same value as org-novelist--sprint-seconds-en-GB.
+(defconst orgn--sprint-you-wrote-words-notify-message-en-GB "You wrote %s <<words>> in %s <<seconds>>" "A message for a window to notify the user of how many words they wrote during the current sprint.")
+(defconst orgn--sprint-preparing-results-en-GB "Sprint finished! Preparing results..." "A message informing the user that the results of the current sprint are being prepared.")
+;; <<words>> (without the << >> brackets must share the same value as org-novelist--sprint-words-en-GB.
+;; <<seconds>> (without the << >> brackets must share the same value as org-novelist--sprint-seconds-en-GB.
+(defconst orgn--sprint-you-wrote-words-en-GB "Sprint finished! You wrote %s <<words>> in %s <<seconds>>" "A message to the user telling them how many words they wrote during the current sprint.")
+(defconst orgn--invalid-time-en-GB "Invalid time" "Time used cannot be processed because it is invalid.")
 (defconst orgn--language-tag-en-GB "language tag" "Placeholder for the language code, used in generating error messages.")  ; Based on URL `https://www.w3.org/International/articles/language-tags/index.en'
 ;; <<language tag>> (without the << >> brackets) must share the same value as org-novelist--language-tag-en-GB.
 (defconst orgn--language-set-to-language-tag-en-GB "Org Novelist language set to: <<language tag>>" "Inform user that language has been set.")
@@ -3169,6 +3186,39 @@ with STORY-FOLDER to override that behaviour."
       (orgn--delete-line)
       (orgn--string-to-file (buffer-string) (concat story-folder / (orgn--fls "indices-folder" story-language-tag) / (orgn--fls "chapters-file" story-language-tag) orgn--file-ending)))))
 
+(defun orgn--on-sprint-end (initial-word-count sprint-length)
+  "A function called at the end of `org-novelist-sprint-timer`.
+This will alert the user to the results of the sprint.
+INITIAL-WORD-COUNT is the word count of the Org Novelist story at the start of
+the sprint.
+SPRINT-LENGTH is the sprint length argument passed to `org-novelist-sprint-timer`."
+  (message (orgn--ls "sprint-preparing-results"))
+  (setq orgn--autoref-p orgn-automatic-referencing-p)
+  (setq orgn-automatic-referencing-p nil)
+  ;; Temporarily add a hook to reset automatic referencing in case user aborts minibuffer.
+  (add-hook 'post-command-hook 'orgn--reset-automatic-referencing)
+  (let* ((story-folder (orgn--story-root-folder))
+         (final-word-count (orgn--count-words story-folder nil t))
+         (word-count-difference (- final-word-count initial-word-count))
+         (seconds-str (orgn--ls "sprint-seconds"))
+         (words-str (orgn--ls "sprint-words"))
+         (sprint-you-wrote-words-str (orgn--ls "sprint-you-wrote-words"))
+         (sprint-you-wrote-words-notify-message-str (orgn--ls "sprint-you-wrote-words-notify-message")))
+    (when (= sprint-length 1) (setq seconds-str (orgn--ls "sprint-second")))
+    (when (= word-count-difference 1) (setq words-str (orgn--ls "sprint-word")))
+    (setq sprint-you-wrote-words-str (orgn--replace-string-in-string (concat "<<" (orgn--ls "sprint-words") ">>") words-str sprint-you-wrote-words-str t))
+    (setq sprint-you-wrote-words-str (orgn--replace-string-in-string (concat "<<" (orgn--ls "sprint-seconds") ">>") seconds-str sprint-you-wrote-words-str t))
+    (setq sprint-you-wrote-words-notify-message-str (orgn--replace-string-in-string (concat "<<" (orgn--ls "sprint-words") ">>") words-str sprint-you-wrote-words-notify-message-str t))
+    (setq sprint-you-wrote-words-notify-message-str (orgn--replace-string-in-string (concat "<<" (orgn--ls "sprint-seconds") ">>") seconds-str sprint-you-wrote-words-notify-message-str t))
+
+    (ding)
+    (message sprint-you-wrote-words-str (number-to-string word-count-difference) sprint-length)
+    (notifications-notify
+     :title (orgn--ls "sprint-finished-notify-title")
+     :body (format sprint-you-wrote-words-notify-message-str (number-to-string word-count-difference) sprint-length)))
+  ;; Remove hook to reset automatic referencing since we made it to the end of the function.
+  (remove-hook 'post-command-hook 'orgn--reset-automatic-referencing))
+
 
 ;;;; File Templates
 
@@ -5083,6 +5133,30 @@ in the exported story."
   ;; Remove hook to reset automatic referencing since we made it to the end of the function.
   (remove-hook 'post-command-hook 'orgn--reset-automatic-referencing))
 
+(defun orgn-sprint-timer (sprint-length)
+  "Run a timer for a writing sprint.
+At the end of the user-specified time (SPRINT-LENGTH), report how many words the user
+added to the current Org Novelist story."
+  (interactive (list (read-string (concat (orgn--ls "sprint-length-query") " "))))
+  (catch 'SPRINT-CREATION-FAULT
+    (unless (timer-duration sprint-length)
+      (user-error (concat (orgn--ls "invalid-time") ": " sprint-length))
+      (throw 'SPRINT-CREATION-FAULT (concat (orgn--ls "invalid-time") ": " sprint-length)))
+    (setq sprint-length (timer-duration sprint-length))  ; Converting to seconds to make language conversion simpler
+    (setq orgn--autoref-p orgn-automatic-referencing-p)
+    (setq orgn-automatic-referencing-p nil)
+    ;; Temporarily add a hook to reset automatic referencing in case user aborts minibuffer.
+    (add-hook 'post-command-hook 'orgn--reset-automatic-referencing)
+    (message (orgn--ls "sprint-preparing"))
+    (let* ((story-folder (orgn--story-root-folder))
+           (initial-word-count (orgn--count-words story-folder nil t))
+           (seconds-str (orgn--ls "sprint-seconds")))
+      (when (= sprint-length 1) (setq seconds-str (orgn--ls "sprint-second")))
+      (message (orgn--replace-string-in-string (concat "<<" (orgn--ls "sprint-seconds") ">>") seconds-str (orgn--ls "sprint-started") t) sprint-length)
+      (run-at-time sprint-length nil 'orgn--on-sprint-end initial-word-count sprint-length))
+    ;; Remove hook to reset automatic referencing since we made it to the end of the function.
+    (remove-hook 'post-command-hook 'orgn--reset-automatic-referencing)))
+
 
 ;; Define the Org Novelist mode menus.
 ;; I've yet to find a way to internationalise these strings, so they're hard coded for now.
@@ -5091,11 +5165,14 @@ in the exported story."
     ("Story"
      ["New Story..." orgn-new-story t]
      ["Rename Story..." orgn-rename-story t]
-     ["Export Story" orgn-export-story t])
+     ["Export Story" orgn-export-story t]
+     ["Word Count For Story" orgn-count-words-in-story t]
+     ["Start Writing Sprint..." orgn-sprint-timer t])
     ("Chapters"
      ["New Chapter..." orgn-new-chapter t]
      ["Rename Chapter..." orgn-rename-chapter t]
-     ["Destroy Chapter..." orgn-destroy-chapter t])
+     ["Destroy Chapter..." orgn-destroy-chapter t]
+     ["Word Count For Current Chapter" orgn-count-words-in-current-chapter t])
     ("Notes"
      ("Characters"
       ["New Character..." orgn-new-character t]
@@ -5160,6 +5237,7 @@ The following commands are available:
 `org-novelist-unlink-from-story'
 `org-novelist-count-words-in-story'
 `org-novelist-count-words-in-current-chapter'
+`org-novelist-sprint-timer'
 `org-novelist-toggle-automatic-referencing'"
   (add-hook 'after-save-hook 'orgn--update-references-after-save-hook))
 

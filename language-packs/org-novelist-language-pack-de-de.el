@@ -224,6 +224,7 @@
 (defconst orgn--match-lang-tag-to-story-query-de-DE "Mit welcher Sprache wurde diese Geschichte geschrieben (z.B. 'de-DE')?" "A query to the user to change the session language tag.")
 (defconst orgn--story-folder-to-link-to-query-de-DE "Soll der Geschichts-Ordner mit der aktuellen Geschichte verknüpft werden?" "A query to the user for the story folder where a story to be linked is located.")
 (defconst orgn--unlink-from-which-story-query-de-DE "Von welcher Geschichte soll die Verknüpfung aufgelöst werden?" "A query to the user for which story to unlink from the current story.")
+(defconst orgn--sprint-length-query-de-DE "Sprint-Dauer (z.B. '5 Minuten')?" "A query to the user for how long the sprint length should be.")
 ;; Error/Throw/Messages
 (defconst orgn--function-name-de-DE "Name der Funktion" "Placeholder for the name of the function, used in generating error messages.")
 (defconst orgn--filename-de-DE "Dateiname" "Placeholder for the filename, used in generating error messages.")
@@ -276,6 +277,22 @@
 ;; <<zeichenzahl>> (without the << >> brackets must share the same value as org-novelist--word-count-character-count-de-DE.
 ;; <<Zeichen>> (without the << >> brackets) must share the same value as org-novelist--word-count-characters-de-DE.
 (defconst orgn--word-count-message-de-DE "<<Die Textauswahl>> hat <<wortzahl>> <<Wörter>>, <<satzzahl>> <<Sätze>>, <<absatzzahl>> <<Absätze>> und <<zeichenzahl>> <<Zeichen>>" "A message showing the word count (and other counts) of the story, current chapter, or a selection of chapters.")
+(defconst orgn--sprint-second-de-DE "Sekunde" "Part of a message for the sprint timer, indicating a single second.")
+(defconst orgn--sprint-seconds-de-DE "Sekunden" "Part of a message for the sprint timer, indicating more than one second.")
+(defconst orgn--sprint-word-de-DE "Wort" "Part of the message for the sprint timer, indicating a single word.")
+(defconst orgn--sprint-words-de-DE "Wörter" "Part of the message for the sprint timer, indicating more than one word.")
+(defconst orgn--sprint-preparing-de-DE "Der Sprint wird vorbereitet..." "A message to the user that a sprint will soon be starting.")
+;; <<Sekunden>> (without the << >> brackets must share the same value as org-novelist--sprint-seconds-de-DE.
+(defconst orgn--sprint-started-de-DE "Sprint gestartet! Du hast %s <<Sekunden>>! Los los los!" "A message telling the user that a sprint has started.")
+(defconst orgn--sprint-finished-notify-title-de-DE "Der Sprint ist vorbei!" "A title for a window to notify the user that a sprint has finished.")
+;; <<Wörter>> (without the << >> brackets must share the same value as org-novelist--sprint-words-de-DE.
+;; <<Sekunden>> (without the << >> brackets must share the same value as org-novelist--sprint-seconds-de-DE.
+(defconst orgn--sprint-you-wrote-words-notify-message-de-DE "Du hast %s <<Wörter>> in %s <<Sekunden>> geschrieben" "A message for a window to notify the user of how many words they wrote during the current sprint.")
+(defconst orgn--sprint-preparing-results-de-DE "Der Sprint ist vorbei! Die Ergebnisse werden vorbereitet..." "A message informing the user that the results of the current sprint are being prepared.")
+;; <<Wörter>> (without the << >> brackets must share the same value as org-novelist--sprint-words-de-DE.
+;; <<Sekunden>> (without the << >> brackets must share the same value as org-novelist--sprint-seconds-de-DE.
+(defconst orgn--sprint-you-wrote-words-de-DE "Der Sprint ist vorbei! Du hast %s <<Wörter>> in %s <<Sekunden>> geschrieben" "A message to the user telling them how many words they wrote during the current sprint.")
+(defconst orgn--invalid-time-de-DE "Ungültige Zeitangabe" "Time used cannot be processed because it is invalid.")
 (defconst orgn--language-tag-de-DE "Sprachkürzel" "Placeholder for the language code, used in generating error messages.")
 ;; <<Sprachkürzel>> (without the << >> brackets) must share the same value as org-novelist--language-tag-de-DE.
 (defconst orgn--language-set-to-language-tag-de-DE "Org Novelist Sprache wurde geändert zu: <<Sprachkürzel>>" "Inform user that language has been set.")

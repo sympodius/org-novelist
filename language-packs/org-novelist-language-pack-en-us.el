@@ -224,6 +224,7 @@
 (defconst orgn--match-lang-tag-to-story-query-en-US "What language was used to create this story (eg, 'en-US')?" "A query to the user to change the session language tag.")
 (defconst orgn--story-folder-to-link-to-query-en-US "Story folder to link to current story?" "A query to the user for the story folder where a story to be linked is located.")
 (defconst orgn--unlink-from-which-story-query-en-US "Unlink from which story?" "A query to the user for which story to unlink from the current story.")
+(defconst orgn--sprint-length-query-en-US "Sprint length (eg, '5 minutes')?" "A query to the user for how long the sprint length should be.")
 ;; Error/Throw/Messages
 (defconst orgn--function-name-en-US "function name" "Placeholder for the name of the function, used in generating error messages.")
 (defconst orgn--filename-en-US "filename" "Placeholder for the filename, used in generating error messages.")
@@ -276,6 +277,22 @@
 ;; <<character count>> (without the << >> brackets must share the same value as org-novelist--word-count-character-count-en-US.
 ;; <<characters>> (without the << >> brackets) must share the same value as org-novelist--word-count-characters-en-US.
 (defconst orgn--word-count-message-en-US "<<Region>> has <<word count>> <<words>>, <<sentence count>> <<sentences>>, <<paragraph count>> <<paragraphs>>, and <<character count>> <<characters>>" "A message showing the word count (and other counts) of the story, current chapter, or a selection of chapters.")
+(defconst orgn--sprint-second-en-US "second" "Part of a message for the sprint timer, indicating a single second.")
+(defconst orgn--sprint-seconds-en-US "seconds" "Part of a message for the sprint timer, indicating more than one second.")
+(defconst orgn--sprint-word-en-US "word" "Part of the message for the sprint timer, indicating a single word.")
+(defconst orgn--sprint-words-en-US "words" "Part of the message for the sprint timer, indicating more than one word.")
+(defconst orgn--sprint-preparing-en-US "Preparing sprint..." "A message to the user that a sprint will soon be starting.")
+;; <<seconds>> (without the << >> brackets must share the same value as org-novelist--sprint-seconds-en-US.
+(defconst orgn--sprint-started-en-US "Sprint started! You have %s <<seconds>>! Go go go!" "A message telling the user that a sprint has started.")
+(defconst orgn--sprint-finished-notify-title-en-US "Sprint finished!" "A title for a window to notify the user that a sprint has finished.")
+;; <<words>> (without the << >> brackets must share the same value as org-novelist--sprint-words-en-US.
+;; <<seconds>> (without the << >> brackets must share the same value as org-novelist--sprint-seconds-en-US.
+(defconst orgn--sprint-you-wrote-words-notify-message-en-US "You wrote %s <<words>> in %s <<seconds>>" "A message for a window to notify the user of how many words they wrote during the current sprint.")
+(defconst orgn--sprint-preparing-results-en-US "Sprint finished! Preparing results..." "A message informing the user that the results of the current sprint are being prepared.")
+;; <<words>> (without the << >> brackets must share the same value as org-novelist--sprint-words-en-US.
+;; <<seconds>> (without the << >> brackets must share the same value as org-novelist--sprint-seconds-en-US.
+(defconst orgn--sprint-you-wrote-words-en-US "Sprint finished! You wrote %s <<words>> in %s <<seconds>>" "A message to the user telling them how many words they wrote during the current sprint.")
+(defconst orgn--invalid-time-en-US "Invalid time" "Time used cannot be processed because it is invalid.")
 (defconst orgn--language-tag-en-US "language tag" "Placeholder for the language code, used in generating error messages.")
 ;; <<language tag>> (without the << >> brackets) must share the same value as org-novelist--language-tag-en-US.
 (defconst orgn--language-set-to-language-tag-en-US "Org Novelist language set to: <<language tag>>" "Inform user that language has been set.")
