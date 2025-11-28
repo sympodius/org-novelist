@@ -47,7 +47,7 @@ While Org Novelist focuses on making the writing process simpler, it's also easy
 + **Settings Stay in the Stories.** Each story folder contains all the information Org Novelist needs. You can easily move and copy your story folders for archive and back-up. And, because all the files are plain text, you can open them in any text editor.
 + **Minimise Dependencies.** If you have a recent version of Emacs correctly installed, Org Novelist should have no problems doing its thing.
 + **Language Agnostic.** Writing in your native language makes you feel more comfortable. Org Novelist's headings, templates, and even error messages can be setup to use any language just by creating a language pack.
-+ **Write Once, Publish Anywhere.** By default, Org Novelist exports stories to a single Org file. You can manually export this file to a large variety of other formats using third party systems like [Pandoc](https://pandoc.org/), or use export templates designed explicitly for Org Novelist. When you use Org Novelist export templates, the system will generate every output format at the same time. Your Org Novelist story can be the single source that publishes everywhere you need.
++ **Write Once, Publish Anywhere.** By default, Org Novelist exports stories to a single Org file. You can manually export this file to a large variety of other formats using third party systems like [Pandoc](https://pandoc.org/), or use export templates designed explicitly for Org Novelist. When you use Org Novelist export templates, the system will generate every requested output format at the same time. Your Org Novelist story can be the single source that publishes everywhere you need.
 + **Maintain the Power of Emacs.** Org Novelist works with the rest of your Emacs setup. If you already use Emacs and Org mode, you should feel right at home with Org Novelist.
 + **Opinionated Organisation.** I designed Org Novelist for my own writing needs. It should be general enough to work for most Emacs novelists, but it is not infinitely flexible. Org Novelist keeps your notes in order and easy to access by doing the hard work for you, but straying too far from this layout will break the system. If you can make peace with that and embrace it, you will find story organisation bliss.
 
@@ -159,7 +159,7 @@ For users of `use-package`, an entry like the following will setup Org Novelist 
           ("C-c n t"   . org-novelist-toggle-automatic-referencing)))
 ```
 
-Or, if you are using Emacs version Emacs 30.1 or greater, you can use something like the following to have `use-package` get the latest version of Org Novelist automatically from the GitHub:
+Or, if you are using Emacs version 30.1 or greater, you can use something like the following to have `use-package` get the latest version of Org Novelist automatically from GitHub:
 
 ``` elisp
 (use-package org-novelist
@@ -250,7 +250,7 @@ Whenever you use the name of a character in your story, it will provide a link t
 
 But let's say that you don't like the character's name any more and want to change it. You can update your notes with a new name by running the command: `org-novelist-rename-character`
 
-After selecting which character you want to change and then giving the new name, you will return to the character index showing the update. If you follow the link from the new character name, you'll see all your notes intact, but with a new name applied next to `#+TITLE:`
+After selecting which character you want to change and then giving the new name, you will be returned to the character index showing the update. If you follow the link from the new character name, you'll see all your notes intact, but with a new name applied next to `#+TITLE:`
 
 You might also have spotted that there is a new line at the top called `#+ALIASES:` which contains the previous name of your character. Org Novelist will not attempt to rename the character within the main text of your story in case you've used a name which could apply to multiple things. Instead, aliases allow the old name to continue linking back to this notes file. From here, you can see all the appearances of the old name in your story and visit each one before updating it.
 
