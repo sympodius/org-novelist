@@ -292,6 +292,32 @@
 (defconst orgn--filename-is-not-a-recognised-index-en-GB "<<filename>> is not a recognised index" "Index is not of a known type.")
 (defconst orgn--auto-ref-now-on-en-GB "Org Novelist automatic referencing has been turned ON" "Inform user that automatic referencing has been turned on.")
 (defconst orgn--auto-ref-now-off-en-GB "Org Novelist automatic referencing has been turned OFF" "Inform user that automatic referencing has been turned off.")
+(defconst orgn--word-count-region-en-GB "Region" "Placeholder for the Region, used in generating word count messages.")
+(defconst orgn--word-count-word-count-en-GB "word count" "Placeholder for the word count number, used in generating word count messages.")
+(defconst orgn--word-count-sentence-count-en-GB "sentence count" "Placeholder for the sentence count number, used in generating word count messages.")
+(defconst orgn--word-count-paragraph-count-en-GB "paragraph count" "Placeholder for the paragraph count number, used in generating word count messages.")
+(defconst orgn--word-count-character-count-en-GB "character count" "Placeholder for the character count number, used in generating word count messages.")
+(defconst orgn--word-count-region-story-en-GB "Story" "Part of the message for the word count of the story.")
+(defconst orgn--word-count-region-chapter-en-GB "Chapter" "Part of the message for the word count of the current chapter.")
+(defconst orgn--word-count-region-selection-en-GB "Selection" "Part of the message for the word count of the current selection of chapters.")
+(defconst orgn--word-count-word-en-GB "word" "Part of the message for the word count, indicating a single word.")
+(defconst orgn--word-count-words-en-GB "words" "Part of the message for the word count, indicating more than one word.")
+(defconst orgn--word-count-sentence-en-GB "sentence" "Part of the message for the word count, indicating a single sentence.")
+(defconst orgn--word-count-sentences-en-GB "sentences" "Part of the message for the word count, indicating more than one sentence.")
+(defconst orgn--word-count-paragraph-en-GB "paragraph" "Part of the message for the word count, indicating a single paragraph.")
+(defconst orgn--word-count-paragraphs-en-GB "paragraphs" "Part of the message for the word count, indicating more than one paragraph.")
+(defconst orgn--word-count-character-en-GB "character" "Part of the message for the word count, indicating a single character.")
+(defconst orgn--word-count-characters-en-GB "characters" "Part of the message for the word count, indicating more than one character.")
+;; <<Region>> (without the << >> brackets) must share the same value as org-novelist--word-count-region-en-GB.
+;; <<word count>> (without the << >> brackets must share the same value as org-novelist--word-count-word-count-en-GB.
+;; <<words>> (without the << >> brackets) must share the same value org-novelist--word-count-words-en-GB.
+;; <<sentence count>> (without the << >> brackets must share the same value as org-novelist--word-count-sentence-count-en-GB.
+;; <<sentences>> (without the << >> brackets) must share the same value as org-novelist--word-count-sentences-en-GB.
+;; <<paragraph count>> (without the << >> brackets must share the same value as org-novelist--word-count-paragraph-count-en-GB.
+;; <<paragraphs>> (without the << >> brackets) must share the same value as org-novelist--word-count-paragraphs-en-GB.
+;; <<character count>> (without the << >> brackets must share the same value as org-novelist--word-count-character-count-en-GB.
+;; <<characters>> (without the << >> brackets) must share the same value as org-novelist--word-count-characters-en-GB.
+(defconst orgn--word-count-message-en-GB "<<Region>> has <<word count>> <<words>>, <<sentence count>> <<sentences>>, <<paragraph count>> <<paragraphs>>, and <<character count>> <<characters>>" "A message showing the word count (and other counts) of the story, current chapter, or a selection of chapters.")
 (defconst orgn--language-tag-en-GB "language tag" "Placeholder for the language code, used in generating error messages.")  ; Based on URL `https://www.w3.org/International/articles/language-tags/index.en'
 ;; <<language tag>> (without the << >> brackets) must share the same value as org-novelist--language-tag-en-GB.
 (defconst orgn--language-set-to-language-tag-en-GB "Org Novelist language set to: <<language tag>>" "Inform user that language has been set.")
@@ -715,7 +741,7 @@ TIME-ZONE is the given time. If omitted or nil, use local time."
       (delete-region (line-beginning-position) (line-beginning-position 2)))))
 
 
-;;;; File Manipulation Worker Functions
+;;;; File Manipulation Worker Functions/Other Worker Functions
 
 (defun orgn--next-visible-heading (arg)
   "Move to the next visible heading line.
@@ -1241,6 +1267,724 @@ related to the current buffer."
       (progn
         (error (concat (orgn--ls "file-not-found") ": " file))
         (throw 'MAKE-REFERENCES-WORKER-FAULT (concat (orgn--ls "file-not-found") ": " file))))))
+
+(defun orgn--make-exported-novel-org-string (story-folder &optional chapter-list no-glossaries no-indices)
+  "Make a single Org file string from chapter files in STORY-FOLDER.
+After checking the indices are not malformed, this function will first
+construct a single Org file string, made up from the chapter files of the
+story. The order of the chapters will be taken from the chapter index,
+with matter sections correctly ordered (not user selected), and the
+chapters labelled with their matter type. Chapter file properties will
+be moved to property drawers in the output Org file for each chapter
+heading.
+Once the Org file string is created, go though any export settings in the
+story config file and apply them to the Org file.
+If NO-INDICES is t, do not add indices.
+If NO-GLOSSARIES is t, do not add glossaries.
+If CHAPTER-LIST is supplied as a list of the chapter files in the story,
+only include these chapters."
+  (catch 'EXPORT-NOVEL-ORG-STRING-FAULT
+    (let* ((story-folder (orgn--story-root-folder story-folder))
+           (indices-folder (orgn--ls "indices-folder"))
+           (story-name (orgn--story-name story-folder))
+           (chapter-index (concat (orgn--ls "chapters-file") orgn--file-ending))
+           (exported-novel-org-string "")
+           (fm-file-list '())
+           (mm-file-list '())
+           (bm-file-list '())
+           curr-chap-file
+           (curr-header "")
+           curr-properties-list
+           curr-index-properties-list
+           (mutable-properties (list "TITLE" "AUTHOR" "EMAIL" "DATE"))  ; Properties that should be overridden by config file
+           curr-index-property
+           (content "")
+           (curr-content "")
+           (curr-glossary-str "")
+           exports-hash
+           keys
+           key
+           (org-export-backends-orig nil)
+           (org-export-registered-backends-orig nil)
+           (org-export-with-toc-orig nil)
+           (org-export-with-date-orig nil)
+           (org-export-with-tags-orig nil)
+           (org-export-with-email-orig nil)
+           (org-export-with-latex-orig nil)
+           (org-export-with-tasks-orig nil)
+           (org-export-with-title-orig nil)
+           (org-export-with-author-orig nil)
+           (org-export-with-clocks-orig nil)
+           (org-export-with-tables-orig nil)
+           (org-export-with-creator-orig nil)
+           (org-export-with-drawers-orig nil)
+           (org-export-with-entities-orig nil)
+           (org-export-with-planning-orig nil)
+           (org-export-with-priority-orig nil)
+           (org-export-with-emphasize-orig nil)
+           (org-export-with-footnotes-orig nil)
+           (org-export-with-properties-orig nil)
+           (org-export-with-timestamps-orig nil)
+           (org-export-with-fixed-width-orig nil)
+           (org-export-with-inlinetasks-orig nil)
+           (org-export-with-broken-links-orig nil)
+           (org-export-with-smart-quotes-orig nil)
+           (org-export-with-todo-keywords-orig nil)
+           (org-export-with-archived-trees-orig nil)
+           (org-export-with-section-numbers-orig nil)
+           (org-export-with-special-strings-orig nil)
+           (org-export-with-sub-superscripts-orig nil)
+           (org-use-sub-superscripts-orig nil)
+           (org-export-with-statistics-cookies-orig nil))
+      ;;  Store original user-set Org export settings.
+      (when (boundp 'org-export-backends)
+        (setq org-export-backends-orig org-export-backends))
+      (when (boundp 'org-export-registered-backends)
+        (setq org-export-registered-backends-orig org-export-registered-backends))
+      (when (boundp 'org-export-with-toc)
+        (setq org-export-with-toc-orig org-export-with-toc))
+      (when (boundp 'org-export-with-date)
+        (setq org-export-with-date-orig org-export-with-date))
+      (when (boundp 'org-export-with-tags)
+        (setq org-export-with-tags-orig org-export-with-tags))
+      (when (boundp 'org-export-with-email)
+        (setq org-export-with-email-orig org-export-with-email))
+      (when (boundp 'org-export-with-latex)
+        (setq org-export-with-latex-orig org-export-with-latex))
+      (when (boundp 'org-export-with-tasks)
+        (setq org-export-with-tasks-orig org-export-with-tasks))
+      (when (boundp 'org-export-with-title)
+        (setq org-export-with-title-orig org-export-with-title))
+      (when (boundp 'org-export-with-author)
+        (setq org-export-with-author-orig org-export-with-author))
+      (when (boundp 'org-export-with-clocks)
+        (setq org-export-with-clocks-orig org-export-with-clocks))
+      (when (boundp 'org-export-with-tables)
+        (setq org-export-with-tables-orig org-export-with-tables))
+      (when (boundp 'org-export-with-creator)
+        (setq org-export-with-creator-orig org-export-with-creator))
+      (when (boundp 'org-export-with-drawers)
+        (setq org-export-with-drawers-orig org-export-with-drawers))
+      (when (boundp 'org-export-with-entities)
+        (setq org-export-with-entities-orig org-export-with-entities))
+      (when (boundp 'org-export-with-planning)
+        (setq org-export-with-planning-orig org-export-with-planning))
+      (when (boundp 'org-export-with-priority)
+        (setq org-export-with-priority-orig org-export-with-priority))
+      (when (boundp 'org-export-with-emphasize)
+        (setq org-export-with-emphasize-orig org-export-with-emphasize))
+      (when (boundp 'org-export-with-footnotes)
+        (setq org-export-with-footnotes-orig org-export-with-footnotes))
+      (when (boundp 'org-export-with-properties)
+        (setq org-export-with-properties-orig org-export-with-properties))
+      (when (boundp 'org-export-with-timestamps)
+        (setq org-export-with-timestamps-orig org-export-with-timestamps))
+      (when (boundp 'org-export-with-fixed-width)
+        (setq org-export-with-fixed-width-orig org-export-with-fixed-width))
+      (when (boundp 'org-export-with-inlinetasks)
+        (setq org-export-with-inlinetasks-orig org-export-with-inlinetasks))
+      (when (boundp 'org-export-with-broken-links)
+        (setq org-export-with-broken-links-orig org-export-with-broken-links))
+      (when (boundp 'org-export-with-smart-quotes)
+        (setq org-export-with-smart-quotes-orig org-export-with-smart-quotes))
+      (when (boundp 'org-export-with-todo-keywords)
+        (setq org-export-with-todo-keywords-orig org-export-with-todo-keywords))
+      (when (boundp 'org-export-with-archived-trees)
+        (setq org-export-with-archived-trees-orig org-export-with-archived-trees))
+      (when (boundp 'org-export-with-section-numbers)
+        (setq org-export-with-section-numbers-orig org-export-with-section-numbers))
+      (when (boundp 'org-export-with-special-strings)
+        (setq org-export-with-special-strings-orig org-export-with-special-strings))
+      (when (boundp 'org-export-with-sub-superscripts)
+        (setq org-export-with-sub-superscripts-orig org-export-with-sub-superscripts))
+      (when (boundp 'org-use-sub-superscripts)
+        (setq org-use-sub-superscripts-orig org-use-sub-superscripts))
+      (when (boundp 'org-export-with-statistics-cookies)
+        (setq org-export-with-statistics-cookies-orig org-export-with-statistics-cookies))
+      (orgn--rebuild-indices story-folder)  ; Make sure the chapter index is in good condition (this function actually checks all indices)
+      (if (file-exists-p (concat story-folder / indices-folder / chapter-index))
+          (if (file-readable-p (concat story-folder / indices-folder / chapter-index))
+              (progn
+                ;; If there is a front matter in chapter index, get files in order and add to front matter list
+                (with-temp-buffer
+                  (insert-file-contents (concat story-folder / indices-folder / chapter-index))
+                  (goto-char (point-min))
+                  (insert "\n")
+                  (goto-char (point-min))
+                  (org-novelist-mode)
+                  (orgn--fold-show-all)  ; Belts and braces
+                  (while (not (orgn--next-visible-heading 1))
+                    (when (string= (orgn--ls "front-matter-heading") (nth 4 (org-heading-components)))
+                      ;; Found front matter, get files in order and add to list.
+                      (when (org-goto-first-child)
+                        (let ((heading-last-link-absolute-link-text (orgn--heading-last-link-absolute-link-text (concat story-folder / indices-folder))))
+                          (if chapter-list
+                              (when (member heading-last-link-absolute-link-text chapter-list)
+                                (setq fm-file-list (cons heading-last-link-absolute-link-text fm-file-list)))
+                            (setq fm-file-list (cons heading-last-link-absolute-link-text fm-file-list))))
+                        (while (org-goto-sibling)
+                          (let ((heading-last-link-absolute-link-text (orgn--heading-last-link-absolute-link-text (concat story-folder / indices-folder))))
+                            (if chapter-list
+                                (when (member heading-last-link-absolute-link-text chapter-list)
+                                  (setq fm-file-list (cons heading-last-link-absolute-link-text fm-file-list)))
+                              (setq fm-file-list (cons heading-last-link-absolute-link-text fm-file-list))))))
+                      (goto-char (point-max))))  ; No need to check any more, so skip to the end go exit loop
+                  (setq fm-file-list (reverse fm-file-list)))  ; Put files back in order
+                ;; If there is a main matter in chapter index, get files in order and add to main matter list
+                (with-temp-buffer
+                  (insert-file-contents (concat story-folder / indices-folder / chapter-index))
+                  (goto-char (point-min))
+                  (insert "\n")
+                  (goto-char (point-min))
+                  (org-novelist-mode)
+                  (orgn--fold-show-all)  ; Belts and braces
+                  (while (not (orgn--next-visible-heading 1))
+                    (when (string= (orgn--ls "main-matter-heading") (nth 4 (org-heading-components)))
+                      ;; Found main matter, get files in order and add to list.
+                      (when (org-goto-first-child)
+                        (let ((heading-last-link-absolute-link-text (orgn--heading-last-link-absolute-link-text (concat story-folder / indices-folder))))
+                          (if chapter-list
+                              (when (member heading-last-link-absolute-link-text chapter-list)
+                                (setq mm-file-list (cons heading-last-link-absolute-link-text mm-file-list)))
+                            (setq mm-file-list (cons heading-last-link-absolute-link-text mm-file-list))))
+                        (while (org-goto-sibling)
+                          (let ((heading-last-link-absolute-link-text (orgn--heading-last-link-absolute-link-text (concat story-folder / indices-folder))))
+                            (if chapter-list
+                                (when (member heading-last-link-absolute-link-text chapter-list)
+                                  (setq mm-file-list (cons heading-last-link-absolute-link-text mm-file-list)))
+                              (setq mm-file-list (cons heading-last-link-absolute-link-text mm-file-list))))))
+                      (goto-char (point-max))))  ; No need to check any more, to skip to the end go exit loop
+                  (setq mm-file-list (reverse mm-file-list)))
+                ;; If there is a back matter in chapter index, get files in order and add to back matter list
+                (with-temp-buffer
+                  (insert-file-contents (concat story-folder / indices-folder / chapter-index))
+                  (goto-char (point-min))
+                  (insert "\n")
+                  (goto-char (point-min))
+                  (org-novelist-mode)
+                  (orgn--fold-show-all)  ; Belts and braces
+                  (while (not (orgn--next-visible-heading 1))
+                    (when (string= (orgn--ls "back-matter-heading") (nth 4 (org-heading-components)))
+                      ;; Found back matter, get files in order and add to list.
+                      (when (org-goto-first-child)
+                        (let ((heading-last-link-absolute-link-text (orgn--heading-last-link-absolute-link-text (concat story-folder / indices-folder))))
+                          (if chapter-list
+                              (when (member heading-last-link-absolute-link-text chapter-list)
+                                (setq bm-file-list (cons heading-last-link-absolute-link-text bm-file-list)))
+                            (setq bm-file-list (cons heading-last-link-absolute-link-text bm-file-list))))
+                        (while (org-goto-sibling)
+                          (let ((heading-last-link-absolute-link-text (orgn--heading-last-link-absolute-link-text (concat story-folder / indices-folder))))
+                            (if chapter-list
+                                (when (member heading-last-link-absolute-link-text chapter-list)
+                                  (setq bm-file-list (cons heading-last-link-absolute-link-text bm-file-list)))
+                              (setq bm-file-list (cons heading-last-link-absolute-link-text bm-file-list))))))
+                      (goto-char (point-max))))  ; No need to check any more, to skip to the end go exit loop
+                  (setq bm-file-list (reverse bm-file-list))))
+            (progn
+              (setq orgn-automatic-referencing-p orgn--autoref-p)
+              (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") chapter-index (orgn--ls "filename-is-not-readable")))
+              (throw 'EXPORT-STORY-FAULT (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") chapter-index (orgn--ls "filename-is-not-readable")))))
+        (progn
+          (setq orgn-automatic-referencing-p orgn--autoref-p)
+          (error (concat (orgn--ls "file-not-found") ": " chapter-index))
+          (throw 'EXPORT-STORY-FAULT (concat (orgn--ls "file-not-found") ": " chapter-index))))
+      ;; Correctly ordered file lists have been made.
+      ;; Make sure export backends that we need are loaded.
+      (progn
+        (setq org-export-registered-backends
+              (cl-remove-if-not
+               (lambda (backend)
+                 (let ((name (org-export-backend-name backend)))
+                   (or (memq name (quote (ascii html icalendar latex odt md org)))
+                       (catch 'parentp
+                         (dolist (b (quote (ascii html icalendar latex odt md org)))
+                           (and (org-export-derived-backend-p b name)
+                                (throw 'parentp t)))))))
+               org-export-registered-backends))
+        (let ((new-list (mapcar #'org-export-backend-name
+                                org-export-registered-backends)))
+          (dolist (backend (quote (ascii html icalendar latex odt md org)))
+            (cond
+             ((not (load (format "ox-%s" backend) t t))
+              (message "Problems while trying to load export back-end `%s'"
+                       backend))
+             ((not (memq backend new-list)) (push backend new-list))))
+          (set-default 'org-export-backends (reverse new-list))))
+      (setq org-export-with-toc nil)
+      (setq org-export-with-date nil)
+      (setq org-export-with-tags t)
+      (setq org-export-with-email nil)
+      (setq org-export-with-latex t)
+      (setq org-export-with-tasks t)
+      (setq org-export-with-title nil)
+      (setq org-export-with-author nil)
+      (setq org-export-with-clocks nil)
+      (setq org-export-with-tables t)
+      (setq org-export-with-creator nil)
+      (setq org-export-with-drawers t)
+      (setq org-export-with-entities t)
+      (setq org-export-with-planning t)
+      (setq org-export-with-priority t)
+      (setq org-export-with-emphasize t)
+      (setq org-export-with-footnotes t)
+      (setq org-export-with-properties t)
+      (setq org-export-with-timestamps t)
+      (setq org-export-with-fixed-width t)
+      (setq org-export-with-inlinetasks t)
+      (setq org-export-with-broken-links t)
+      (setq org-export-with-smart-quotes t)
+      (setq org-export-with-todo-keywords t)
+      (setq org-export-with-archived-trees nil)
+      (setq org-export-with-section-numbers t)
+      (setq org-export-with-special-strings t)
+      (setq org-export-with-sub-superscripts t)
+      (setq org-use-sub-superscripts '{})
+      (setq org-export-with-statistics-cookies t)
+      ;; Process chapters.
+      (while fm-file-list
+        (setq curr-chap-file (expand-file-name (pop fm-file-list)))
+        (setq curr-properties-list (assoc-delete-all "INDEX" (assoc-delete-all "TITLE" (orgn--get-file-properties curr-chap-file))))
+        ;; Generate header for current chapter. TITLE property in file will override the one in the Chapter Index, but otherwise the Chapter Index line will be used, set to level 1.
+        (when (file-readable-p (concat story-folder / indices-folder / chapter-index))
+          (with-temp-buffer
+            (insert-file-contents (concat story-folder / indices-folder / chapter-index))
+            (org-novelist-mode)
+            (orgn--fold-show-all)  ; Belts and braces
+            (goto-char (point-min))
+            (re-search-forward (file-relative-name curr-chap-file (concat story-folder / indices-folder)) nil t)
+            (setq curr-header (orgn--replace-true-headline-in-org-heading (orgn--get-file-property-value "TITLE" curr-chap-file) (org-heading-components) 1))
+            (setq curr-index-properties-list (org-entry-properties nil 'standard))))
+        (with-temp-buffer
+          (org-novelist-mode)
+          (orgn--fold-show-all)  ; Belts and braces
+          (if (string=  curr-header "")
+              (insert "* " (orgn--get-file-property-value "TITLE" curr-chap-file) "\n")
+            (insert curr-header "\n"))
+          (setq curr-header "")
+          ;; Chapter title setup, add contents.
+          (goto-char (buffer-size))
+          (insert "\n")
+          (insert (orgn--get-file-subtree curr-chap-file (orgn--ls "content-header") t))
+          ;; Maybe add glossary?
+          (unless no-glossaries
+            (when (member orgn--glossary-generator-value (split-string (orgn--get-file-property-value orgn--generate-property curr-chap-file) (orgn--ls "generate-separators") t " "))
+              (setq curr-glossary-str (orgn--make-export-glossary-string story-folder curr-chap-file))
+              (unless (string= (string-chop-newline curr-glossary-str) "")
+                (insert "* " (orgn--ls "glossary-header") " :no_header_preamble:no_toc_entry:plain_pagestyle:\n")
+                (insert curr-glossary-str)
+                (setq curr-glossary-str ""))))
+          ;; Maybe add index?
+          (unless no-indices
+            (when (member orgn--index-generator-value (split-string (orgn--get-file-property-value orgn--generate-property curr-chap-file) (orgn--ls "generate-separators") t " "))
+              (insert "\n#+LATEX: \\printindex")))
+          (org-align-tags t)
+          (setq curr-content (buffer-string)))
+        (with-temp-buffer
+          (insert curr-content)
+          (org-novelist-mode)
+          (orgn--fold-show-all)  ; Belts and braces
+          (goto-char (point-min))
+          ;; If the chapter index had any properties, we should probably include them as well. Doing it here will allow file level properties to override the index properties.
+          (while curr-index-properties-list
+            (setq curr-index-property (pop curr-index-properties-list))
+            (when (not (string= (cdr curr-index-property) "???"))
+              (org-set-property (car curr-index-property) (cdr curr-index-property))))
+          (org-set-property (upcase orgn--matter-type-property) (upcase orgn--front-matter-value))
+          (dolist (kv curr-properties-list)
+            (unless (string= (car kv) orgn--generate-property)
+              (org-set-property (car kv) (cdr kv))))
+          (setq content (concat content (buffer-substring (point-min) (buffer-size)) "\n"))))
+      (while mm-file-list
+        (setq curr-chap-file (pop mm-file-list))
+        (setq curr-properties-list (assoc-delete-all "INDEX" (assoc-delete-all "TITLE" (orgn--get-file-properties curr-chap-file))))
+        ;; Generate header for current chapter. TITLE property in file will override the one in the Chapter Index, but otherwise the Chapter Index line will be used, set to level 1.
+        (when (file-readable-p (concat story-folder / indices-folder / chapter-index))
+          (with-temp-buffer
+            (insert-file-contents (concat story-folder / indices-folder / chapter-index))
+            (org-novelist-mode)
+            (orgn--fold-show-all)  ; Belts and braces
+            (goto-char (point-min))
+            (re-search-forward (file-relative-name curr-chap-file (concat story-folder / indices-folder)) nil t)
+            (setq curr-header (orgn--replace-true-headline-in-org-heading (orgn--get-file-property-value "TITLE" curr-chap-file) (org-heading-components) 1))
+            (setq curr-index-properties-list (org-entry-properties nil 'standard))))
+        (with-temp-buffer
+          (org-novelist-mode)
+          (orgn--fold-show-all)  ; Belts and braces
+          (if (string=  curr-header "")
+              (insert "* " (orgn--get-file-property-value "TITLE" curr-chap-file) "\n")
+            (insert curr-header "\n"))
+          (setq curr-header "")
+          ;; Chapter title setup, add contents.
+          (goto-char (buffer-size))
+          (insert "\n")
+          (insert (orgn--get-file-subtree curr-chap-file (orgn--ls "content-header") t))
+          ;; Maybe add glossary?
+          (unless no-glossaries
+            (when (member orgn--glossary-generator-value (split-string (orgn--get-file-property-value orgn--generate-property curr-chap-file) (orgn--ls "generate-separators") t " "))
+              (setq curr-glossary-str (orgn--make-export-glossary-string story-folder curr-chap-file))
+              (unless (string= (string-chop-newline curr-glossary-str) "")
+                (insert "* " (orgn--ls "glossary-header") " :no_header_preamble:no_toc_entry:plain_pagestyle:\n")
+                (insert curr-glossary-str)
+                (setq curr-glossary-str ""))))
+          ;; Maybe add index?
+          (unless no-indices
+            (when (member orgn--index-generator-value (split-string (orgn--get-file-property-value orgn--generate-property curr-chap-file) (orgn--ls "generate-separators") t " "))
+              (insert "\n#+LATEX: \\printindex")))
+          (org-align-tags t)
+          (setq curr-content (buffer-string)))
+        (with-temp-buffer
+          (insert curr-content)
+          (org-novelist-mode)
+          (orgn--fold-show-all)  ; Belts and braces
+          (goto-char (point-min))
+          ;; If the chapter index had any properties, we should probably include them as well. Doing it here will allow file level properties to override the index properties.
+          (while curr-index-properties-list
+            (setq curr-index-property (pop curr-index-properties-list))
+            (when (not (string= (cdr curr-index-property) "???"))
+              (org-set-property (car curr-index-property) (cdr curr-index-property))))
+          (org-set-property (upcase orgn--matter-type-property) (upcase orgn--main-matter-value))
+          (dolist (kv curr-properties-list)
+            (unless (string= (car kv) orgn--generate-property)
+              (org-set-property (car kv) (cdr kv))))
+          (setq content (concat content (buffer-substring (point-min) (buffer-size)) "\n"))))
+      (while bm-file-list
+        (setq curr-chap-file (expand-file-name (pop bm-file-list)))
+        (setq curr-properties-list (assoc-delete-all "INDEX" (assoc-delete-all "TITLE" (orgn--get-file-properties curr-chap-file))))
+        ;; Generate header for current chapter. TITLE property in file will override the one in the Chapter Index, but otherwise the Chapter Index line will be used, set to level 1.
+        (when (file-readable-p (concat story-folder / indices-folder / chapter-index))
+          (with-temp-buffer
+            (insert-file-contents (concat story-folder / indices-folder / chapter-index))
+            (org-novelist-mode)
+            (orgn--fold-show-all)  ; Belts and braces
+            (goto-char (point-min))
+            (re-search-forward (file-relative-name curr-chap-file (concat story-folder / indices-folder)) nil t)
+            (setq curr-header (orgn--replace-true-headline-in-org-heading (orgn--get-file-property-value "TITLE" curr-chap-file) (org-heading-components) 1))
+            (setq curr-index-properties-list (org-entry-properties nil 'standard))))
+        (with-temp-buffer
+          (org-novelist-mode)
+          (orgn--fold-show-all)  ; Belts and braces
+          (if (string=  curr-header "")
+              (insert "* " (orgn--get-file-property-value "TITLE" curr-chap-file) "\n")
+            (insert curr-header "\n"))
+          (setq curr-header "")
+          ;; Chapter title setup, add contents.
+          (goto-char (buffer-size))
+          (insert "\n")
+          (insert (orgn--get-file-subtree curr-chap-file (orgn--ls "content-header") t))
+          ;; Maybe add glossary?
+          (unless no-glossaries
+            (when (member orgn--glossary-generator-value (split-string (orgn--get-file-property-value orgn--generate-property curr-chap-file) (orgn--ls "generate-separators") t " "))
+              (setq curr-glossary-str (orgn--make-export-glossary-string story-folder curr-chap-file))
+              (unless (string= (string-chop-newline curr-glossary-str) "")
+                (insert "* " (orgn--ls "glossary-header") " :no_header_preamble:no_toc_entry:plain_pagestyle:\n")
+                (insert curr-glossary-str)
+                (setq curr-glossary-str ""))))
+          ;; Maybe add index?
+          (unless no-indices
+            (when (member orgn--index-generator-value (split-string (orgn--get-file-property-value orgn--generate-property curr-chap-file) (orgn--ls "generate-separators") t " "))
+              (insert "\n#+LATEX: \\printindex")))
+          (org-align-tags t)
+          (setq curr-content (buffer-string)))
+        (with-temp-buffer
+          (insert curr-content)
+          (org-novelist-mode)
+          (orgn--fold-show-all)  ; Belts and braces
+          (goto-char (point-min))
+          ;; If the chapter index had any properties, we should probably include them as well. Doing it here will allow file level properties to override the index properties.
+          (while curr-index-properties-list
+            (setq curr-index-property (pop curr-index-properties-list))
+            (when (not (string= (cdr curr-index-property) "???"))
+              (org-set-property (car curr-index-property) (cdr curr-index-property))))
+          (org-set-property (upcase orgn--matter-type-property) (upcase orgn--back-matter-value))
+          (dolist (kv curr-properties-list)
+            (unless (string= (car kv) orgn--generate-property)
+              (org-set-property (car kv) (cdr kv))))
+          (setq content (concat content (buffer-substring (point-min) (buffer-size)) "\n"))))
+      ;; Make sure export backends are reset to user-set values.
+      (progn
+        (setq org-export-registered-backends org-export-registered-backends-orig)
+        (let ((new-list (mapcar #'org-export-backend-name
+                                org-export-registered-backends)))
+          (dolist (backend org-export-backends-orig)
+            (cond
+             ((not (load (format "ox-%s" backend) t t))
+              (message "Problems while trying to load export back-end `%s'"
+                       backend))
+             ((not (memq backend new-list)) (push backend new-list))))
+          (set-default 'org-export-backends (reverse new-list))))
+      (setq org-export-with-toc org-export-with-toc-orig)
+      (setq org-export-with-date org-export-with-date-orig)
+      (setq org-export-with-tags org-export-with-tags-orig)
+      (setq org-export-with-email org-export-with-email-orig)
+      (setq org-export-with-latex org-export-with-latex-orig)
+      (setq org-export-with-tasks org-export-with-tasks-orig)
+      (setq org-export-with-title org-export-with-title-orig)
+      (setq org-export-with-author org-export-with-author-orig)
+      (setq org-export-with-clocks org-export-with-clocks-orig)
+      (setq org-export-with-tables org-export-with-tables-orig)
+      (setq org-export-with-creator org-export-with-creator-orig)
+      (setq org-export-with-drawers org-export-with-drawers-orig)
+      (setq org-export-with-entities org-export-with-entities-orig)
+      (setq org-export-with-planning org-export-with-planning-orig)
+      (setq org-export-with-priority org-export-with-priority-orig)
+      (setq org-export-with-emphasize org-export-with-emphasize-orig)
+      (setq org-export-with-footnotes org-export-with-footnotes-orig)
+      (setq org-export-with-properties org-export-with-properties-orig)
+      (setq org-export-with-timestamps org-export-with-timestamps-orig)
+      (setq org-export-with-fixed-width org-export-with-fixed-width-orig)
+      (setq org-export-with-inlinetasks org-export-with-inlinetasks-orig)
+      (setq org-export-with-broken-links org-export-with-broken-links-orig)
+      (setq org-export-with-smart-quotes org-export-with-smart-quotes-orig)
+      (setq org-export-with-todo-keywords org-export-with-todo-keywords-orig)
+      (setq org-export-with-archived-trees org-export-with-archived-trees-orig)
+      (setq org-export-with-section-numbers org-export-with-section-numbers-orig)
+      (setq org-export-with-special-strings org-export-with-special-strings-orig)
+      (setq org-export-with-sub-superscripts org-export-with-sub-superscripts-orig)
+      (setq org-use-sub-superscripts org-use-sub-superscripts-orig)
+      (setq org-export-with-statistics-cookies org-export-with-statistics-cookies-orig)
+      ;; Generate Org export string.
+      (setq exported-novel-org-string (orgn--populate-export-org-template-string
+                                       story-name
+                                       orgn-author
+                                       orgn-author-email
+                                       (orgn--format-time-string "[%Y-%m-%d %a %H:%M]")
+                                       (string-chop-newline content)))
+      ;; Expand include directives in exported file.
+      (with-temp-buffer
+        (insert exported-novel-org-string)
+        (goto-char (point-min))
+        (org-export-expand-include-keyword nil (concat story-folder / (orgn--ls "chapters-folder")))  ; Make sure any include directives are expanded and included in the exported Org string
+        (setq exported-novel-org-string (buffer-string)))
+
+      ;; Although Org export string is made, the file level properties may need to be overridden by the config file.
+      ;; Find all properties in config file, then go through each and add/overwrite what is in Org export file.
+      ;; Save the results to the Org export string.
+      (when (file-exists-p (concat story-folder / orgn--config-filename))
+        (setq curr-properties-list (orgn--get-file-properties (concat story-folder / orgn--config-filename)))
+        (with-temp-buffer
+          (insert exported-novel-org-string)
+          (dolist (kv curr-properties-list)
+            (let ((no-overwrite nil))
+              (unless (member (upcase (car kv)) mutable-properties)
+                (setq no-overwrite t))
+              (orgn--set-file-property-value (car kv)
+                                             (cdr kv)
+                                             nil
+                                             no-overwrite)))
+          ;; Check if any generators are set and act accordingly.
+          ;; Get list of notes names to be included in glossary, then add to end of string.
+          ;; This must be run before adding index properties to export string.
+          (unless no-glossaries
+            (when (member orgn--glossary-generator-value (split-string (orgn--get-file-property-value orgn--generate-property (concat story-folder / orgn--config-filename)) (orgn--ls "generate-separators") t " "))
+              (let ((glossary-string ""))
+                (setq glossary-string (orgn--make-export-glossary-string story-folder))
+                (unless (string= "" (string-chop-newline glossary-string))
+                  (goto-char (point-max))
+                  (insert (concat "* " (orgn--ls "glossary-header") "\n"
+                                  ":PROPERTIES:\n"
+                                  ":" orgn--matter-type-property ": " orgn--back-matter-value "\n"
+                                  ":END:\n"))
+                  (insert glossary-string)))))
+          ;; Get list of notes names to be included in index, then add to file properties list here.
+          (unless no-indices
+            (let* ((story-pool (orgn--map-story-pool story-folder))
+                   (file-characters (orgn--character-hash-table story-pool))
+                   (file-places (orgn--place-hash-table story-pool))
+                   (file-props (orgn--prop-hash-table story-pool))
+                   (keys (append (hash-table-keys file-characters)
+                                 (hash-table-keys file-places)
+                                 (hash-table-keys file-props)))
+                   key
+                   aliases
+                   alias)
+              (while keys
+                (setq key (pop keys))
+                (if (file-exists-p key)
+                    (if (file-readable-p key)
+                        (when (member orgn--index-generator-value (split-string (orgn--get-file-property-value orgn--add-to-generators-property key) (orgn--ls "generate-separators") t " "))
+                          ;; Add main name.
+                          (orgn--set-file-property-value orgn--index-entry-property
+                                                         (orgn--get-file-property-value "TITLE" key)
+                                                         nil t)
+                          ;; Add aliases.
+                          (setq aliases (split-string (orgn--get-file-property-value orgn--aliases-property key) (orgn--ls "aliases-separators") t " "))
+                          (while aliases
+                            (setq alias (pop aliases))
+                            (orgn--set-file-property-value orgn--index-entry-property
+                                                           (concat (orgn--get-file-property-value "TITLE" key) "!" alias)
+                                                           nil t)))
+                      (progn
+                        (setq orgn-automatic-referencing-p orgn--autoref-p)
+                        (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") key (orgn--ls "filename-is-not-readable")))
+                        (throw 'EXPORT-STORY-FAULT (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") key (orgn--ls "filename-is-not-readable")))))
+                  (progn
+                    (setq orgn-automatic-referencing-p orgn--autoref-p)
+                    (error (concat (orgn--ls "file-not-found") ": " key))
+                    (throw 'EXPORT-STORY-FAULT (concat (orgn--ls "file-not-found") ": " key))))))
+            ;; If export string contains any printindex commands, or has an index generator included, then make sure to include the LaTeX header for makeindex.
+            (when (member orgn--index-generator-value (split-string (orgn--get-file-property-value orgn--generate-property (concat story-folder / orgn--config-filename)) (orgn--ls "generate-separators") t " "))
+              (goto-char (point-min))
+              (when (or (member orgn--index-generator-value (split-string (orgn--get-file-property-value orgn--generate-property (concat story-folder / orgn--config-filename)) (orgn--ls "generate-separators") t " "))
+                        (re-search-forward "#\\+latex: \\\\printindex" nil t))
+                (orgn--set-file-property-value "LATEX_HEADER" "\\makeindex" nil t)
+                (orgn--set-file-property-value "LATEX_HEADER" "\\usepackage{makeidx}" nil t))))
+          (setq exported-novel-org-string (buffer-string))))  ; Make sure new properties have been saved to output string)
+
+      ;; By this point, we should have the Org file string correctly exported.
+      (setq orgn-automatic-referencing-p orgn--autoref-p)
+      (when orgn-automatic-referencing-p
+        (orgn-update-references story-folder))
+      (eval exported-novel-org-string))))
+
+(defun orgn--count-words (&optional story-folder chapter-list just-word-count-p)
+  "Count the words in the story and return a message string.
+This function will attempt to resolve all includes, and remove as much
+extraneous Org markup as makes sense before performing the word count.
+This should make the final word count closer to the exported story.
+If called non-interactively, the STORY-FOLDER can specify which Org
+Novelist story to process.
+If called non-interactively, a specific list of chapter filenames
+(CHAPTER-LIST) can be passed to restrict the word count to only these
+files (which must still be part of the Org Novelist story chapters index).
+If JUST-WORD-COUNT-P is t, then just return the word count as an interger."
+  (if (not story-folder)
+      (setq story-folder (orgn--story-root-folder))
+    (setq story-folder (orgn--story-root-folder story-folder)))
+  (let* ((out-string (orgn--make-exported-novel-org-string story-folder chapter-list t t)))
+    (with-temp-buffer
+      (org-mode)
+      (insert out-string)
+      ;; Basic word count works from here, but let's strip out as much stuff as we can that we think shouldn't contribute.
+
+      ;; First-pass stripping extraneous markup (this one is mainly removing trees with a :noexport: tag)
+      (let ((beg (point-min))
+            (end (point-max))
+            (temp-point (point)))
+        (goto-char beg)
+        (while (< (point) end)
+          (cond
+           ;; Remove subtrees marked for no export.
+           ((org-at-heading-p)
+            (setq temp-point (point))
+            (let ((element (org-element-at-point)))
+              (when (org-element-type-p element 'headline)
+                (let ((org-heading-comps (org-heading-components)))
+                  (when (seq-intersection (org-get-tags) org-export-exclude-tags)
+                    (org-back-to-heading t)
+                    (org-mark-subtree)
+                    (delete-region (point) (mark))))))
+            (goto-char temp-point)))
+          (setq end (point-max))
+          (unless (= (point) end)
+            (forward-char))))
+      ;; Second-pass stripping extraneous markup
+      (let ((beg (point-min))
+            (end (point-max))
+            (temp-point (point)))
+        (goto-char beg)
+        (while (< (point) end)
+          (cond
+           ;; Strip comment lines.
+           ((org-at-comment-p)
+            (setq temp-point (point))
+            (let ((element (org-element-at-point)))
+              (when (org-element-type-p element 'comment)
+                (delete-region (org-element-begin element) (org-element-end element))))
+            (goto-char temp-point))
+           ;; Strip comment blocks, and export blocks.
+           ((org-at-block-p)
+            (setq temp-point (point))
+            (let ((element (org-element-at-point)))
+              (when (or (org-element-type-p element 'comment-block)
+                        (org-element-type-p element 'export-block))
+                (delete-region (org-element-begin element) (org-element-end element))))
+            (goto-char temp-point))
+           ;; Strip keyword lines (this will also remove title and author from word count).
+           ((org-at-keyword-p)
+            (setq temp-point (- (point) 1))
+            (let ((element (org-element-at-point)))
+              (when (org-element-type-p element 'keyword)
+                (delete-region (org-element-begin element) (org-element-end element))))
+            (goto-char temp-point))
+           ;; If hyperlink has a description, just use the description.
+           ((org-at-regexp-p org-link-bracket-re)
+            (setq temp-point (point))
+            (when (match-string-no-properties 2)
+              (let ((desc (match-string-no-properties 2)))
+                (delete-region (match-beginning 0) (match-end 0))
+                (insert desc)))
+            (goto-char temp-point))
+           ;; Strip property drawers.
+           ((org-at-property-drawer-p)
+            (setq temp-point (point))
+            (let ((element (org-element-at-point)))
+              (when (org-element-type-p element 'property-drawer)
+                (delete-region (org-element-begin element) (org-element-end element))))
+            (goto-char temp-point)))
+          (setq end (point-max))
+          (unless (= (point) end)
+            (forward-char))))
+      ;; Third-pass stripping extraneous markup (this one is mainly simplifying headings)
+      (let ((beg (point-min))
+            (end (point-max))
+            (temp-point (point)))
+        (goto-char beg)
+        (while (< (point) end)
+          (cond
+           ;; Simplify headings.
+           ((org-at-heading-p)
+            (let ((element (org-element-at-point)))
+              (when (org-element-type-p element 'headline)
+                (let ((org-heading-comps (org-heading-components))
+                      (new-heading-str ""))
+                  (setq new-heading-str (org-novelist--replace-true-headline-in-org-heading
+                                         (nth 4 org-heading-comps)
+                                         (list (nth 0 org-heading-comps)
+                                               (nth 1 org-heading-comps)
+                                               nil
+                                               nil
+                                               (nth 4 org-heading-comps)
+                                               nil)))
+                  (orgn--delete-line)
+                  (insert (concat new-heading-str "\n")))))
+            (forward-line)))
+          (setq end (point-max))
+          (unless (= (point) end)
+            (forward-char))))
+
+      ;; Make the word count a little more detailed.
+      (let* ((beg (point-min))
+             (end (point-max))
+             (lines (count-lines beg end))
+             (sentences (count-sentences beg end))
+             (words (count-words beg end))
+             (chars (- end beg))
+             (count-message (orgn--ls "word-count-message"))
+             (region-str (orgn--ls "word-count-region-story"))
+             (words-str (orgn--ls "word-count-words"))
+             (sentences-str (orgn--ls "word-count-sentences"))
+             (paragraphs-str (orgn--ls "word-count-paragraphs"))
+             (characters-str (orgn--ls "word-count-characters")))
+        (when chapter-list
+          (if (= (length chapter-list) 1)
+              (setq region-str (orgn--ls "word-count-region-chapter"))
+            (setq region-str (orgn--ls "word-count-region-selection"))))
+        (when (= words 1) (setq words-str (orgn--ls "word-count-word")))
+        (when (= sentences 1) (setq sentences-str (orgn--ls "word-count-sentence")))
+        (when (= lines 1) (setq paragraphs-str (orgn--ls "word-count-paragraph")))
+        (when (= chars 1) (setq characters-str (orgn--ls "word-count-character")))
+        (setq count-message (orgn--replace-string-in-string (concat "<<" (orgn--ls "word-count-region") ">>") region-str count-message t))
+        (setq count-message (orgn--replace-string-in-string (concat "<<" (orgn--ls "word-count-word-count") ">>") (number-to-string words) count-message t))
+        (setq count-message (orgn--replace-string-in-string (concat "<<" (orgn--ls "word-count-words") ">>") words-str count-message t))
+        (setq count-message (orgn--replace-string-in-string (concat "<<" (orgn--ls "word-count-sentence-count") ">>") (number-to-string sentences) count-message t))
+        (setq count-message (orgn--replace-string-in-string (concat "<<" (orgn--ls "word-count-sentences") ">>") sentences-str count-message t))
+        (setq count-message (orgn--replace-string-in-string (concat "<<" (orgn--ls "word-count-paragraph-count") ">>") (number-to-string lines) count-message t))
+        (setq count-message (orgn--replace-string-in-string (concat "<<" (orgn--ls "word-count-paragraphs") ">>") paragraphs-str count-message t))
+        (setq count-message (orgn--replace-string-in-string (concat "<<" (orgn--ls "word-count-character-count") ">>") (number-to-string chars) count-message t))
+        (setq count-message (orgn--replace-string-in-string (concat "<<" (orgn--ls "word-count-characters") ">>") characters-str count-message t))
+        (if just-word-count-p
+            words
+          count-message)))))
 
 (defun orgn--map-story-pool (&optional story-folder)
   "Return a list of all stories linked to current story.
@@ -2971,6 +3715,20 @@ open buffer."
     (puthash "<<props-content>>" props-content glossary-string-substitutions)
     (orgn--generate-string-from-template glossary-string-substitutions orgn--glossary-template)))
 
+(defun orgn--populate-export-org-template-string (story-name author email date content)
+  "Populate the export Org file string template with data.
+STORY-NAME is the name for the story.
+AUTHOR and EMAIL are for the story's writer. DATE is when the export was made.
+CONTENT is the story content as a string.
+Once template is populated, its string will be returned."
+  (let ((export-org-file-substitutions (make-hash-table :test 'equal)))
+    (puthash "<<title>>" story-name export-org-file-substitutions)
+    (puthash "<<author>>" author export-org-file-substitutions)
+    (puthash "<<email>>" email export-org-file-substitutions)
+    (puthash "<<date>>" date export-org-file-substitutions)
+    (puthash "<<content>>" content export-org-file-substitutions)
+    (orgn--generate-string-from-template export-org-file-substitutions orgn--export-org-template)))
+
 (defun orgn--populate-export-org-template (story-name author email date content output-file)
   "Populate the export Org file template with data.
 STORY-NAME is the name for the story.
@@ -2978,13 +3736,7 @@ AUTHOR and EMAIL are for the story's writer. DATE is when the export was made.
 CONTENT is the story content as a string.
 OUTPUT-FILE is where the exported Org file will be saved.
 Once template is populated, it will be written to file."
-  (let ((export-org-file-substitutions (make-hash-table :test 'equal)))
-    (puthash "<<title>>" story-name export-org-file-substitutions)
-    (puthash "<<author>>" author export-org-file-substitutions)
-    (puthash "<<email>>" email export-org-file-substitutions)
-    (puthash "<<date>>" date export-org-file-substitutions)
-    (puthash "<<content>>" content export-org-file-substitutions)
-    (orgn--generate-file-from-template export-org-file-substitutions orgn--export-org-template output-file)))
+  (orgn--string-to-file (orgn--populate-export-org-template-string story-name author email date content) output-file))
 
 
 
@@ -3821,7 +4573,9 @@ PLACE-NAME will be the name given to the place."
       (remove-hook 'post-command-hook 'orgn--reset-automatic-referencing))))
 
 (defun orgn-update-references (&optional story-folder)
-  "Given a STORY-FOLDER, update all cross-references in story."
+  "Given a STORY-FOLDER, update all cross-references in story.
+If no STORY-FOLDER is provided, attempt to use resolve story
+folder from current buffer."
   (interactive)
   (if (not story-folder)
       (setq story-folder (orgn--story-root-folder))
@@ -3928,549 +4682,31 @@ Once the single Org file is complete, go through any other export
 templates specified in config file and run them to create all specified
 export files."
   (interactive)
-  (catch 'EXPORT-STORY-FAULT
-    (let* ((story-folder (orgn--story-root-folder))
-           (indices-folder (orgn--ls "indices-folder"))
-           (exports-folder (orgn--ls "exports-folder"))
-           (story-name (orgn--story-name story-folder))
-           (chapter-index (concat (orgn--ls "chapters-file") orgn--file-ending))
-           (fm-file-list '())
-           (mm-file-list '())
-           (bm-file-list '())
-           curr-chap-file
-           (curr-header "")
-           curr-properties-list
-           curr-index-properties-list
-           (mutable-properties (list "TITLE" "AUTHOR" "EMAIL" "DATE"))  ; Properties that should be overridden by config file
-           curr-index-property
-           (content "")
-           (curr-content "")
-           (curr-glossary-str "")
-           exports-hash
-           keys
-           key
-           (org-export-backends-orig nil)
-	   (org-export-registered-backends-orig nil)
-           (org-export-with-toc-orig nil)
-           (org-export-with-date-orig nil)
-           (org-export-with-tags-orig nil)
-           (org-export-with-email-orig nil)
-           (org-export-with-latex-orig nil)
-           (org-export-with-tasks-orig nil)
-           (org-export-with-title-orig nil)
-           (org-export-with-author-orig nil)
-           (org-export-with-clocks-orig nil)
-           (org-export-with-tables-orig nil)
-           (org-export-with-creator-orig nil)
-           (org-export-with-drawers-orig nil)
-           (org-export-with-entities-orig nil)
-           (org-export-with-planning-orig nil)
-           (org-export-with-priority-orig nil)
-           (org-export-with-emphasize-orig nil)
-           (org-export-with-footnotes-orig nil)
-           (org-export-with-properties-orig nil)
-           (org-export-with-timestamps-orig nil)
-           (org-export-with-fixed-width-orig nil)
-           (org-export-with-inlinetasks-orig nil)
-           (org-export-with-broken-links-orig nil)
-           (org-export-with-smart-quotes-orig nil)
-           (org-export-with-todo-keywords-orig nil)
-           (org-export-with-archived-trees-orig nil)
-           (org-export-with-section-numbers-orig nil)
-           (org-export-with-special-strings-orig nil)
-           (org-export-with-sub-superscripts-orig nil)
-           (org-use-sub-superscripts-orig nil)
-           (org-export-with-statistics-cookies-orig nil))
-      (setq orgn--autoref-p orgn-automatic-referencing-p)
-      (setq orgn-automatic-referencing-p nil)
-      ;; Temporarily add a hook to reset automatic referencing in case user aborts minibuffer.
-      (add-hook 'post-command-hook 'orgn--reset-automatic-referencing)
-      ;;  Store original user-set Org export settings.
-      (when (boundp 'org-export-backends)
-        (setq org-export-backends-orig org-export-backends))
-      (when (boundp 'org-export-registered-backends)
-	(setq org-export-registered-backends-orig org-export-registered-backends))
-      (when (boundp 'org-export-with-toc)
-        (setq org-export-with-toc-orig org-export-with-toc))
-      (when (boundp 'org-export-with-date)
-        (setq org-export-with-date-orig org-export-with-date))
-      (when (boundp 'org-export-with-tags)
-        (setq org-export-with-tags-orig org-export-with-tags))
-      (when (boundp 'org-export-with-email)
-        (setq org-export-with-email-orig org-export-with-email))
-      (when (boundp 'org-export-with-latex)
-        (setq org-export-with-latex-orig org-export-with-latex))
-      (when (boundp 'org-export-with-tasks)
-        (setq org-export-with-tasks-orig org-export-with-tasks))
-      (when (boundp 'org-export-with-title)
-        (setq org-export-with-title-orig org-export-with-title))
-      (when (boundp 'org-export-with-author)
-        (setq org-export-with-author-orig org-export-with-author))
-      (when (boundp 'org-export-with-clocks)
-        (setq org-export-with-clocks-orig org-export-with-clocks))
-      (when (boundp 'org-export-with-tables)
-        (setq org-export-with-tables-orig org-export-with-tables))
-      (when (boundp 'org-export-with-creator)
-        (setq org-export-with-creator-orig org-export-with-creator))
-      (when (boundp 'org-export-with-drawers)
-        (setq org-export-with-drawers-orig org-export-with-drawers))
-      (when (boundp 'org-export-with-entities)
-        (setq org-export-with-entities-orig org-export-with-entities))
-      (when (boundp 'org-export-with-planning)
-        (setq org-export-with-planning-orig org-export-with-planning))
-      (when (boundp 'org-export-with-priority)
-        (setq org-export-with-priority-orig org-export-with-priority))
-      (when (boundp 'org-export-with-emphasize)
-        (setq org-export-with-emphasize-orig org-export-with-emphasize))
-      (when (boundp 'org-export-with-footnotes)
-        (setq org-export-with-footnotes-orig org-export-with-footnotes))
-      (when (boundp 'org-export-with-properties)
-        (setq org-export-with-properties-orig org-export-with-properties))
-      (when (boundp 'org-export-with-timestamps)
-        (setq org-export-with-timestamps-orig org-export-with-timestamps))
-      (when (boundp 'org-export-with-fixed-width)
-        (setq org-export-with-fixed-width-orig org-export-with-fixed-width))
-      (when (boundp 'org-export-with-inlinetasks)
-        (setq org-export-with-inlinetasks-orig org-export-with-inlinetasks))
-      (when (boundp 'org-export-with-broken-links)
-        (setq org-export-with-broken-links-orig org-export-with-broken-links))
-      (when (boundp 'org-export-with-smart-quotes)
-        (setq org-export-with-smart-quotes-orig org-export-with-smart-quotes))
-      (when (boundp 'org-export-with-todo-keywords)
-        (setq org-export-with-todo-keywords-orig org-export-with-todo-keywords))
-      (when (boundp 'org-export-with-archived-trees)
-        (setq org-export-with-archived-trees-orig org-export-with-archived-trees))
-      (when (boundp 'org-export-with-section-numbers)
-        (setq org-export-with-section-numbers-orig org-export-with-section-numbers))
-      (when (boundp 'org-export-with-special-strings)
-        (setq org-export-with-special-strings-orig org-export-with-special-strings))
-      (when (boundp 'org-export-with-sub-superscripts)
-        (setq org-export-with-sub-superscripts-orig org-export-with-sub-superscripts))
-      (when (boundp 'org-use-sub-superscripts)
-        (setq org-use-sub-superscripts-orig org-use-sub-superscripts))
-      (when (boundp 'org-export-with-statistics-cookies)
-        (setq org-export-with-statistics-cookies-orig org-export-with-statistics-cookies))
-      (orgn--rebuild-indices story-folder)  ; Make sure the chapter index is in good condition (this function actually checks all indices)
-      (if (file-exists-p (concat story-folder / indices-folder / chapter-index))
-          (if (file-readable-p (concat story-folder / indices-folder / chapter-index))
-              (progn
-                (find-file (concat story-folder / indices-folder / chapter-index))
-                ;; If there is a front matter in chapter index, get files in order and add to front matter list
-                (with-temp-buffer
-                  (insert-file-contents (concat story-folder / indices-folder / chapter-index))
-                  (goto-char (point-min))
-                  (insert "\n")
-                  (goto-char (point-min))
-                  (org-novelist-mode)
-                  (orgn--fold-show-all)  ; Belts and braces
-                  (while (not (orgn--next-visible-heading 1))
-                    (when (string= (orgn--ls "front-matter-heading") (nth 4 (org-heading-components)))
-                      ;; Found front matter, get files in order and add to list.
-                      (when (org-goto-first-child)
-                        (setq fm-file-list (cons (orgn--heading-last-link-absolute-link-text) fm-file-list))
-                        (while (org-goto-sibling)
-                          (setq fm-file-list (cons (orgn--heading-last-link-absolute-link-text) fm-file-list))))
-                      (goto-char (point-max))))  ; No need to check any more, so skip to the end go exit loop
-                  (setq fm-file-list (reverse fm-file-list)))  ; Put files back in order
-                ;; If there is a main matter in chapter index, get files in order and add to main matter list
-                (with-temp-buffer
-                  (insert-file-contents (concat story-folder / indices-folder / chapter-index))
-                  (goto-char (point-min))
-                  (insert "\n")
-                  (goto-char (point-min))
-                  (org-novelist-mode)
-                  (orgn--fold-show-all)  ; Belts and braces
-                  (while (not (orgn--next-visible-heading 1))
-                    (when (string= (orgn--ls "main-matter-heading") (nth 4 (org-heading-components)))
-                      ;; Found main matter, get files in order and add to list.
-                      (when (org-goto-first-child)
-                        (setq mm-file-list (cons (orgn--heading-last-link-absolute-link-text) mm-file-list))
-                        (while (org-goto-sibling)
-                          (setq mm-file-list (cons (orgn--heading-last-link-absolute-link-text) mm-file-list))))
-                      (goto-char (point-max))))  ; No need to check any more, to skip to the end go exit loop
-                  (setq mm-file-list (reverse mm-file-list)))
-                ;; If there is a back matter in chapter index, get files in order and add to back matter list
-                (with-temp-buffer
-                  (insert-file-contents (concat story-folder / indices-folder / chapter-index))
-                  (goto-char (point-min))
-                  (insert "\n")
-                  (goto-char (point-min))
-                  (org-novelist-mode)
-                  (orgn--fold-show-all)  ; Belts and braces
-                  (while (not (orgn--next-visible-heading 1))
-                    (when (string= (orgn--ls "back-matter-heading") (nth 4 (org-heading-components)))
-                      ;; Found back matter, get files in order and add to list.
-                      (when (org-goto-first-child)
-                        (setq bm-file-list (cons (orgn--heading-last-link-absolute-link-text) bm-file-list))
-                        (while (org-goto-sibling)
-                          (setq bm-file-list (cons (orgn--heading-last-link-absolute-link-text) bm-file-list))))
-                      (goto-char (point-max))))  ; No need to check any more, to skip to the end go exit loop
-                  (setq bm-file-list (reverse bm-file-list))))
-            (progn
-              (setq orgn-automatic-referencing-p orgn--autoref-p)
-              (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") chapter-index (orgn--ls "filename-is-not-readable")))
-              (throw 'EXPORT-STORY-FAULT (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") chapter-index (orgn--ls "filename-is-not-readable")))))
-        (progn
-          (setq orgn-automatic-referencing-p orgn--autoref-p)
-          (error (concat (orgn--ls "file-not-found") ": " chapter-index))
-          (throw 'EXPORT-STORY-FAULT (concat (orgn--ls "file-not-found") ": " chapter-index))))
-      ;; Correctly ordered file lists have been made.
-      ;; Make sure export backends that we need are loaded.
-      (progn
-        (setq org-export-registered-backends
-              (cl-remove-if-not
-               (lambda (backend)
-                 (let ((name (org-export-backend-name backend)))
-                   (or (memq name (quote (ascii html icalendar latex odt md org)))
-                       (catch 'parentp
-                         (dolist (b (quote (ascii html icalendar latex odt md org)))
-                           (and (org-export-derived-backend-p b name)
-                                (throw 'parentp t)))))))
-               org-export-registered-backends))
-        (let ((new-list (mapcar #'org-export-backend-name
-                                org-export-registered-backends)))
-          (dolist (backend (quote (ascii html icalendar latex odt md org)))
-            (cond
-             ((not (load (format "ox-%s" backend) t t))
-              (message "Problems while trying to load export back-end `%s'"
-                       backend))
-             ((not (memq backend new-list)) (push backend new-list))))
-          (set-default 'org-export-backends (reverse new-list))))
-      (setq org-export-with-toc nil)
-      (setq org-export-with-date nil)
-      (setq org-export-with-tags t)
-      (setq org-export-with-email nil)
-      (setq org-export-with-latex t)
-      (setq org-export-with-tasks t)
-      (setq org-export-with-title nil)
-      (setq org-export-with-author nil)
-      (setq org-export-with-clocks nil)
-      (setq org-export-with-tables t)
-      (setq org-export-with-creator nil)
-      (setq org-export-with-drawers t)
-      (setq org-export-with-entities t)
-      (setq org-export-with-planning t)
-      (setq org-export-with-priority t)
-      (setq org-export-with-emphasize t)
-      (setq org-export-with-footnotes t)
-      (setq org-export-with-properties t)
-      (setq org-export-with-timestamps t)
-      (setq org-export-with-fixed-width t)
-      (setq org-export-with-inlinetasks t)
-      (setq org-export-with-broken-links t)
-      (setq org-export-with-smart-quotes t)
-      (setq org-export-with-todo-keywords t)
-      (setq org-export-with-archived-trees nil)
-      (setq org-export-with-section-numbers t)
-      (setq org-export-with-special-strings t)
-      (setq org-export-with-sub-superscripts t)
-      (setq org-use-sub-superscripts '{})
-      (setq org-export-with-statistics-cookies t)
-      ;; Process chapters.
-      (while fm-file-list
-        (setq curr-chap-file (expand-file-name (pop fm-file-list)))
-        (setq curr-properties-list (assoc-delete-all "INDEX" (assoc-delete-all "TITLE" (orgn--get-file-properties curr-chap-file))))
-        ;; Generate header for current chapter. TITLE property in file will override the one in the Chapter Index, but otherwise the Chapter Index line will be used, set to level 1.
-        (when (file-readable-p (concat story-folder / indices-folder / chapter-index))
-          (with-temp-buffer
-            (insert-file-contents (concat story-folder / indices-folder / chapter-index))
-            (org-novelist-mode)
-            (orgn--fold-show-all)  ; Belts and braces
-            (goto-char (point-min))
-            (re-search-forward (file-relative-name curr-chap-file) nil t)
-            (setq curr-header (orgn--replace-true-headline-in-org-heading (orgn--get-file-property-value "TITLE" curr-chap-file) (org-heading-components) 1))
-            (setq curr-index-properties-list (org-entry-properties nil 'standard))))
-        (with-temp-buffer
-          (org-novelist-mode)
-          (orgn--fold-show-all)  ; Belts and braces
-          (if (string=  curr-header "")
-              (insert "* " (orgn--get-file-property-value "TITLE" curr-chap-file) "\n")
-            (insert curr-header "\n"))
-          (setq curr-header "")
-          ;; Chapter title setup, add contents.
-          (goto-char (buffer-size))
-          (insert "\n")
-          (insert (orgn--get-file-subtree curr-chap-file (orgn--ls "content-header") t))
-          ;; Maybe add glossary?
-          (when (member orgn--glossary-generator-value (split-string (orgn--get-file-property-value orgn--generate-property curr-chap-file) (orgn--ls "generate-separators") t " "))
-            (setq curr-glossary-str (orgn--make-export-glossary-string story-folder curr-chap-file))
-            (unless (string= (string-chop-newline curr-glossary-str) "")
-              (insert "* " (orgn--ls "glossary-header") " :no_header_preamble:no_toc_entry:plain_pagestyle:\n")
-              (insert curr-glossary-str)
-              (setq curr-glossary-str "")))
-          ;; Maybe add index?
-          (when (member orgn--index-generator-value (split-string (orgn--get-file-property-value orgn--generate-property curr-chap-file) (orgn--ls "generate-separators") t " "))
-            (insert "\n#+LATEX: \\printindex"))
-          (org-align-tags t)
-          (setq curr-content (buffer-string)))
-        (with-temp-buffer
-          (insert curr-content)
-          (org-novelist-mode)
-          (orgn--fold-show-all)  ; Belts and braces
-          (goto-char (point-min))
-          ;; If the chapter index had any properties, we should probably include them as well. Doing it here will allow file level properties to override the index properties.
-          (while curr-index-properties-list
-            (setq curr-index-property (pop curr-index-properties-list))
-            (when (not (string= (cdr curr-index-property) "???"))
-              (org-set-property (car curr-index-property) (cdr curr-index-property))))
-          (org-set-property (upcase orgn--matter-type-property) (upcase orgn--front-matter-value))
-          (dolist (kv curr-properties-list)
-            (org-set-property (car kv) (cdr kv)))
-          (setq content (concat content (buffer-substring (point-min) (buffer-size)) "\n"))))
-      (while mm-file-list
-        (setq curr-chap-file (pop mm-file-list))
-        (setq curr-properties-list (assoc-delete-all "INDEX" (assoc-delete-all "TITLE" (orgn--get-file-properties curr-chap-file))))
-        ;; Generate header for current chapter. TITLE property in file will override the one in the Chapter Index, but otherwise the Chapter Index line will be used, set to level 1.
-        (when (file-readable-p (concat story-folder / indices-folder / chapter-index))
-          (with-temp-buffer
-            (insert-file-contents (concat story-folder / indices-folder / chapter-index))
-            (org-novelist-mode)
-            (orgn--fold-show-all)  ; Belts and braces
-            (goto-char (point-min))
-            (re-search-forward (file-relative-name curr-chap-file) nil t)
-            (setq curr-header (orgn--replace-true-headline-in-org-heading (orgn--get-file-property-value "TITLE" curr-chap-file) (org-heading-components) 1))
-            (setq curr-index-properties-list (org-entry-properties nil 'standard))))
-        (with-temp-buffer
-          (org-novelist-mode)
-          (orgn--fold-show-all)  ; Belts and braces
-          (if (string=  curr-header "")
-              (insert "* " (orgn--get-file-property-value "TITLE" curr-chap-file) "\n")
-            (insert curr-header "\n"))
-          (setq curr-header "")
-          ;; Chapter title setup, add contents.
-          (goto-char (buffer-size))
-          (insert "\n")
-          (insert (orgn--get-file-subtree curr-chap-file (orgn--ls "content-header") t))
-          ;; Maybe add glossary?
-          (when (member orgn--glossary-generator-value (split-string (orgn--get-file-property-value orgn--generate-property curr-chap-file) (orgn--ls "generate-separators") t " "))
-            (setq curr-glossary-str (orgn--make-export-glossary-string story-folder curr-chap-file))
-            (unless (string= (string-chop-newline curr-glossary-str) "")
-              (insert "* " (orgn--ls "glossary-header") " :no_header_preamble:no_toc_entry:plain_pagestyle:\n")
-              (insert curr-glossary-str)
-              (setq curr-glossary-str "")))
-          ;; Maybe add index?
-          (when (member orgn--index-generator-value (split-string (orgn--get-file-property-value orgn--generate-property curr-chap-file) (orgn--ls "generate-separators") t " "))
-            (insert "\n#+LATEX: \\printindex"))
-          (org-align-tags t)
-          (setq curr-content (buffer-string)))
-        (with-temp-buffer
-          (insert curr-content)
-          (org-novelist-mode)
-          (orgn--fold-show-all)  ; Belts and braces
-          (goto-char (point-min))
-          ;; If the chapter index had any properties, we should probably include them as well. Doing it here will allow file level properties to override the index properties.
-          (while curr-index-properties-list
-            (setq curr-index-property (pop curr-index-properties-list))
-            (when (not (string= (cdr curr-index-property) "???"))
-              (org-set-property (car curr-index-property) (cdr curr-index-property))))
-          (org-set-property (upcase orgn--matter-type-property) (upcase orgn--main-matter-value))
-          (dolist (kv curr-properties-list)
-            (org-set-property (car kv) (cdr kv)))
-          (setq content (concat content (buffer-substring (point-min) (buffer-size)) "\n"))))
-      (while bm-file-list
-        (setq curr-chap-file (expand-file-name (pop bm-file-list)))
-        (setq curr-properties-list (assoc-delete-all "INDEX" (assoc-delete-all "TITLE" (orgn--get-file-properties curr-chap-file))))
-        ;; Generate header for current chapter. TITLE property in file will override the one in the Chapter Index, but otherwise the Chapter Index line will be used, set to level 1.
-        (when (file-readable-p (concat story-folder / indices-folder / chapter-index))
-          (with-temp-buffer
-            (insert-file-contents (concat story-folder / indices-folder / chapter-index))
-            (org-novelist-mode)
-            (orgn--fold-show-all)  ; Belts and braces
-            (goto-char (point-min))
-            (re-search-forward (file-relative-name curr-chap-file) nil t)
-            (setq curr-header (orgn--replace-true-headline-in-org-heading (orgn--get-file-property-value "TITLE" curr-chap-file) (org-heading-components) 1))
-            (setq curr-index-properties-list (org-entry-properties nil 'standard))))
-        (with-temp-buffer
-          (org-novelist-mode)
-          (orgn--fold-show-all)  ; Belts and braces
-          (if (string=  curr-header "")
-              (insert "* " (orgn--get-file-property-value "TITLE" curr-chap-file) "\n")
-            (insert curr-header "\n"))
-          (setq curr-header "")
-          ;; Chapter title setup, add contents.
-          (goto-char (buffer-size))
-          (insert "\n")
-          (insert (orgn--get-file-subtree curr-chap-file (orgn--ls "content-header") t))
-          ;; Maybe add glossary?
-          (when (member orgn--glossary-generator-value (split-string (orgn--get-file-property-value orgn--generate-property curr-chap-file) (orgn--ls "generate-separators") t " "))
-            (setq curr-glossary-str (orgn--make-export-glossary-string story-folder curr-chap-file))
-            (unless (string= (string-chop-newline curr-glossary-str) "")
-              (insert "* " (orgn--ls "glossary-header") " :no_header_preamble:no_toc_entry:plain_pagestyle:\n")
-              (insert curr-glossary-str)
-              (setq curr-glossary-str "")))
-          ;; Maybe add index?
-          (when (member orgn--index-generator-value (split-string (orgn--get-file-property-value orgn--generate-property curr-chap-file) (orgn--ls "generate-separators") t " "))
-            (insert "\n#+LATEX: \\printindex"))
-          (org-align-tags t)
-          (setq curr-content (buffer-string)))
-        (with-temp-buffer
-          (insert curr-content)
-          (org-novelist-mode)
-          (orgn--fold-show-all)  ; Belts and braces
-          (goto-char (point-min))
-          ;; If the chapter index had any properties, we should probably include them as well. Doing it here will allow file level properties to override the index properties.
-          (while curr-index-properties-list
-            (setq curr-index-property (pop curr-index-properties-list))
-            (when (not (string= (cdr curr-index-property) "???"))
-              (org-set-property (car curr-index-property) (cdr curr-index-property))))
-          (org-set-property (upcase orgn--matter-type-property) (upcase orgn--back-matter-value))
-          (dolist (kv curr-properties-list)
-            (org-set-property (car kv) (cdr kv)))
-          (setq content (concat content (buffer-substring (point-min) (buffer-size)) "\n"))))
-      ;; Make sure export backends are reset to user-set values.
-      (progn
-        (setq org-export-registered-backends org-export-registered-backends-orig)
-        (let ((new-list (mapcar #'org-export-backend-name
-                                org-export-registered-backends)))
-          (dolist (backend org-export-backends-orig)
-            (cond
-             ((not (load (format "ox-%s" backend) t t))
-              (message "Problems while trying to load export back-end `%s'"
-                       backend))
-             ((not (memq backend new-list)) (push backend new-list))))
-          (set-default 'org-export-backends (reverse new-list))))
-      (setq org-export-with-toc org-export-with-toc-orig)
-      (setq org-export-with-date org-export-with-date-orig)
-      (setq org-export-with-tags org-export-with-tags-orig)
-      (setq org-export-with-email org-export-with-email-orig)
-      (setq org-export-with-latex org-export-with-latex-orig)
-      (setq org-export-with-tasks org-export-with-tasks-orig)
-      (setq org-export-with-title org-export-with-title-orig)
-      (setq org-export-with-author org-export-with-author-orig)
-      (setq org-export-with-clocks org-export-with-clocks-orig)
-      (setq org-export-with-tables org-export-with-tables-orig)
-      (setq org-export-with-creator org-export-with-creator-orig)
-      (setq org-export-with-drawers org-export-with-drawers-orig)
-      (setq org-export-with-entities org-export-with-entities-orig)
-      (setq org-export-with-planning org-export-with-planning-orig)
-      (setq org-export-with-priority org-export-with-priority-orig)
-      (setq org-export-with-emphasize org-export-with-emphasize-orig)
-      (setq org-export-with-footnotes org-export-with-footnotes-orig)
-      (setq org-export-with-properties org-export-with-properties-orig)
-      (setq org-export-with-timestamps org-export-with-timestamps-orig)
-      (setq org-export-with-fixed-width org-export-with-fixed-width-orig)
-      (setq org-export-with-inlinetasks org-export-with-inlinetasks-orig)
-      (setq org-export-with-broken-links org-export-with-broken-links-orig)
-      (setq org-export-with-smart-quotes org-export-with-smart-quotes-orig)
-      (setq org-export-with-todo-keywords org-export-with-todo-keywords-orig)
-      (setq org-export-with-archived-trees org-export-with-archived-trees-orig)
-      (setq org-export-with-section-numbers org-export-with-section-numbers-orig)
-      (setq org-export-with-special-strings org-export-with-special-strings-orig)
-      (setq org-export-with-sub-superscripts org-export-with-sub-superscripts-orig)
-      (setq org-use-sub-superscripts org-use-sub-superscripts-orig)
-      (setq org-export-with-statistics-cookies org-export-with-statistics-cookies-orig)
-      ;; Generate Org export file.
-      (orgn--populate-export-org-template
-       story-name
-       orgn-author
-       orgn-author-email
-       (orgn--format-time-string "[%Y-%m-%d %a %H:%M]")
-       (string-chop-newline content)
-       (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
-      ;; Expand include directives in exported file.
-      (when (file-exists-p (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
-        (when (file-writable-p (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
-          (find-file (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
-          (goto-char (point-min))
-          (org-export-expand-include-keyword nil (concat story-folder / (orgn--ls "chapters-folder")))  ; Make sure any include directives are expanded and included in the exported Org file
-          (orgn--save-current-file)))
-      ;; Although Org export file is made, the file level properties may need to be overridden by the config file.
-      ;; Find all properties in config file, then go through each and add/overwrite what is in Org export file.
-      ;; Save the results.
-      (when (file-exists-p (concat story-folder / orgn--config-filename))
-        (setq curr-properties-list (orgn--get-file-properties (concat story-folder / orgn--config-filename)))
-        (dolist (kv curr-properties-list)
-          (let ((no-overwrite nil))
-            (unless (member (upcase (car kv)) mutable-properties)
-              (setq no-overwrite t))
-            (orgn--set-file-property-value (car kv)
-                                           (cdr kv)
-                                           (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending)
-                                           no-overwrite)))
-        ;; Make sure new properties have been saved to output file.
-        (when (file-exists-p (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
-          (when (file-writable-p (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
-            (find-file (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
-            (orgn--save-current-file)))
-        ;; Check if any generators are set and act accordingly.
-        ;; Get list of notes names to be included in glossary, then add to end of file.
-        ;; This must be run before adding index properties to export file.
-        (when (member orgn--glossary-generator-value (split-string (orgn--get-file-property-value orgn--generate-property (concat story-folder / orgn--config-filename)) (orgn--ls "generate-separators") t " "))
-          (when (file-exists-p (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
-            (when (file-writable-p (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
-              (let ((glossary-string ""))
-                (find-file (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
-                (setq glossary-string (orgn--make-export-glossary-string story-folder))
-                (unless (string= "" (string-chop-newline glossary-string))
-                  (goto-char (point-max))
-                  (insert (concat "* " (orgn--ls "glossary-header") "\n"
-                                  ":PROPERTIES:\n"
-                                  ":" orgn--matter-type-property ": " orgn--back-matter-value "\n"
-                                  ":END:\n"))
-                  (insert glossary-string)
-                  (orgn--save-current-file))))))  ; This is currently unchecked for when user enters an invalid filename. As such, it could result in an error that will not allow orgn-automatic-referencing-p to be reset. This is saving the file opened by the various calls to `orgn--set-file-property-value'
-        ;; Get list of notes names to be included in index, then add to file properties list here.
-        (let* ((story-pool (orgn--map-story-pool story-folder))
-               (file-characters (orgn--character-hash-table story-pool))
-               (file-places (orgn--place-hash-table story-pool))
-               (file-props (orgn--prop-hash-table story-pool))
-               (keys (append (hash-table-keys file-characters)
-                             (hash-table-keys file-places)
-                             (hash-table-keys file-props)))
-               key
-               aliases
-               alias)
-          (while keys
-            (setq key (pop keys))
-            (if (file-exists-p key)
-                (if (file-readable-p key)
-                    (when (member orgn--index-generator-value (split-string (orgn--get-file-property-value orgn--add-to-generators-property key) (orgn--ls "generate-separators") t " "))
-                      ;; Add main name.
-                      (orgn--set-file-property-value orgn--index-entry-property
-                                                     (orgn--get-file-property-value "TITLE" key)
-                                                     (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending) t)
-                      ;; Add aliases.
-                      (setq aliases (split-string (orgn--get-file-property-value orgn--aliases-property key) (orgn--ls "aliases-separators") t " "))
-                      (while aliases
-                        (setq alias (pop aliases))
-                        (orgn--set-file-property-value orgn--index-entry-property
-                                                       (concat (orgn--get-file-property-value "TITLE" key) "!" alias)
-                                                       (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending) t)))
-                  (progn
-                    (setq orgn-automatic-referencing-p orgn--autoref-p)
-                    (error (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") key (orgn--ls "filename-is-not-readable")))
-                    (throw 'EXPORT-STORY-FAULT (orgn--replace-string-in-string (concat "<<" (orgn--ls "filename") ">>") key (orgn--ls "filename-is-not-readable")))))
-              (progn
-                (setq orgn-automatic-referencing-p orgn--autoref-p)
-                (error (concat (orgn--ls "file-not-found") ": " key))
-                (throw 'EXPORT-STORY-FAULT (concat (orgn--ls "file-not-found") ": " key))))))
-        ;; If export file contains any printindex commands, or has an index generator included, then made sure to include the LaTeX header for makeindex.
-        (when (member orgn--index-generator-value (split-string (orgn--get-file-property-value orgn--generate-property (concat story-folder / orgn--config-filename)) (orgn--ls "generate-separators") t " "))
-          (when (file-exists-p (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
-            (when (file-writable-p (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
-              (find-file (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
-              (goto-char (point-min))
-              (when (or (member orgn--index-generator-value (split-string (orgn--get-file-property-value orgn--generate-property (concat story-folder / orgn--config-filename)) (orgn--ls "generate-separators") t " "))
-                        (re-search-forward "#\\+latex: \\\\printindex" nil t))
-                (orgn--set-file-property-value "LATEX_HEADER" "\\makeindex" (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending) t)
-                (orgn--set-file-property-value "LATEX_HEADER" "\\usepackage{makeidx}" (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending) t))
-              (orgn--save-current-file)))))
-      ;; By this point, we should have the Org file correctly exported.
-      ;; Run through the export templates in the config file.
-      (setq exports-hash (orgn--exports-hash-table story-folder))
-      (setq keys (hash-table-keys exports-hash))
-      (while keys
-        (setq key (pop keys))
-        (load-file (expand-file-name (gethash key exports-hash)))
-        (declare-function org-novelist--export-template (concat "ext:" (gethash key exports-hash)) (org-input-file output-file))
-        (org-novelist--export-template (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending) key))
-      ;; Open exported Org file.
-      (find-file (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
-      (setq orgn-automatic-referencing-p orgn--autoref-p)
-      (when orgn-automatic-referencing-p
-        (orgn-update-references story-folder))
-      ;; Remove hook to reset automatic referencing since we made it to the end of the function.
-      (remove-hook 'post-command-hook 'orgn--reset-automatic-referencing))))
+  (setq orgn--autoref-p orgn-automatic-referencing-p)
+  (setq orgn-automatic-referencing-p nil)
+  ;; Temporarily add a hook to reset automatic referencing in case user aborts minibuffer.
+  (add-hook 'post-command-hook 'orgn--reset-automatic-referencing)
+  (let* ((story-folder (orgn--story-root-folder))
+         (story-name (orgn--story-name story-folder))
+         (exports-folder (orgn--ls "exports-folder"))
+         (exported-novel-org-string (orgn--make-exported-novel-org-string story-folder)))
+    (orgn--string-to-file exported-novel-org-string (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
+    ;; By this point, we should have the Org file correctly exported.
+    ;; Run through the export templates in the config file.
+    (setq exports-hash (orgn--exports-hash-table story-folder))
+    (setq keys (hash-table-keys exports-hash))
+    (while keys
+      (setq key (pop keys))
+      (load-file (expand-file-name (gethash key exports-hash)))
+      (declare-function org-novelist--export-template (concat "ext:" (gethash key exports-hash)) (org-input-file output-file))
+      (org-novelist--export-template (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending) key))
+    ;; Open exported Org file.
+    (find-file (concat story-folder / exports-folder / (orgn--system-safe-name story-name) orgn--file-ending))
+    (setq orgn-automatic-referencing-p orgn--autoref-p)
+    (when orgn-automatic-referencing-p
+      (orgn-update-references story-folder))
+    ;; Remove hook to reset automatic referencing since we made it to the end of the function.
+    (remove-hook 'post-command-hook 'orgn--reset-automatic-referencing)))
 
 (defun orgn-link-to-story (linked-story-folder)
   "Add a LINKED-STORY-FOLDER to the linked story index, and associated config.
@@ -4817,6 +5053,36 @@ Once changed, inform user of new state."
       (message (orgn--ls "auto-ref-now-on"))
     (message (orgn--ls "auto-ref-now-off"))))
 
+(defun orgn-count-words-in-story ()
+  "Count the words in the story.
+This function will attempt to resolve all includes, and remove as much
+extraneous Org markup as makes sense before performing the word count.
+This should make the final word count closer to the exported story."
+  (interactive)
+  (setq story-folder (orgn--story-root-folder))
+  (setq orgn--autoref-p orgn-automatic-referencing-p)
+  (setq orgn-automatic-referencing-p nil)
+  ;; Temporarily add a hook to reset automatic referencing in case user aborts minibuffer.
+  (add-hook 'post-command-hook 'orgn--reset-automatic-referencing)
+  (message (orgn--count-words story-folder))
+  ;; Remove hook to reset automatic referencing since we made it to the end of the function.
+  (remove-hook 'post-command-hook 'orgn--reset-automatic-referencing))
+
+(defun orgn-count-words-in-current-chapter ()
+  "Count the words in the current Org Novelist chapter file.
+This function will attempt to resolve all includes, and remove as much
+extraneous Org markup as makes sense before performing the word count.
+This should make the final word count closer to the chapter's output
+in the exported story."
+  (interactive)
+  (setq story-folder (orgn--story-root-folder))
+  (setq orgn--autoref-p orgn-automatic-referencing-p)
+  (setq orgn-automatic-referencing-p nil)
+  ;; Temporarily add a hook to reset automatic referencing in case user aborts minibuffer.
+  (message (orgn--count-words story-folder (list (buffer-file-name))))
+  ;; Remove hook to reset automatic referencing since we made it to the end of the function.
+  (remove-hook 'post-command-hook 'orgn--reset-automatic-referencing))
+
 
 ;; Define the Org Novelist mode menus.
 ;; I've yet to find a way to internationalise these strings, so they're hard coded for now.
@@ -4892,6 +5158,8 @@ The following commands are available:
 `org-novelist-export-story'
 `org-novelist-link-to-story'
 `org-novelist-unlink-from-story'
+`org-novelist-count-words-in-story'
+`org-novelist-count-words-in-current-chapter'
 `org-novelist-toggle-automatic-referencing'"
   (add-hook 'after-save-hook 'orgn--update-references-after-save-hook))
 

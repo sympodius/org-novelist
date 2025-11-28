@@ -250,6 +250,32 @@
 (defconst orgn--filename-is-not-a-recognised-index-en-US "<<filename>> is not a recognized index" "Index is not of a known type.")
 (defconst orgn--auto-ref-now-on-en-US "Org Novelist automatic referencing has been turned ON" "Inform user that automatic referencing has been turned on.")
 (defconst orgn--auto-ref-now-off-en-US "Org Novelist automatic referencing has been turned OFF" "Inform user that automatic referencing has been turned off.")
+(defconst orgn--word-count-region-en-US "Region" "Placeholder for the Region, used in generating word count messages.")
+(defconst orgn--word-count-word-count-en-US "word count" "Placeholder for the word count number, used in generating word count messages.")
+(defconst orgn--word-count-sentence-count-en-US "sentence count" "Placeholder for the sentence count number, used in generating word count messages.")
+(defconst orgn--word-count-paragraph-count-en-US "paragraph count" "Placeholder for the paragraph count number, used in generating word count messages.")
+(defconst orgn--word-count-character-count-en-US "character count" "Placeholder for the character count number, used in generating word count messages.")
+(defconst orgn--word-count-region-story-en-US "Story" "Part of the message for the word count of the story.")
+(defconst orgn--word-count-region-chapter-en-US "Chapter" "Part of the message for the word count of the current chapter.")
+(defconst orgn--word-count-region-selection-en-US "Selection" "Part of the message for the word count of the current selection of chapters.")
+(defconst orgn--word-count-word-en-US "word" "Part of the message for the word count, indicating a single word.")
+(defconst orgn--word-count-words-en-US "words" "Part of the message for the word count, indicating more than one word.")
+(defconst orgn--word-count-sentence-en-US "sentence" "Part of the message for the word count, indicating a single sentence.")
+(defconst orgn--word-count-sentences-en-US "sentences" "Part of the message for the word count, indicating more than one sentence.")
+(defconst orgn--word-count-paragraph-en-US "paragraph" "Part of the message for the word count, indicating a single paragraph.")
+(defconst orgn--word-count-paragraphs-en-US "paragraphs" "Part of the message for the word count, indicating more than one paragraph.")
+(defconst orgn--word-count-character-en-US "character" "Part of the message for the word count, indicating a single character.")
+(defconst orgn--word-count-characters-en-US "characters" "Part of the message for the word count, indicating more than one character.")
+;; <<Region>> (without the << >> brackets) must share the same value as org-novelist--word-count-region-en-US.
+;; <<word count>> (without the << >> brackets must share the same value as org-novelist--word-count-word-count-en-US.
+;; <<words>> (without the << >> brackets) must share the same value org-novelist--word-count-words-en-US.
+;; <<sentence count>> (without the << >> brackets must share the same value as org-novelist--word-count-sentence-count-en-US.
+;; <<sentences>> (without the << >> brackets) must share the same value as org-novelist--word-count-sentences-en-US.
+;; <<paragraph count>> (without the << >> brackets must share the same value as org-novelist--word-count-paragraph-count-en-US.
+;; <<paragraphs>> (without the << >> brackets) must share the same value as org-novelist--word-count-paragraphs-en-US.
+;; <<character count>> (without the << >> brackets must share the same value as org-novelist--word-count-character-count-en-US.
+;; <<characters>> (without the << >> brackets) must share the same value as org-novelist--word-count-characters-en-US.
+(defconst orgn--word-count-message-en-US "<<Region>> has <<word count>> <<words>>, <<sentence count>> <<sentences>>, <<paragraph count>> <<paragraphs>>, and <<character count>> <<characters>>" "A message showing the word count (and other counts) of the story, current chapter, or a selection of chapters.")
 (defconst orgn--language-tag-en-US "language tag" "Placeholder for the language code, used in generating error messages.")
 ;; <<language tag>> (without the << >> brackets) must share the same value as org-novelist--language-tag-en-US.
 (defconst orgn--language-set-to-language-tag-en-US "Org Novelist language set to: <<language tag>>" "Inform user that language has been set.")

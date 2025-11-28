@@ -250,6 +250,32 @@
 (defconst orgn--filename-is-not-a-recognised-index-de-DE "Die Datei <<Dateiname>> ist kein bekannter Index" "Index is not of a known type.")
 (defconst orgn--auto-ref-now-on-de-DE "Org Novelist automatische Querverweise sind eingeschaltet" "Inform user that automatic referencing has been turned on.")
 (defconst orgn--auto-ref-now-off-de-DE "Org Novelist automatische Querverweise sind ausgeschaltet" "Inform user that automatic referencing has been turned off.")
+(defconst orgn--word-count-region-de-DE "Die Textauswahl" "Placeholder for the Region, used in generating word count messages.")
+(defconst orgn--word-count-word-count-de-DE "wortzahl" "Placeholder for the word count number, used in generating word count messages.")
+(defconst orgn--word-count-sentence-count-de-DE "satzzahl" "Placeholder for the sentence count number, used in generating word count messages.")
+(defconst orgn--word-count-paragraph-count-de-DE "absatzzahl" "Placeholder for the paragraph count number, used in generating word count messages.")
+(defconst orgn--word-count-character-count-de-DE "zeichenzahl" "Placeholder for the character count number, used in generating word count messages.")
+(defconst orgn--word-count-region-story-de-DE "Die Geschichte" "Part of the message for the word count of the story.")
+(defconst orgn--word-count-region-chapter-de-DE "Das Kapitel" "Part of the message for the word count of the current chapter.")
+(defconst orgn--word-count-region-selection-de-DE "Der ausgewählte Text" "Part of the message for the word count of the current selection of chapters.")
+(defconst orgn--word-count-word-de-DE "Wort" "Part of the message for the word count, indicating a single word.")
+(defconst orgn--word-count-words-de-DE "Wörter" "Part of the message for the word count, indicating more than one word.")
+(defconst orgn--word-count-sentence-de-DE "Satz" "Part of the message for the word count, indicating a single sentence.")
+(defconst orgn--word-count-sentences-de-DE "Sätze" "Part of the message for the word count, indicating more than one sentence.")
+(defconst orgn--word-count-paragraph-de-DE "Absatz" "Part of the message for the word count, indicating a single paragraph.")
+(defconst orgn--word-count-paragraphs-de-DE "Absätze" "Part of the message for the word count, indicating more than one paragraph.")
+(defconst orgn--word-count-character-de-DE "Zeichen" "Part of the message for the word count, indicating a single character.")
+(defconst orgn--word-count-characters-de-DE "Zeichen" "Part of the message for the word count, indicating more than one character.")
+;; <<Die Textauswahl>> (without the << >> brackets) must share the same value as org-novelist--word-count-region-de-DE.
+;; <<wortzahl>> (without the << >> brackets must share the same value as org-novelist--word-count-word-count-de-DE.
+;; <<Wörter>> (without the << >> brackets) must share the same value org-novelist--word-count-words-de-DE.
+;; <<satzzahl>> (without the << >> brackets must share the same value as org-novelist--word-count-sentence-count-de-DE.
+;; <<Sätze>> (without the << >> brackets) must share the same value as org-novelist--word-count-sentences-de-DE.
+;; <<absatzzahl>> (without the << >> brackets must share the same value as org-novelist--word-count-paragraph-count-de-DE.
+;; <<Absätze>> (without the << >> brackets) must share the same value as org-novelist--word-count-paragraphs-de-DE.
+;; <<zeichenzahl>> (without the << >> brackets must share the same value as org-novelist--word-count-character-count-de-DE.
+;; <<Zeichen>> (without the << >> brackets) must share the same value as org-novelist--word-count-characters-de-DE.
+(defconst orgn--word-count-message-de-DE "<<Die Textauswahl>> hat <<wortzahl>> <<Wörter>>, <<satzzahl>> <<Sätze>>, <<absatzzahl>> <<Absätze>> und <<zeichenzahl>> <<Zeichen>>" "A message showing the word count (and other counts) of the story, current chapter, or a selection of chapters.")
 (defconst orgn--language-tag-de-DE "Sprachkürzel" "Placeholder for the language code, used in generating error messages.")
 ;; <<Sprachkürzel>> (without the << >> brackets) must share the same value as org-novelist--language-tag-de-DE.
 (defconst orgn--language-set-to-language-tag-de-DE "Org Novelist Sprache wurde geändert zu: <<Sprachkürzel>>" "Inform user that language has been set.")

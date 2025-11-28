@@ -23,6 +23,8 @@
   - [Places and Props](#places-and-props)
   - [Chapters](#chapters)
   - [Exporting](#exporting)
+  - [Word Counts](#word-counts)
+  - [End of Tutorial](#end-of-tutorial)
 - [Advanced Features](#advanced-features)
   - [Custom Note Templates](#custom-note-templates)
   - [Glossary Generator](#glossary-generator)
@@ -110,6 +112,10 @@ If you'd like to use keybindings with Org Novelist, you could also try adding so
                             'org-novelist-link-to-story)
               (keymap-set org-novelist-mode-map "C-c n l u"
                             'org-novelist-unlink-from-story)
+              (keymap-set org-novelist-mode-map "C-c n w s"
+                            'org-novelist-count-words-in-story)
+              (keymap-set org-novelist-mode-map "C-c n w c"
+                            'org-novelist-count-words-in-current-chapter)
               (keymap-set org-novelist-mode-map "C-c n t"
                             'org-novelist-toggle-automatic-referencing)))
 ```
@@ -144,6 +150,8 @@ For users of `use-package`, an entry like the following will setup Org Novelist 
           ("C-c n e"   . org-novelist-export-story)
           ("C-c n l l" . org-novelist-link-to-story)
           ("C-c n l u" . org-novelist-unlink-from-story)
+          ("C-c n w s" . org-novelist-count-words-in-story)
+          ("C-c n w c" . org-novelist-count-words-in-current-chapter)
           ("C-c n t"   . org-novelist-toggle-automatic-referencing)))
 ```
 
@@ -176,6 +184,8 @@ Or, if you are using Emacs version Emacs 30.1 or greater, you can use something 
           ("C-c n e"   . org-novelist-export-story)
           ("C-c n l l" . org-novelist-link-to-story)
           ("C-c n l u" . org-novelist-unlink-from-story)
+          ("C-c n w s" . org-novelist-count-words-in-story)
+          ("C-c n w c" . org-novelist-count-words-in-current-chapter)
           ("C-c n t"   . org-novelist-toggle-automatic-referencing)))
 ```
 
@@ -453,6 +463,16 @@ Exports/org-latex-export-to-pdf-en-gb.el
 
 From now on, running `org-novelist-export-story` will use these settings for the title, author, author email, and date, no matter what else is set in the story files, or the global Org Novelist settings. If you only want to override some of these, you obviously don't need to include the others.
 
+## Word Counts
+While Emacs has a built-in word count function (using the `count-words` command, or hitting <kbd>M-=</kbd>), it is not entirely suitable for use within Org Novelist. This is partly because Org markup shouldn't be included in your novel's word count; and partly because Org Novelist splits stories across many files and includes a lot of metadata.
+
+In order to get a more accurate count of the words in your novel, you should use the dedicated function: `org-novelist-count-words-in-story`
+
+This function will resolve all files to be included in the final novel, then remove the Org markup and metadata that shouldn't be included. Only then will it do a word count and give you the results. As this is quite an involved sequence of events, it may take a few seconds to finish. However, the final word count should be more accurate to the exported novel.
+
+A similar function to count the words in the current chapter is also available: `org-novelist-count-words-in-current-chapter`
+
+## End of Tutorial
 This ends the tutorial for the main features of Org Novelist. I designed this system for myself, but I hope it proves useful to you. The main goal has always been to help make the boring stuff easier so that you can spend more time on writing. I sincerely hope it helps make your writing more enjoyable.
 
 
@@ -577,6 +597,8 @@ You might also wish to change the Org Novelist mode menu to your own language, o
 (defalias 'org-novelist-geschichte-exportieren 'org-novelist-export-story)
 (defalias 'org-novelist-verknuepfung-zu-geschichte 'org-novelist-link-to-story)
 (defalias 'org-novelist-verknuepfung-zu-geschichte-aufloesen 'org-novelist-unlink-from-story)
+(defalias 'org-novelist-woerter-zaehlen-geschichte 'org-novelist-count-words-in-story)
+(defalias 'org-novelist-woerter-zaehlen-kapitel 'org-novelist-count-words-in-current-chapter)
 (defalias 'org-novelist-automatische-verweise-umschalten 'org-novelist-toggle-automatic-referencing)
 
 ;; Replace the Org Novelist menu with a de-DE equivalent.
@@ -642,6 +664,8 @@ A complete `use-package` version of the above might look something like this:
     (defalias 'org-novelist-geschichte-exportieren 'org-novelist-export-story)
     (defalias 'org-novelist-verknuepfung-zu-geschichte 'org-novelist-link-to-story)
     (defalias 'org-novelist-verknuepfung-zu-geschichte-aufloesen 'org-novelist-unlink-from-story)
+    (defalias 'org-novelist-woerter-zaehlen-geschichte 'org-novelist-count-words-in-story)
+    (defalias 'org-novelist-woerter-zaehlen-kapitel 'org-novelist-count-words-in-current-chapter)
     (defalias 'org-novelist-automatische-verweise-umschalten 'org-novelist-toggle-automatic-referencing)
   :config
     ;; Replace the Org Novelist menu with a de-DE equivalent.
@@ -709,4 +733,6 @@ If you wish to unlink a story and no longer share its notes, you can either edit
 + `org-novelist-export-story` - Export the story to a single Org file, and any other formats specified in export settings.
 + `org-novelist-link-to-story` - Link to a different story to include its notes in the current story's referencing.
 + `org-novelist-unlink-from-story` - Remove a linked story from the current story.
++ `org-novelist-count-words-in-story` - Perform an accurate word count for the story.
++ `org-novelist-count-words-in-current-chapter` - Perform an accurate word count for the current chapter.
 + `org-novelist-toggle-automatic-referencing` - Toggle automatic referencing on/off.
