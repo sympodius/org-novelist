@@ -1848,7 +1848,6 @@ only include these chapters."
           (setq exported-novel-org-string (buffer-string))))  ; Make sure new properties have been saved to output string)
 
       ;; By this point, we should have the Org file string correctly exported.
-      (setq orgn-automatic-referencing-p orgn--autoref-p)
       (eval exported-novel-org-string))))
 
 (defun orgn--count-words (&optional story-folder chapter-list just-word-count-p)
